@@ -1,0 +1,238 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "drizzle.config.ts",
+      "file_type": "code",
+      "source_file": "drizzle.config.ts",
+      "source_location": "L1",
+      "id": "drizzle_config_ts",
+      "community": 3,
+      "norm_label": "drizzle.config.ts"
+    },
+    {
+      "label": "index.ts",
+      "file_type": "code",
+      "source_file": "packages/auth/src/index.ts",
+      "source_location": "L1",
+      "id": "packages_auth_src_index_ts",
+      "community": 4,
+      "norm_label": "index.ts"
+    },
+    {
+      "label": "soap-generator.ts",
+      "file_type": "code",
+      "source_file": "packages/ai/src/soap-generator.ts",
+      "source_location": "L1",
+      "id": "packages_ai_src_soap_generator_ts",
+      "community": 1,
+      "norm_label": "soap-generator.ts"
+    },
+    {
+      "label": "generateSoapNote()",
+      "file_type": "code",
+      "source_file": "packages/ai/src/soap-generator.ts",
+      "source_location": "L52",
+      "id": "soap_generator_generatesoapnote",
+      "community": 1,
+      "norm_label": "generatesoapnote()"
+    },
+    {
+      "label": "index.ts",
+      "file_type": "code",
+      "source_file": "packages/ai/src/index.ts",
+      "source_location": "L1",
+      "id": "packages_ai_src_index_ts",
+      "community": 5,
+      "norm_label": "index.ts"
+    },
+    {
+      "label": "transcription.ts",
+      "file_type": "code",
+      "source_file": "packages/ai/src/transcription.ts",
+      "source_location": "L1",
+      "id": "packages_ai_src_transcription_ts",
+      "community": 2,
+      "norm_label": "transcription.ts"
+    },
+    {
+      "label": "transcribeMedicalAudio()",
+      "file_type": "code",
+      "source_file": "packages/ai/src/transcription.ts",
+      "source_location": "L23",
+      "id": "transcription_transcribemedicalaudio",
+      "community": 2,
+      "norm_label": "transcribemedicalaudio()"
+    },
+    {
+      "label": "schema.ts",
+      "file_type": "code",
+      "source_file": "packages/db/src/schema.ts",
+      "source_location": "L1",
+      "id": "packages_db_src_schema_ts",
+      "community": 6,
+      "norm_label": "schema.ts"
+    },
+    {
+      "label": "client.ts",
+      "file_type": "code",
+      "source_file": "packages/db/src/client.ts",
+      "source_location": "L1",
+      "id": "packages_db_src_client_ts",
+      "community": 7,
+      "norm_label": "client.ts"
+    },
+    {
+      "label": "index.ts",
+      "file_type": "code",
+      "source_file": "packages/db/src/index.ts",
+      "source_location": "L1",
+      "id": "packages_db_src_index_ts",
+      "community": 8,
+      "norm_label": "index.ts"
+    },
+    {
+      "label": "credit-manager.ts",
+      "file_type": "code",
+      "source_file": "packages/billing/src/credit-manager.ts",
+      "source_location": "L1",
+      "id": "packages_billing_src_credit_manager_ts",
+      "community": 0,
+      "norm_label": "credit-manager.ts"
+    },
+    {
+      "label": "addCreditsToOrg()",
+      "file_type": "code",
+      "source_file": "packages/billing/src/credit-manager.ts",
+      "source_location": "L9",
+      "id": "credit_manager_addcreditstoorg",
+      "community": 0,
+      "norm_label": "addcreditstoorg()"
+    },
+    {
+      "label": "consumeCredits()",
+      "file_type": "code",
+      "source_file": "packages/billing/src/credit-manager.ts",
+      "source_location": "L38",
+      "id": "credit_manager_consumecredits",
+      "community": 0,
+      "norm_label": "consumecredits()"
+    },
+    {
+      "label": "getCreditBalance()",
+      "file_type": "code",
+      "source_file": "packages/billing/src/credit-manager.ts",
+      "source_location": "L118",
+      "id": "credit_manager_getcreditbalance",
+      "community": 0,
+      "norm_label": "getcreditbalance()"
+    },
+    {
+      "label": "hasEnoughCredits()",
+      "file_type": "code",
+      "source_file": "packages/billing/src/credit-manager.ts",
+      "source_location": "L131",
+      "id": "credit_manager_hasenoughcredits",
+      "community": 0,
+      "norm_label": "hasenoughcredits()"
+    },
+    {
+      "label": "index.ts",
+      "file_type": "code",
+      "source_file": "packages/billing/src/index.ts",
+      "source_location": "L1",
+      "id": "packages_billing_src_index_ts",
+      "community": 9,
+      "norm_label": "index.ts"
+    }
+  ],
+  "links": [
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "packages/ai/src/soap-generator.ts",
+      "source_location": "L52",
+      "weight": 1.0,
+      "_src": "packages_ai_src_soap_generator_ts",
+      "_tgt": "soap_generator_generatesoapnote",
+      "source": "packages_ai_src_soap_generator_ts",
+      "target": "soap_generator_generatesoapnote",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "packages/ai/src/transcription.ts",
+      "source_location": "L23",
+      "weight": 1.0,
+      "_src": "packages_ai_src_transcription_ts",
+      "_tgt": "transcription_transcribemedicalaudio",
+      "source": "packages_ai_src_transcription_ts",
+      "target": "transcription_transcribemedicalaudio",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "packages/billing/src/credit-manager.ts",
+      "source_location": "L9",
+      "weight": 1.0,
+      "_src": "packages_billing_src_credit_manager_ts",
+      "_tgt": "credit_manager_addcreditstoorg",
+      "source": "packages_billing_src_credit_manager_ts",
+      "target": "credit_manager_addcreditstoorg",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "packages/billing/src/credit-manager.ts",
+      "source_location": "L38",
+      "weight": 1.0,
+      "_src": "packages_billing_src_credit_manager_ts",
+      "_tgt": "credit_manager_consumecredits",
+      "source": "packages_billing_src_credit_manager_ts",
+      "target": "credit_manager_consumecredits",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "packages/billing/src/credit-manager.ts",
+      "source_location": "L118",
+      "weight": 1.0,
+      "_src": "packages_billing_src_credit_manager_ts",
+      "_tgt": "credit_manager_getcreditbalance",
+      "source": "packages_billing_src_credit_manager_ts",
+      "target": "credit_manager_getcreditbalance",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "packages/billing/src/credit-manager.ts",
+      "source_location": "L131",
+      "weight": 1.0,
+      "_src": "packages_billing_src_credit_manager_ts",
+      "_tgt": "credit_manager_hasenoughcredits",
+      "source": "packages_billing_src_credit_manager_ts",
+      "target": "credit_manager_hasenoughcredits",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "packages/billing/src/credit-manager.ts",
+      "source_location": "L135",
+      "weight": 1.0,
+      "_src": "credit_manager_hasenoughcredits",
+      "_tgt": "credit_manager_getcreditbalance",
+      "source": "credit_manager_getcreditbalance",
+      "target": "credit_manager_hasenoughcredits",
+      "confidence_score": 1.0
+    }
+  ],
+  "hyperedges": []
+}

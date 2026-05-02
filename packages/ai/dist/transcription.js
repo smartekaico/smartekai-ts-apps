@@ -1,0 +1,46 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.transcribeMedicalAudio = transcribeMedicalAudio;
+const sdk_1 = require("@deepgram/sdk");
+let deepgram = null;
+function getDeepgramClient() {
+    if (!deepgram) {
+        deepgram = (0, sdk_1.createClient)(process.env.DEEPGRAM_API_KEY);
+    }
+    return deepgram;
+}
+/**
+ * Transcribes audio using Deepgram's nova-3-medical model
+ * Optimized for medical dictation with keyterm boosting
+ */
+async function transcribeMedicalAudio(audioBuffer, contentType = "audio/webm") {
+    try {
+        const { result, error } = await getDeepgramClient().listen.prerecorded.transcribeFile(Buffer.from(new Uint8Array(audioBuffer)), {
+            model: "nova-3-medical",
+            smart_format: true,
+            punctuate: true,
+            mimetype: contentType,
+            keyterm: ["Blood pressure:2", "BP:2", "Temperature:2", "Pulse:2"],
+        });
+        if (error) {
+            console.error("Deepgram transcription error:", error);
+            throw new Error(`Deepgram transcription failed: ${error.message}`);
+        }
+        const transcript = result?.results?.channels[0]?.alternatives[0]?.transcript || "";
+        const confidence = result?.results?.channels[0]?.alternatives[0]?.confidence;
+        return {
+            success: true,
+            transcription: transcript,
+            language: "en", // Deepgram auto-detects
+            confidence,
+        };
+    }
+    catch (error) {
+        console.error("Transcription error:", error);
+        return {
+            success: false,
+            transcription: "",
+            language: "en",
+        };
+    }
+}

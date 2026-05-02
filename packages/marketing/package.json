@@ -1,0 +1,23 @@
+{
+  "name": "@smartekai/marketing",
+  "version": "1.0.0",
+  "main": "src/index.tsx",
+  "types": "src/index.tsx",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@smartekai/ui": "*",
+    "lucide-react": "^0.577.0",
+    "next": "16.2.4",
+    "react": "19.2.5",
+    "react-dom": "19.2.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "19.2.14",
+    "typescript": "^5.0.0"
+  }
+}

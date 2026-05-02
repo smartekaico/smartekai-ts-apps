@@ -1,0 +1,23 @@
+{
+  "name": "smartekai-saas",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "npm@11.13.0",
+  "workspaces": {
+    "packages": [
+      "apps/*",
+      "packages/*"
+    ]
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "dev:legal": "turbo run dev --filter=legal-os --output-logs=full",
+    "dev:medical": "turbo run dev --filter=medical-os --output-logs=full",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0"
+  }
+}
