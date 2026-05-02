@@ -1,41 +1,75 @@
-# Active Plan: Compound SaaS Core Reuse Migration
+# Active Plan: Medical SOAP + Client Management Sync
 
-## Source of Truth
-- `.agents/directives/sop_compund_saas_repo.md`
-- `AGENTS.md`
-- `ai-law-copilot/` (reference only — do not modify)
+## Scope: Basic SOAP Note Generation + Client Management
 
-## Architecture Principle
-Do not copy full product implementations into each app. Extract reusable business, AI, auth, billing, database, and UI/workspace logic into `packages/`. Keep `apps/legal-os` and `apps/medical-os` as thin product frontends.
+Sync from **ai-clinic-app** (DO NOT MODIFY source):
+- SOAP note generation from voice recording/dictation
+- Client management (add, list, select)
+- Minimal viable dashboard
 
-## Current Task: Sync legal-os with canonical source
-- [x] Audit differences between legal-os and ai-law-copilot
-- [x] Sync package.json scripts (db:push, db:studio, security:report, check, type-check)
-- [x] Sync tsconfig.json configuration
-- [x] Update landing page with full ProductShowcase (replacing SharedMarketingSections)
-- [x] Add full marketing sections (platform capabilities, industries, CTA)
-- [x] Localize pricing features and button text (EN/AR)
-- [x] Add DemoRequestModal to pricing section
-- [x] Validate type-check passes
-- [x] Validate build passes
-- [x] Commit on branch `feat/sync-legal-os-from-canonical`
+## Source Reference
 
-## Completed Packages
-- [x] `packages/db` — Drizzle schema with legal, medical, auth, billing, KB, session tables
-- [x] `packages/auth` — Better Auth configuration
-- [x] `packages/billing` — Credit manager and weighted credit utilities
-- [x] `packages/marketing` — DRY data-driven marketing sections (MarketingHeader, MarketingHero, PlatformValueSection, ProductShowcase, SecuritySection, MarketingFooter)
-- [x] `packages/ui` — Foundational shadcn/base UI components
-- [x] `packages/emails` — Email templates
-- [x] `packages/ai` — AI/RAG modules (placeholder)
+| Pattern | Source Location | Target |
+|---------|-----------------|--------|
+| Dashboard index | `ai-clinic-app/src/app/routes/_dashboard/index.tsx` | `medical-os/src/app/workspace/page.tsx` |
+| Client selection | `ai-clinic-app/src/components/client-selection.tsx` | Copy to `medical-os/src/components/` |
+| SOAP note editor | `ai-clinic-app/src/components/soap-note-editor-layout.tsx` | Copy to `medical-os/src/components/` |
+| Recording interface | `ai-clinic-app/src/components/recording-interface.tsx` | Copy to `medical-os/src/components/` |
+| VoiceRecorder | `smartekai-saas/apps/medical-os/src/components/VoiceRecorder.tsx` | Already exists, integrate |
 
-## App Status
-- [x] `apps/legal-os` — Synced with canonical, full marketing pages with i18n (EN/AR)
-- [ ] `apps/medical-os` — Basic shell, needs: demo/invite system, marketing pages
-- [ ] `apps/voice-os` — Not created yet
+## Target Structure
 
-## Next Step
-Add DemoRequestModal, marketing pages, and team invitation system to `apps/medical-os`, then prepare Dokploy-compatible standalone outputs.
+```
+apps/medical-os/src/
+├── app/
+│   ├── workspace/
+│   │   ├── page.tsx           ← Dashboard (stats, recent notes, FAB)
+│   │   └── layout.tsx         ← Shared layout with sidebar
+│   └── api/
+│       ├── generate-soap/     ← Already exists
+│       └── transcribe/        ← Already exists
+├── components/
+│   ├── ClientSelection.tsx     ← NEW from ai-clinic-app
+│   ├── SoapNoteEditor.tsx     ← NEW from ai-clinic-app
+│   ├── RecordingInterface.tsx ← NEW from ai-clinic-app
+│   └── VoiceRecorder.tsx      ← Already exists, integrate
+└── lib/
+    └── medical.ts             ← NEW helpers
+```
+
+## Implementation Steps
+
+### Step 1: Sync Dashboard (workspace/page.tsx)
+- Stats cards (Total Clients, Total Notes)
+- Recent notes list
+- FAB with quick actions (New Client, New Note, Dictate)
+
+### Step 2: Sync Client Management
+- Client list component
+- Add client form
+- Client selection for encounters
+
+### Step 3: Sync SOAP Note Editor
+- TipTap-based rich text editor
+- SOAP sections (Subject, Objective, Assessment, Plan)
+- Template support
+
+### Step 4: Integrate Voice Recording
+- Connect VoiceRecorder to SOAP generation
+- Dictation → Transcription → SOAP
+
+## Status
+
+- [ ] Audit ai-clinic-app patterns via graphify
+- [ ] Sync dashboard/index.tsx
+- [ ] Sync client components
+- [ ] Sync SOAP editor components
+- [ ] Integrate voice recording
+- [ ] Validate build
 
 ## Branch
-`feat/sync-legal-os-from-canonical` (just committed)
+`feat/sync-legal-os-from-canonical` (dirty state)
+
+## Graphify Memory
+- ai-law-copilot: `./graphify-out/ai-law-copilot/` (auth, role enforcement, locale)
+- ai-clinic-app: Source files in `/Users/ar/Desktop/Web Development/ai-clinic-app/src/`
