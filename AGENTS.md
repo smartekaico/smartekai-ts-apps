@@ -113,7 +113,7 @@ _If any box is unchecked, the task is **not done**._
 ## 9. Git Discipline
 
 - Never work on `main` or protected branches.
-- Branch naming: `feature/{scope}-{id}`, `fix/{scope}-{id}`, `chore/{scope}-{id}`
+- Branch naming: `feat/{scope}-{id}`, `fix/{scope}-{id}`, `chore/{scope}-{id}`
 - Use Conventional Commits: `feat(scope):`, `fix(scope):`, `refactor(scope):`, `docs(scope):`, `test(scope):`, `chore(scope):`
 - Commit only validated, coherent changes.
 Record active branch in `.agents/plans/active.md`.

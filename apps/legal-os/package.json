@@ -6,8 +6,13 @@
     "build": "next build",
     "dev": "next dev",
     "start": "next start",
-    "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "lint": "npx @biomejs/biome lint --write ./src",
+    "format": "npx @biomejs/biome format --write ./src",
+    "check": "tsc --noEmit",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "security:report": "trivy fs --scanners vuln,secret,config --format html --output security-report.html ."
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.61",
