@@ -3,26 +3,39 @@
 ## Source of Truth
 - `.agents/directives/sop_compund_saas_repo.md`
 - `AGENTS.md`
+- `ai-law-copilot/` (reference only — do not modify)
 
 ## Architecture Principle
 Do not copy full product implementations into each app. Extract reusable business, AI, auth, billing, database, and UI/workspace logic into `packages/`. Keep `apps/legal-os` and `apps/medical-os` as thin product frontends.
 
-## Current Task: Core Engine Extraction from `ai-law-copilot`
-- [x] Audit existing Legal OS APIs and Medical OS AI implementation.
-- [x] Instantiate `.agents/` execution structure.
-- [x] Align migration plan with compound SaaS SOP.
-- [x] Initialize shared `packages/db` schema with legal, medical, auth, billing, KB, and session tables.
-- [x] Initialize shared `packages/auth` with reusable Better Auth configuration.
-- [x] Initialize shared `packages/billing` credit manager and weighted credit utilities.
-- [~] Initialize shared `packages/ui` with foundational shadcn/base UI components.
-- [x] Initialize shared `packages/marketing` with DRY data-driven marketing sections.
-- [x] Wire Medical OS landing page to shared `packages/marketing` primitives.
-- [x] Wire Legal OS landing value/showcase/security sections to shared `packages/marketing` primitives while keeping localized app-specific hero/pricing.
-- [x] Preserve app-local imports until shared packages are complete and validated.
-- [x] Validate shared packages and app builds after dependency normalization.
-- [ ] Extract reusable AI/RAG modules into `packages/ai` with product/organization filtering.
-- [ ] Add `productId`/entitlement isolation to KB/RAG flows where missing.
-- [ ] Prepare Dokploy-compatible app outputs (`output: 'standalone'`) after package validation.
+## Current Task: Sync legal-os with canonical source
+- [x] Audit differences between legal-os and ai-law-copilot
+- [x] Sync package.json scripts (db:push, db:studio, security:report, check, type-check)
+- [x] Sync tsconfig.json configuration
+- [x] Update landing page with full ProductShowcase (replacing SharedMarketingSections)
+- [x] Add full marketing sections (platform capabilities, industries, CTA)
+- [x] Localize pricing features and button text (EN/AR)
+- [x] Add DemoRequestModal to pricing section
+- [x] Validate type-check passes
+- [x] Validate build passes
+- [x] Commit on branch `feat/sync-legal-os-from-canonical`
+
+## Completed Packages
+- [x] `packages/db` — Drizzle schema with legal, medical, auth, billing, KB, session tables
+- [x] `packages/auth` — Better Auth configuration
+- [x] `packages/billing` — Credit manager and weighted credit utilities
+- [x] `packages/marketing` — DRY data-driven marketing sections (MarketingHeader, MarketingHero, PlatformValueSection, ProductShowcase, SecuritySection, MarketingFooter)
+- [x] `packages/ui` — Foundational shadcn/base UI components
+- [x] `packages/emails` — Email templates
+- [x] `packages/ai` — AI/RAG modules (placeholder)
+
+## App Status
+- [x] `apps/legal-os` — Synced with canonical, full marketing pages with i18n (EN/AR)
+- [ ] `apps/medical-os` — Basic shell, needs: demo/invite system, marketing pages
+- [ ] `apps/voice-os` — Not created yet
 
 ## Next Step
-Continue extracting AI/RAG modules into `packages/ai` with `organizationId` + `productId` isolation, then prepare Dokploy-compatible standalone app outputs.
+Add DemoRequestModal, marketing pages, and team invitation system to `apps/medical-os`, then prepare Dokploy-compatible standalone outputs.
+
+## Branch
+`feat/sync-legal-os-from-canonical` (just committed)
