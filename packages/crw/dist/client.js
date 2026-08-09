@@ -8,9 +8,13 @@ function getCrwBaseUrl() {
     return (process.env.CRW_INTERNAL_URL ?? DEFAULT_BASE_URL).replace(/\/+$/, "");
 }
 async function post(path, body) {
+    const apiKey = process.env.CRW_API_KEY;
     const response = await fetch(`${getCrwBaseUrl()}${path}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+            "Content-Type": "application/json",
+            ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+        },
         body: JSON.stringify(body),
     });
     if (!response.ok) {

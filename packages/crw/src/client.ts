@@ -7,9 +7,13 @@ export function getCrwBaseUrl(): string {
 }
 
 async function post<T>(path: string, body: unknown): Promise<T> {
+  const apiKey = process.env.CRW_API_KEY;
   const response = await fetch(`${getCrwBaseUrl()}${path}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+    },
     body: JSON.stringify(body),
   });
 
