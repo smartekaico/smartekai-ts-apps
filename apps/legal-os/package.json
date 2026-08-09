@@ -25,6 +25,7 @@
     "@radix-ui/react-progress": "^1.1.8",
     "@react-email/components": "^1.0.11",
     "@react-email/tailwind": "^2.0.7",
+    "@smartekai/crw": "*",
     "@smartekai/marketing": "*",
     "@smartekai/ui": "*",
     "@swc/helpers": "^0.5.21",

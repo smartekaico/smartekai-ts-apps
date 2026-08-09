@@ -21,6 +21,7 @@
       "@smartekai/db": ["./packages/db/src/index.ts"],
       "@smartekai/billing": ["./packages/billing/src/index.ts"],
       "@smartekai/ai": ["./packages/ai/src/index.ts"],
+      "@smartekai/crw": ["./packages/crw/src/index.ts"],
       "@smartekai/marketing": ["./packages/marketing/src/index.tsx"],
       "@smartekai/ui": ["./packages/ui/src/index.ts"],
       "@smartekai/emails": ["./packages/emails/src/index.ts"],

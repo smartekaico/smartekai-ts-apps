@@ -5,7 +5,8 @@
     "BETTER_AUTH_URL",
     "BETTER_AUTH_SECRET",
     "GOOGLE_AI_API_KEY",
-    "DEEPGRAM_API_KEY"
+    "DEEPGRAM_API_KEY",
+    "CRW_INTERNAL_URL"
   ],
   "tasks": {
     "build": {
