@@ -202,10 +202,17 @@ Reference for whenever it's worth building — don't invent this speculatively.
   + a per-app `Dockerfile`.
 - **Plans and specs live under `.agents/`**: `.agents/plans/active.md` is current
   work state; other files in `.agents/plans/` and `.agents/specs/` are
-  point-in-time design docs and implementation plans, kept for history. The
-  `superpowers` skills (brainstorming, writing-plans) default to writing into
-  `docs/superpowers/...` — redirect them to `.agents/specs/` and `.agents/plans/`
-  instead when they run (they explicitly support overriding the save location).
+  point-in-time design docs and implementation plans, kept for history. There is
+  no `docs/` directory in this repo — don't recreate one.
+- **`superpowers:brainstorming` writes specs, `superpowers:writing-plans` writes
+  plans.** Both default to `docs/superpowers/specs/` and `docs/superpowers/plans/`
+  — that default is wrong for this repo. Every time either skill is invoked here,
+  save its output to `.agents/specs/<same-filename>.md` or
+  `.agents/plans/<same-filename>.md` instead (same `YYYY-MM-DD-<topic>.md` naming,
+  just a different parent folder). This is the skills' own documented override
+  mechanism ("user preferences for [spec/plan] location override this default") —
+  it is not automatic, so state it explicitly at invocation time, don't rely on
+  remembering it later.
 - **Logs** (`.agents/logs/*.md`): one file per notable decision, root cause, or
   troubleshooting session. Don't log routine work, raw chain-of-thought, or every
   commit.
