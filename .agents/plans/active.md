@@ -1,21 +1,10 @@
-# Active Plan: Medical SOAP + Client Management Sync
+# Active Plan: Medical OS Redesign — Legal OS Pattern Sync
 
-## Scope: Basic SOAP Note Generation + Client Management
+## Scope: Reusable Dashboard + Session-based 3-Tab UI
 
-Sync from **ai-clinic-app** (DO NOT MODIFY source):
-- SOAP note generation from voice recording/dictation
-- Client management (add, list, select)
-- Minimal viable dashboard
-
-## Source Reference
-
-| Pattern | Source Location | Target |
-|---------|-----------------|--------|
-| Dashboard index | `ai-clinic-app/src/app/routes/_dashboard/index.tsx` | `medical-os/src/app/workspace/page.tsx` |
-| Client selection | `ai-clinic-app/src/components/client-selection.tsx` | Copy to `medical-os/src/components/` |
-| SOAP note editor | `ai-clinic-app/src/components/soap-note-editor-layout.tsx` | Copy to `medical-os/src/components/` |
-| Recording interface | `ai-clinic-app/src/components/recording-interface.tsx` | Copy to `medical-os/src/components/` |
-| VoiceRecorder | `smartekai-saas/apps/medical-os/src/components/VoiceRecorder.tsx` | Already exists, integrate |
+Redesign Medical OS to mirror Legal OS session view patterns:
+- **Dashboard:** Stats cards, recent sessions, FAB for quick actions
+- **Session View:** 3-tab interface (Chat, SOAP Note from recording, Events)
 
 ## Target Structure
 
@@ -23,53 +12,111 @@ Sync from **ai-clinic-app** (DO NOT MODIFY source):
 apps/medical-os/src/
 ├── app/
 │   ├── workspace/
-│   │   ├── page.tsx           ← Dashboard (stats, recent notes, FAB)
-│   │   └── layout.tsx         ← Shared layout with sidebar
-│   └── api/
-│       ├── generate-soap/     ← Already exists
-│       └── transcribe/        ← Already exists
-├── components/
-│   ├── ClientSelection.tsx     ← NEW from ai-clinic-app
-│   ├── SoapNoteEditor.tsx     ← NEW from ai-clinic-app
-│   ├── RecordingInterface.tsx ← NEW from ai-clinic-app
-│   └── VoiceRecorder.tsx      ← Already exists, integrate
-└── lib/
-    └── medical.ts             ← NEW helpers
+│   │   ├── page.tsx              ← Dashboard (stats, recent, FAB)
+│   │   └── sessions/
+│   │       └── [id]/
+│   │           └── page.tsx       ← Session view with 3 tabs
+│   └── layout.tsx                ← Root layout
+└── components/
+    ├── dashboard/
+    │   ├── MedicalDashboard.tsx   ← Stats + recent sessions
+    │   └── MedicalSidebar.tsx    ← Sidebar nav (simplified)
+    ├── session/
+    │   ├── SessionHeader.tsx      ← Title, client, case, metadata
+    │   ├── ChatWorkspace.tsx      ← Tab 1: Clinical assistant
+    │   ├── SoapNoteEditor.tsx     ← Tab 2: SOAP from recording
+    │   ├── EventsPanel.tsx        ← Tab 3: Appointments
+    │   └── SessionTabs.tsx        ← 3-tab switcher
+    ├── VoiceRecorder.tsx          ← Existing, integrate
+    └── ui/                         ← shadcn components
 ```
 
 ## Implementation Steps
 
-### Step 1: Sync Dashboard (workspace/page.tsx)
-- Stats cards (Total Clients, Total Notes)
-- Recent notes list
-- FAB with quick actions (New Client, New Note, Dictate)
+### Step 1: Dashboard (workspace/page.tsx)
+- [ ] Stats cards: Total Clients, Total Sessions, Total Notes
+- [ ] Recent sessions list with client, date, status
+- [ ] FAB with quick actions (New Session, New Client)
+- [ ] Sidebar with medical navigation
 
-### Step 2: Sync Client Management
-- Client list component
-- Add client form
-- Client selection for encounters
+### Step 2: Session View (sessions/[id]/page.tsx)
+- [ ] Session header: title, client, case, metadata row
+- [ ] 3-tab switcher buttons:
+  - Tab 1: 💬 Chat (clinical assistant)
+  - Tab 2: 📝 SOAP Note (voice → transcription → SOAP)
+  - Tab 3: 📅 Events (appointments/calendar)
+- [ ] Absolute positioning for tab content (persistent mount)
+- [ ] Mobile-responsive scrollable tabs
 
-### Step 3: Sync SOAP Note Editor
-- TipTap-based rich text editor
-- SOAP sections (Subject, Objective, Assessment, Plan)
-- Template support
+### Step 3: Chat Workspace (Tab 1)
+- [ ] Chat interface for clinical analysis
+- [ ] Quick actions sidebar
+- [ ] Integration with AI endpoints
 
-### Step 4: Integrate Voice Recording
-- Connect VoiceRecorder to SOAP generation
-- Dictation → Transcription → SOAP
+### Step 4: SOAP Note Editor (Tab 2)
+- [ ] Voice recorder → transcription
+- [ ] SOAP generation from transcription
+- [ ] Editable SOAP sections (Subjective, Objective, Assessment, Plan)
+- [ ] Save to session
+
+### Step 5: Events Panel (Tab 3)
+- [ ] Calendar view (list or grid)
+- [ ] Add/Edit/Delete events
+- [ ] Event types (appointment, follow-up, reminder)
+
+## Source Reference (Legal OS Pattern)
+
+| Component | Source | Target |
+|-----------|--------|--------|
+| 3-tab session UI | `ai-law-copilot/src/app/[locale]/dashboard/(workspace)/(legal)/sessions/[id]/page.tsx` | Medical session view |
+| Tab switcher styles | Lines 605-647 | Medical tabs |
+| Dashboard layout | `ai-law-copilot/src/app/[locale]/dashboard/(workspace)/page.tsx` | Medical dashboard |
+| Sidebar | `UnifiedSidebar` | Simplified medical sidebar |
+
+## Key UI Patterns to Mirror
+
+### Tab Switcher (Legal OS L605-647)
+```tsx
+<div className="flex items-center gap-2 overflow-x-auto">
+  <Button variant={activeView === "chat" ? "default" : "outline"}>
+    💬 محادثة ذكية
+  </Button>
+  <Button variant={activeView === "doc" ? "default" : "outline"}>
+    📝 مستند جديد
+  </Button>
+  <Button variant="outline" onClick={() => setIsAddEventModalOpen(true)}>
+    📅 إضافة موعد
+  </Button>
+</div>
+```
+
+### Persistent Tab Content (L653-714)
+```tsx
+<div className="absolute inset-0 transition-opacity duration-300"
+  className={cn(
+    activeView !== "chat" 
+      ? "opacity-0 invisible pointer-events-none" 
+      : "opacity-100 visible"
+  )}
+>
+  <ChatWorkspace ... />
+</div>
+```
 
 ## Status
 
-- [ ] Audit ai-clinic-app patterns via graphify
-- [ ] Sync dashboard/index.tsx
-- [ ] Sync client components
-- [ ] Sync SOAP editor components
-- [ ] Integrate voice recording
+- [x] Audit Legal OS session page patterns
+- [x] Implement Medical Dashboard
+- [ ] Implement Session View with 3 tabs
+- [ ] Build Chat Workspace component
+- [ ] Build SOAP Note Editor (from recording)
+- [ ] Build Events Panel
 - [ ] Validate build
 
 ## Branch
-`feat/sync-legal-os-from-canonical` (dirty state)
+`feat/sync-legal-os-from-canonical` (clean state)
 
-## Graphify Memory
-- ai-law-copilot: `./graphify-out/ai-law-copilot/` (auth, role enforcement, locale)
-- ai-clinic-app: Source files in `/Users/ar/Desktop/Web Development/ai-clinic-app/src/`
+## Dependencies
+- Reuse existing VoiceRecorder component
+- Reuse existing API routes (generate-soap, transcribe)
+- Reuse shadcn UI components
