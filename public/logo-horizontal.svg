@@ -1,0 +1,41 @@
+<svg width="600" height="120" viewBox="0 0 600 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="brain-gradient-h" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1e3a8a" />
+      <stop offset="100%" stop-color="#14b8a6" />
+    </linearGradient>
+    <linearGradient id="line-gradient-h" x1="120" y1="85" x2="550" y2="85" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1e3a8a" opacity="0.3" />
+      <stop offset="50%" stop-color="#14b8a6" />
+      <stop offset="100%" stop-color="#14b8a6" opacity="0.3" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Icon Group (Left Side) -->
+  <g transform="translate(10, 10)">
+    <path d="M60 20C75 20 82 25 88 30C95 35 102 45 102 60C102 75 95 85 88 90C82 95 75 100 60 100" stroke="url(#brain-gradient-h)" stroke-width="6" stroke-linecap="round" />
+    <path d="M60 40C70 40 78 45 78 60C78 75 70 80 60 80" stroke="url(#brain-gradient-h)" stroke-width="4" stroke-linecap="round" />
+    <path d="M60 20C38 20 22 38 22 60C22 82 38 100 60 100" stroke="url(#brain-gradient-h)" stroke-width="6" stroke-linecap="round" />
+    <circle cx="38" cy="45" r="4.5" fill="url(#brain-gradient-h)" />
+    <circle cx="32" cy="60" r="4.5" fill="url(#brain-gradient-h)" />
+    <circle cx="38" cy="75" r="4.5" fill="url(#brain-gradient-h)" />
+    <path d="M38 45L60 45" stroke="url(#brain-gradient-h)" stroke-width="2.5" stroke-linecap="round" />
+    <path d="M32 60L60 60" stroke="url(#brain-gradient-h)" stroke-width="2.5" stroke-linecap="round" />
+    <path d="M38 75L60 75" stroke="url(#brain-gradient-h)" stroke-width="2.5" stroke-linecap="round" />
+  </g>
+
+  <!-- Brand Text -->
+  <g transform="translate(120, 65)">
+    <text font-family="Inter, system-ui, -apple-system, sans-serif" font-weight="900" font-size="52" letter-spacing="0.05em">
+      <tspan fill="#1e3a8a">SMARTEK</tspan><tspan fill="#14b8a6">AI</tspan>
+    </text>
+  </g>
+
+  <!-- Divider Line -->
+  <rect x="120" y="85" width="430" height="2" rx="1" fill="url(#line-gradient-h)" />
+
+  <!-- Subtitle -->
+  <g transform="translate(120, 105)">
+    <text fill="#64748b" font-family="Inter, system-ui, -apple-system, sans-serif" font-weight="700" font-size="12" letter-spacing="0.3em">UNIFIED AI POWERED HUB</text>
+  </g>
+</svg>

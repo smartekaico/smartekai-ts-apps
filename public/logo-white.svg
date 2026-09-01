@@ -1,0 +1,29 @@
+<svg width="400" height="400" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Icon Group (Vertical Centered) -->
+  <g transform="translate(140, 40)">
+    <path d="M60 20C75 20 82 25 88 30C95 35 102 45 102 60C102 75 95 85 88 90C82 95 75 100 60 100" stroke="white" stroke-width="6" stroke-linecap="round" />
+    <path d="M60 40C70 40 78 45 78 60C78 75 70 80 60 80" stroke="white" stroke-width="4" stroke-linecap="round" />
+    <path d="M60 20C38 20 22 38 22 60C22 82 38 100 60 100" stroke="white" stroke-width="6" stroke-linecap="round" />
+    <circle cx="38" cy="45" r="4.5" fill="white" />
+    <circle cx="32" cy="60" r="4.5" fill="white" />
+    <circle cx="38" cy="75" r="4.5" fill="white" />
+    <path d="M38 45L60 45" stroke="white" stroke-width="2.5" stroke-linecap="round" />
+    <path d="M32 60L60 60" stroke="white" stroke-width="2.5" stroke-linecap="round" />
+    <path d="M38 75L60 75" stroke="white" stroke-width="2.5" stroke-linecap="round" />
+  </g>
+
+  <!-- Brand Text -->
+  <g transform="translate(200, 240)" text-anchor="middle">
+    <text font-family="Inter, system-ui, -apple-system, sans-serif" font-weight="900" font-size="52" letter-spacing="0.05em" fill="white">
+      SMARTEKAI
+    </text>
+  </g>
+
+  <!-- Divider Line -->
+  <rect x="50" y="270" width="300" height="3" rx="1.5" fill="white" opacity="0.3" />
+
+  <!-- Subtitle -->
+  <g transform="translate(200, 310)" text-anchor="middle">
+    <text fill="white" opacity="0.7" font-family="Inter, system-ui, -apple-system, sans-serif" font-weight="700" font-size="14" letter-spacing="0.3em">UNIFIED AI POWERED HUB</text>
+  </g>
+</svg>
