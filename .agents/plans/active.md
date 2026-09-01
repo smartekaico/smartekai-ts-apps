@@ -1,122 +1,35 @@
-# Active Plan: Medical OS Redesign — Legal OS Pattern Sync
+# Active Plan: Medical OS — Next.js → TanStack Start Migration
 
-## Scope: Reusable Dashboard + Session-based 3-Tab UI
+## Scope
+Replace Next.js with TanStack Start in `apps/medical-os`, keeping Turborepo unchanged, with zero behavior change to routes/UI/API contracts. Swap `apps/medical-os` App Router → TanStack Start (React Router file-based routing, Vite + Nitro build), fix `packages/marketing`'s `next/link`, add like-for-like Nitro build output support in `turbo.json`, and add a Dockerfile for Dokploy.
 
-Redesign Medical OS to mirror Legal OS session view patterns:
-- **Dashboard:** Stats cards, recent sessions, FAB for quick actions
-- **Session View:** 3-tab interface (Chat, SOAP Note from recording, Events)
+## Plan
+`.agents/plans/2026-09-01-medical-os-tanstack-start-migration.md`
 
-## Target Structure
-
-```
-apps/medical-os/src/
-├── app/
-│   ├── workspace/
-│   │   ├── page.tsx              ← Dashboard (stats, recent, FAB)
-│   │   └── sessions/
-│   │       └── [id]/
-│   │           └── page.tsx       ← Session view with 3 tabs
-│   └── layout.tsx                ← Root layout
-└── components/
-    ├── dashboard/
-    │   ├── MedicalDashboard.tsx   ← Stats + recent sessions
-    │   └── MedicalSidebar.tsx    ← Sidebar nav (simplified)
-    ├── session/
-    │   ├── SessionHeader.tsx      ← Title, client, case, metadata
-    │   ├── ChatWorkspace.tsx      ← Tab 1: Clinical assistant
-    │   ├── SoapNoteEditor.tsx     ← Tab 2: SOAP from recording
-    │   ├── EventsPanel.tsx        ← Tab 3: Appointments
-    │   └── SessionTabs.tsx        ← 3-tab switcher
-    ├── VoiceRecorder.tsx          ← Existing, integrate
-    └── ui/                         ← shadcn components
-```
-
-## Implementation Steps
-
-### Step 1: Dashboard (workspace/page.tsx)
-- [ ] Stats cards: Total Clients, Total Sessions, Total Notes
-- [ ] Recent sessions list with client, date, status
-- [ ] FAB with quick actions (New Session, New Client)
-- [ ] Sidebar with medical navigation
-
-### Step 2: Session View (sessions/[id]/page.tsx)
-- [ ] Session header: title, client, case, metadata row
-- [ ] 3-tab switcher buttons:
-  - Tab 1: 💬 Chat (clinical assistant)
-  - Tab 2: 📝 SOAP Note (voice → transcription → SOAP)
-  - Tab 3: 📅 Events (appointments/calendar)
-- [ ] Absolute positioning for tab content (persistent mount)
-- [ ] Mobile-responsive scrollable tabs
-
-### Step 3: Chat Workspace (Tab 1)
-- [ ] Chat interface for clinical analysis
-- [ ] Quick actions sidebar
-- [ ] Integration with AI endpoints
-
-### Step 4: SOAP Note Editor (Tab 2)
-- [ ] Voice recorder → transcription
-- [ ] SOAP generation from transcription
-- [ ] Editable SOAP sections (Subjective, Objective, Assessment, Plan)
-- [ ] Save to session
-
-### Step 5: Events Panel (Tab 3)
-- [ ] Calendar view (list or grid)
-- [ ] Add/Edit/Delete events
-- [ ] Event types (appointment, follow-up, reminder)
-
-## Source Reference (Legal OS Pattern)
-
-| Component | Source | Target |
-|-----------|--------|--------|
-| 3-tab session UI | `ai-law-copilot/src/app/[locale]/dashboard/(workspace)/(legal)/sessions/[id]/page.tsx` | Medical session view |
-| Tab switcher styles | Lines 605-647 | Medical tabs |
-| Dashboard layout | `ai-law-copilot/src/app/[locale]/dashboard/(workspace)/page.tsx` | Medical dashboard |
-| Sidebar | `UnifiedSidebar` | Simplified medical sidebar |
-
-## Key UI Patterns to Mirror
-
-### Tab Switcher (Legal OS L605-647)
-```tsx
-<div className="flex items-center gap-2 overflow-x-auto">
-  <Button variant={activeView === "chat" ? "default" : "outline"}>
-    💬 محادثة ذكية
-  </Button>
-  <Button variant={activeView === "doc" ? "default" : "outline"}>
-    📝 مستند جديد
-  </Button>
-  <Button variant="outline" onClick={() => setIsAddEventModalOpen(true)}>
-    📅 إضافة موعد
-  </Button>
-</div>
-```
-
-### Persistent Tab Content (L653-714)
-```tsx
-<div className="absolute inset-0 transition-opacity duration-300"
-  className={cn(
-    activeView !== "chat" 
-      ? "opacity-0 invisible pointer-events-none" 
-      : "opacity-100 visible"
-  )}
->
-  <ChatWorkspace ... />
-</div>
-```
-
-## Status
-
-- [x] Audit Legal OS session page patterns
-- [x] Implement Medical Dashboard
-- [ ] Implement Session View with 3 tabs
-- [ ] Build Chat Workspace component
-- [ ] Build SOAP Note Editor (from recording)
-- [ ] Build Events Panel
-- [ ] Validate build
+Spec: `.agents/specs/2026-09-01-medical-os-tanstack-start-migration-design.md`
 
 ## Branch
-`feat/sync-legal-os-from-canonical` (clean state)
+`feat/medical-os-tanstack-start-migration` (clean state, created from `main`)
 
-## Dependencies
-- Reuse existing VoiceRecorder component
-- Reuse existing API routes (generate-soap, transcribe)
-- Reuse shadcn UI components
+## Source of Truth
+The implementation plan file is the source of truth for task-by-task steps. See its 9 tasks:
+1. Root monorepo config (turbo.json outputs add `.output/**`, .gitignore)
+2. Fix `@smartekai/marketing` `next/link` → plain `<a>`, drop `next` dep
+3. Bootstrap TanStack Start toolchain (vite.config, tsr.config, eslint, .cta.json, router.tsx, routes/__root, routes/index, package.json, tsconfig, tailwind config)
+4. Port workspace dashboard (workspace/route.tsx layout, workspace/index.tsx, MedicalSidebar, MedicalDashboard)
+5. Port session detail route (`$id.tsx`)
+6. Port the two API routes as server routes (api/generate-soap.ts, api/transcribe.ts)
+7. Remove Next.js (delete src/app/, next.config.js, next-env.d.ts; full verification)
+8. Dockerfile for Dokploy (turbo prune pattern)
+9. Full manual verification (real API keys, browser golden path)
+
+## Execution Method
+superpowers:subagent-driven-development — fresh implementer subagent per task, then spec-compliance review then code-quality review.
+
+## Key Decisions
+- Tailwind stays on v3 (PostCSS) — NOT upgraded to CLI default v4
+- TypeScript `^6.0.3` for medical-os package only
+- API routes stay as HTTP server routes (raw `server.handlers`), NOT `createServerFn` RPC
+- Plain `<a>` used uniformly in Medical OS components (no TanStack `Link`/`to`/`params` needed)
+- `routeTree.gen.ts` committed to git
+- `.output/` is self-contained (verified): `node .output/server/index.mjs`
