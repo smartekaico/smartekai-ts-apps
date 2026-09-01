@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
+
 import {
   Activity,
   ArrowRight,
@@ -190,7 +190,7 @@ export const defaultMarketingProducts: MarketingProduct[] = [
 
 function BrandMark({ label }: { label: string }) {
   return (
-    <Link
+    <a
       href="/"
       className="flex items-center gap-3 font-black text-slate-950"
     >
@@ -198,7 +198,7 @@ function BrandMark({ label }: { label: string }) {
         <Sparkles className="h-5 w-5" />
       </span>
       <span className="text-lg tracking-tight">{label}</span>
-    </Link>
+    </a>
   );
 }
 
@@ -210,14 +210,14 @@ function NavLinks({
   onClick?: () => void;
 }) {
   return items.map((item) => (
-    <Link
+    <a
       key={item.href}
       href={item.href}
       onClick={onClick}
       className="rounded-full px-4 py-2 text-sm font-black text-slate-600 transition hover:bg-slate-100 hover:text-slate-950"
     >
       {item.label}
-    </Link>
+    </a>
   ));
 }
 
@@ -352,17 +352,17 @@ export function MarketingHeader({
           <NavLinks items={navItems} />
         </div>
         <div className="hidden items-center gap-3 lg:flex">
-          <Link
+          <a
             href={loginHref}
             className="px-3 text-sm font-black text-slate-700 hover:text-slate-950"
           >
             {loginLabel}
-          </Link>
+          </a>
           <Button
             asChild
             className="rounded-full bg-slate-950 px-5 font-black text-white hover:bg-indigo-600"
           >
-            <Link href={ctaHref}>{ctaLabel}</Link>
+            <a href={ctaHref}>{ctaLabel}</a>
           </Button>
         </div>
         <button
@@ -382,7 +382,7 @@ export function MarketingHeader({
               asChild
               className="mt-3 rounded-2xl bg-slate-950 font-black text-white"
             >
-              <Link href={ctaHref}>{ctaLabel}</Link>
+              <a href={ctaHref}>{ctaLabel}</a>
             </Button>
           </div>
         </div>
@@ -431,17 +431,17 @@ export function MarketingHero({
             asChild
             className="h-14 rounded-2xl bg-slate-950 px-8 text-base font-black text-white hover:bg-indigo-600"
           >
-            <Link href={primaryCta.href}>
+            <a href={primaryCta.href}>
               {primaryCta.label}
               <ArrowRight className="ms-2 h-5 w-5" />
-            </Link>
+            </a>
           </Button>
           <Button
             asChild
             variant="outline"
             className="h-14 rounded-2xl px-8 text-base font-black"
           >
-            <Link href={secondaryCta.href}>{secondaryCta.label}</Link>
+            <a href={secondaryCta.href}>{secondaryCta.label}</a>
           </Button>
         </div>
       </div>
@@ -518,7 +518,7 @@ export function ProductShowcase({
               asChild
               className="mt-10 h-12 rounded-2xl bg-slate-950 px-6 font-black text-white hover:bg-indigo-600"
             >
-              <Link href={current.href}>Explore {current.name}</Link>
+              <a href={current.href}>Explore {current.name}</a>
             </Button>
           </div>
           <div className="relative">
