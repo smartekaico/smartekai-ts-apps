@@ -305,7 +305,6 @@ Update the `scripts` block:
     "jsx": "react-jsx",
     "incremental": true,
     "types": ["vite/client"],
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     }
@@ -316,6 +315,8 @@ Update the `scripts` block:
 ```
 
 Changes from the original: dropped `"plugins": [{"name": "next"}]` (Next's editor-only TS plugin) and the Next-specific `include` entries (`next-env.d.ts`, `.next/types/**/*.ts`, `.next/dev/types/**/*.ts`). Added `"types": ["vite/client"]` — this is required for the `import appCss from "../styles.css?url"` pattern used in `__root.tsx` (Task 3, Step 7) to type-check; without it, `?url` imports have no ambient type declaration.
+
+> **Correction (found during a 2026-09-02 validation pass, after `typescript` had already moved to `^6.0.3`): no `baseUrl`.** The version above originally included `"baseUrl": "."`, which now fails `tsc --noEmit` with `TS5101: Option 'baseUrl' is deprecated and will stop functioning in TypeScript 7.0` — this is a genuine TypeScript 6 behavior change, not a typo in this plan. Verified fix: drop `baseUrl` entirely. With `moduleResolution: "bundler"`, `paths` resolves relative to the tsconfig file's own directory without it — confirmed by editing the actual file, running `tsc --noEmit` clean, then reverting the test edit. The JSON block above already has `baseUrl` removed; if you're working from an older copy of this plan or from `git show` history, drop that line.
 
 - [ ] **Step 5: Create `apps/medical-os/tsr.config.json`**
 
