@@ -1,8 +1,7 @@
-"use client";
-
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { SessionTabs, TabId } from "@/components/session/SessionTabs";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { SessionTabs } from "@/components/session/SessionTabs";
+import type { TabId } from "@/components/session/SessionTabs";
 import { ChatWorkspace } from "@/components/session/ChatWorkspace";
 import { SoapNoteEditor } from "@/components/session/SoapNoteEditor";
 import { EventsPanel } from "@/components/session/EventsPanel";
@@ -22,6 +21,10 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+export const Route = createFileRoute("/workspace/sessions/$id")({
+  component: SessionPage,
+});
+
 interface SessionData {
   id: string;
   title: string;
@@ -33,10 +36,6 @@ interface SessionData {
   updatedAt: string;
   notesCount: number;
   eventsCount: number;
-}
-
-interface SessionPageProps {
-  params: Promise<{ id: string }>;
 }
 
 // Mock session data for demo
@@ -53,10 +52,9 @@ const mockSession: SessionData = {
   eventsCount: 0,
 };
 
-export default function SessionPage({ params }: SessionPageProps) {
-  const router = useRouter();
-  const resolvedParams = useParams<{ id: string }>();
-  const sessionId = resolvedParams.id;
+function SessionPage() {
+  const navigate = useNavigate();
+  const { id: sessionId } = Route.useParams();
 
   const [activeTab, setActiveTab] = useState<TabId>("chat");
   const [loading, setLoading] = useState(true);
@@ -93,7 +91,7 @@ export default function SessionPage({ params }: SessionPageProps) {
   }, [sessionId]);
 
   const handleBack = () => {
-    router.push("/workspace");
+    navigate({ to: "/workspace" });
   };
 
   const handleTranscriptionComplete = (transcription: string) => {

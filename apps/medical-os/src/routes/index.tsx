@@ -1,3 +1,4 @@
+import { createFileRoute } from "@tanstack/react-router";
 import {
   MarketingFooter,
   MarketingHeader,
@@ -7,7 +8,11 @@ import {
   SecuritySection,
 } from "@smartekai/marketing";
 
-export default function Home() {
+export const Route = createFileRoute("/")({
+  component: Home,
+});
+
+function Home() {
   return (
     <main className="min-h-screen bg-white text-slate-950">
       <MarketingHeader

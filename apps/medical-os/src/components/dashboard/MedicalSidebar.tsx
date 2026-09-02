@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useRouterState } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -58,7 +57,7 @@ const bottomNav: NavItem[] = [
 ];
 
 export function MedicalSidebar() {
-  const pathname = usePathname();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
 
   const isActive = (href: string) => {
     if (href === "/workspace") {
@@ -71,7 +70,7 @@ export function MedicalSidebar() {
     <aside className="w-64 bg-white border-e border-slate-200 flex flex-col h-full">
       {/* Logo */}
       <div className="p-4 border-b border-slate-100">
-        <Link href="/workspace" className="flex items-center gap-3">
+        <a href="/workspace" className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 to-rose-600 flex items-center justify-center shadow-lg shadow-rose-200">
             <Stethoscope className="h-5 w-5 text-white" />
           </div>
@@ -81,26 +80,26 @@ export function MedicalSidebar() {
               Clinical Workspace
             </p>
           </div>
-        </Link>
+        </a>
       </div>
 
       {/* Quick Actions */}
       <div className="p-3 border-b border-slate-100">
         <div className="grid grid-cols-2 gap-2">
-          <Link
+          <a
             href="/workspace/sessions/new"
             className="flex items-center justify-center gap-2 px-3 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl font-bold text-xs transition-colors"
           >
             <Mic className="h-4 w-4" />
             New Session
-          </Link>
-          <Link
+          </a>
+          <a
             href="/workspace/clients/new"
             className="flex items-center justify-center gap-2 px-3 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl font-bold text-xs transition-colors"
           >
             <Users className="h-4 w-4" />
             Add Client
-          </Link>
+          </a>
         </div>
       </div>
 
@@ -109,7 +108,7 @@ export function MedicalSidebar() {
         {mainNav.map((item) => {
           const active = isActive(item.href);
           return (
-            <Link
+            <a
               key={item.href}
               href={item.href}
               className={cn(
@@ -126,7 +125,7 @@ export function MedicalSidebar() {
                   {item.badge}
                 </span>
               )}
-            </Link>
+            </a>
           );
         })}
       </nav>
@@ -136,7 +135,7 @@ export function MedicalSidebar() {
         {bottomNav.map((item) => {
           const active = isActive(item.href);
           return (
-            <Link
+            <a
               key={item.href}
               href={item.href}
               className={cn(
@@ -148,7 +147,7 @@ export function MedicalSidebar() {
             >
               {item.icon}
               {item.label}
-            </Link>
+            </a>
           );
         })}
       </div>

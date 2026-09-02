@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -130,8 +129,8 @@ export function MedicalDashboard() {
 
   const filteredSessions = sessions.filter(
     (session) =>
-      session.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      session.clientName?.toLowerCase().includes(searchQuery.toLowerCase())
+      session.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      session.clientName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const formatDate = (dateString: string) => {
@@ -167,7 +166,7 @@ export function MedicalDashboard() {
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {stats.map((stat) => (
-            <Link key={stat.name} href={stat.href}>
+            <a key={stat.name} href={stat.href}>
               <Card className="hover:shadow-md transition-all duration-200 cursor-pointer border-slate-100">
                 <CardContent className="p-4 sm:p-6">
                   <div className="flex items-center justify-between">
@@ -185,7 +184,7 @@ export function MedicalDashboard() {
                   </div>
                 </CardContent>
               </Card>
-            </Link>
+            </a>
           ))}
         </div>
 
@@ -231,7 +230,7 @@ export function MedicalDashboard() {
               </div>
             ) : (
               filteredSessions.map((session) => (
-                <Link
+                <a
                   key={session.id}
                   href={`/workspace/sessions/${session.id}`}
                   className="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors"
@@ -265,19 +264,19 @@ export function MedicalDashboard() {
                   <Button variant="ghost" size="sm" className="text-slate-400">
                     <ArrowRight className="h-4 w-4" />
                   </Button>
-                </Link>
+                </a>
               ))
             )}
           </div>
 
           {sessions.length > 0 && (
             <div className="p-4 border-t border-slate-100 text-center">
-              <Link href="#sessions">
+              <a href="#sessions">
                 <Button variant="link" className="text-indigo-600 font-bold">
                   View all sessions
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
-              </Link>
+              </a>
             </div>
           )}
         </Card>
@@ -294,7 +293,7 @@ export function MedicalDashboard() {
                   : "opacity-0 translate-y-4 scale-95 pointer-events-none"
               )}
             >
-              <Link href="/workspace/sessions/new">
+              <a href="/workspace/sessions/new">
                 <Button
                   size="lg"
                   className="rounded-2xl gap-2 shadow-xl bg-emerald-600 hover:bg-emerald-700"
@@ -302,8 +301,8 @@ export function MedicalDashboard() {
                   <Activity className="h-5 w-5" />
                   <span className="hidden sm:inline">New Session</span>
                 </Button>
-              </Link>
-              <Link href="#clients/new">
+              </a>
+              <a href="#clients/new">
                 <Button
                   size="lg"
                   className="rounded-2xl gap-2 shadow-xl bg-blue-600 hover:bg-blue-700"
@@ -311,7 +310,7 @@ export function MedicalDashboard() {
                   <Users className="h-5 w-5" />
                   <span className="hidden sm:inline">New Client</span>
                 </Button>
-              </Link>
+              </a>
             </div>
 
             {/* FAB Toggle */}

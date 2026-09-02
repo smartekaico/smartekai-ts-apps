@@ -9,7 +9,8 @@ Replace Next.js with TanStack Start in `apps/medical-os`, keeping Turborepo unch
 Spec: `.agents/specs/2026-09-01-medical-os-tanstack-start-migration-design.md`
 
 ## Branch
-`feat/medical-os-tanstack-start-migration` (clean state, created from `main`)
+`feat/medical-os-tanstack-start-migration` — Tasks 1–9 implemented and verified
+(commits `e054e68..4841a23`), merged into `main`.
 
 ## Source of Truth
 The implementation plan file is the source of truth for task-by-task steps. See its 9 tasks:
