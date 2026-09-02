@@ -7,6 +7,6 @@ export default defineConfig({
   resolve: { tsconfigPaths: true },
   plugins: [nitro(), tanstackStart(), viteReact()],
   ssr: {
-    external: ["@smartekai/ui"],
+    external: ["@smartekai/ui", "@smartekai/ai"],
   },
 });

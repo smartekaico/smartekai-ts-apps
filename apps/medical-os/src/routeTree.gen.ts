@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WorkspaceRouteRouteImport } from './routes/workspace/route'
+import { Route as ApiGenerateSoapRouteImport } from './routes/api/generate-soap'
+import { Route as ApiTranscribeRouteImport } from './routes/api/transcribe'
 import { Route as WorkspaceIndexRouteImport } from './routes/workspace/index'
 import { Route as WorkspaceSessionsIdRouteImport } from './routes/workspace/sessions/$id'
 
@@ -22,6 +24,16 @@ const IndexRoute = IndexRouteImport.update({
 const WorkspaceRouteRoute = WorkspaceRouteRouteImport.update({
   id: '/workspace',
   path: '/workspace',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGenerateSoapRoute = ApiGenerateSoapRouteImport.update({
+  id: '/api/generate-soap',
+  path: '/api/generate-soap',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTranscribeRoute = ApiTranscribeRouteImport.update({
+  id: '/api/transcribe',
+  path: '/api/transcribe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WorkspaceIndexRoute = WorkspaceIndexRouteImport.update({
@@ -38,11 +50,15 @@ const WorkspaceSessionsIdRoute = WorkspaceSessionsIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/workspace': typeof WorkspaceRouteRouteWithChildren
+  '/api/generate-soap': typeof ApiGenerateSoapRoute
+  '/api/transcribe': typeof ApiTranscribeRoute
   '/workspace/': typeof WorkspaceIndexRoute
   '/workspace/sessions/$id': typeof WorkspaceSessionsIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/generate-soap': typeof ApiGenerateSoapRoute
+  '/api/transcribe': typeof ApiTranscribeRoute
   '/workspace': typeof WorkspaceIndexRoute
   '/workspace/sessions/$id': typeof WorkspaceSessionsIdRoute
 }
@@ -50,18 +66,33 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/workspace': typeof WorkspaceRouteRouteWithChildren
+  '/api/generate-soap': typeof ApiGenerateSoapRoute
+  '/api/transcribe': typeof ApiTranscribeRoute
   '/workspace/': typeof WorkspaceIndexRoute
   '/workspace/sessions/$id': typeof WorkspaceSessionsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/workspace' | '/workspace/' | '/workspace/sessions/$id'
+  fullPaths:
+    | '/'
+    | '/workspace'
+    | '/api/generate-soap'
+    | '/api/transcribe'
+    | '/workspace/'
+    | '/workspace/sessions/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/workspace' | '/workspace/sessions/$id'
+  to:
+    | '/'
+    | '/api/generate-soap'
+    | '/api/transcribe'
+    | '/workspace'
+    | '/workspace/sessions/$id'
   id:
     | '__root__'
     | '/'
     | '/workspace'
+    | '/api/generate-soap'
+    | '/api/transcribe'
     | '/workspace/'
     | '/workspace/sessions/$id'
   fileRoutesById: FileRoutesById
@@ -69,6 +100,8 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   WorkspaceRouteRoute: typeof WorkspaceRouteRouteWithChildren
+  ApiGenerateSoapRoute: typeof ApiGenerateSoapRoute
+  ApiTranscribeRoute: typeof ApiTranscribeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -85,6 +118,20 @@ declare module '@tanstack/react-router' {
       path: '/workspace'
       fullPath: '/workspace'
       preLoaderRoute: typeof WorkspaceRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/generate-soap': {
+      id: '/api/generate-soap'
+      path: '/api/generate-soap'
+      fullPath: '/api/generate-soap'
+      preLoaderRoute: typeof ApiGenerateSoapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/transcribe': {
+      id: '/api/transcribe'
+      path: '/api/transcribe'
+      fullPath: '/api/transcribe'
+      preLoaderRoute: typeof ApiTranscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/workspace/': {
@@ -121,6 +168,8 @@ const WorkspaceRouteRouteWithChildren = WorkspaceRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   WorkspaceRouteRoute: WorkspaceRouteRouteWithChildren,
+  ApiGenerateSoapRoute: ApiGenerateSoapRoute,
+  ApiTranscribeRoute: ApiTranscribeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
