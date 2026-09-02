@@ -279,7 +279,7 @@ export function ChatWorkspace({
       </div>
 
       {/* Messages Area */}
-      <ScrollArea className="flex-1" ref={scrollAreaRef as any}>
+      <ScrollArea className="flex-1" ref={scrollAreaRef}>
         <div className="p-4 space-y-4 min-h-full">
           {messages.map((message) => (
             <div

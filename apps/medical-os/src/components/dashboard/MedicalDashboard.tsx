@@ -129,8 +129,8 @@ export function MedicalDashboard() {
 
   const filteredSessions = sessions.filter(
     (session) =>
-      session.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      session.clientName?.toLowerCase().includes(searchQuery.toLowerCase())
+      session.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      session.clientName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const formatDate = (dateString: string) => {

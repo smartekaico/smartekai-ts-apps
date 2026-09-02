@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, FileText, Calendar } from "lucide-react";
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 
 export type TabId = "chat" | "soap" | "events";
 

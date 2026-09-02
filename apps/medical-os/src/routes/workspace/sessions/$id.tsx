@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { SessionTabs, TabId } from "@/components/session/SessionTabs";
+import { SessionTabs } from "@/components/session/SessionTabs";
+import type { TabId } from "@/components/session/SessionTabs";
 import { ChatWorkspace } from "@/components/session/ChatWorkspace";
 import { SoapNoteEditor } from "@/components/session/SoapNoteEditor";
 import { EventsPanel } from "@/components/session/EventsPanel";

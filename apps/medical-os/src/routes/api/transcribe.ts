@@ -7,7 +7,7 @@ export const Route = createFileRoute("/api/transcribe")({
       POST: async ({ request }) => {
         try {
           const formData = await request.formData();
-          const audioFile = formData.get("audio") as File;
+          const audioFile = formData.get("audio") as File | null;
 
           if (!audioFile) {
             return Response.json(
