@@ -41,3 +41,23 @@ superpowers:subagent-driven-development — fresh implementer subagent per task,
 - Plain `<a>` used uniformly in Medical OS components (no TanStack `Link`/`to`/`params` needed)
 - `routeTree.gen.ts` committed to git
 - `.output/` is self-contained (verified): `node .output/server/index.mjs`
+
+## Current work (2026-09-02): shared landing + SOAP access — `feat/shared-landing-and-soap-access`
+Approved scope (plan-mode, user "go" with defaults):
+1. `@smartekai/marketing`: new config-driven `MarketingLandingPage` (+
+   `MarketingSiteConfig` type). Composes existing sections — their markup stays
+   untouched (legal-os renders them live). New component only: composition +
+   light polish (reveal, accent theming via config).
+2. medical-os home → config object + `<MarketingLandingPage>`; footer "SOAP
+   Generation" link → `/workspace/notes` (was raw API URL).
+3. medical-os: new `/workspace/notes` route — standalone SoapNoteEditor, no
+   persistence (copy/download only).
+4. medical-os: hide dead nav (Sessions/Clients/Appointments/Settings, Add
+   Client); keep Dashboard / SOAP Notes / New Session; point dashboard "SOAP
+   Notes" stat card to /workspace/notes; drop phantom /api/medical/* fetches.
+5. Gates: turbo type-check/lint/build medical-os (+marketing dep), dev
+   click-through incl. real SOAP generation on the new page.
+Deferred (agreed): legal-os adoption of MarketingLandingPage = separate follow-up
+(i18n/SEO/RTL surface); real note persistence/auth = separate project.
+(`chore/dependency-updates` branch: dep triage committed there, unmerged.)
+
