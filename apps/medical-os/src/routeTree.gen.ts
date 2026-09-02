@@ -14,6 +14,7 @@ import { Route as WorkspaceRouteRouteImport } from './routes/workspace/route'
 import { Route as ApiGenerateSoapRouteImport } from './routes/api/generate-soap'
 import { Route as ApiTranscribeRouteImport } from './routes/api/transcribe'
 import { Route as WorkspaceIndexRouteImport } from './routes/workspace/index'
+import { Route as WorkspaceNotesRouteImport } from './routes/workspace/notes'
 import { Route as WorkspaceSessionsIdRouteImport } from './routes/workspace/sessions/$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -41,6 +42,11 @@ const WorkspaceIndexRoute = WorkspaceIndexRouteImport.update({
   path: '/',
   getParentRoute: () => WorkspaceRouteRoute,
 } as any)
+const WorkspaceNotesRoute = WorkspaceNotesRouteImport.update({
+  id: '/notes',
+  path: '/notes',
+  getParentRoute: () => WorkspaceRouteRoute,
+} as any)
 const WorkspaceSessionsIdRoute = WorkspaceSessionsIdRouteImport.update({
   id: '/sessions/$id',
   path: '/sessions/$id',
@@ -52,6 +58,7 @@ export interface FileRoutesByFullPath {
   '/workspace': typeof WorkspaceRouteRouteWithChildren
   '/api/generate-soap': typeof ApiGenerateSoapRoute
   '/api/transcribe': typeof ApiTranscribeRoute
+  '/workspace/notes': typeof WorkspaceNotesRoute
   '/workspace/': typeof WorkspaceIndexRoute
   '/workspace/sessions/$id': typeof WorkspaceSessionsIdRoute
 }
@@ -59,6 +66,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/api/generate-soap': typeof ApiGenerateSoapRoute
   '/api/transcribe': typeof ApiTranscribeRoute
+  '/workspace/notes': typeof WorkspaceNotesRoute
   '/workspace': typeof WorkspaceIndexRoute
   '/workspace/sessions/$id': typeof WorkspaceSessionsIdRoute
 }
@@ -68,6 +76,7 @@ export interface FileRoutesById {
   '/workspace': typeof WorkspaceRouteRouteWithChildren
   '/api/generate-soap': typeof ApiGenerateSoapRoute
   '/api/transcribe': typeof ApiTranscribeRoute
+  '/workspace/notes': typeof WorkspaceNotesRoute
   '/workspace/': typeof WorkspaceIndexRoute
   '/workspace/sessions/$id': typeof WorkspaceSessionsIdRoute
 }
@@ -78,6 +87,7 @@ export interface FileRouteTypes {
     | '/workspace'
     | '/api/generate-soap'
     | '/api/transcribe'
+    | '/workspace/notes'
     | '/workspace/'
     | '/workspace/sessions/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -85,6 +95,7 @@ export interface FileRouteTypes {
     | '/'
     | '/api/generate-soap'
     | '/api/transcribe'
+    | '/workspace/notes'
     | '/workspace'
     | '/workspace/sessions/$id'
   id:
@@ -93,6 +104,7 @@ export interface FileRouteTypes {
     | '/workspace'
     | '/api/generate-soap'
     | '/api/transcribe'
+    | '/workspace/notes'
     | '/workspace/'
     | '/workspace/sessions/$id'
   fileRoutesById: FileRoutesById
@@ -141,6 +153,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkspaceIndexRouteImport
       parentRoute: typeof WorkspaceRouteRoute
     }
+    '/workspace/notes': {
+      id: '/workspace/notes'
+      path: '/notes'
+      fullPath: '/workspace/notes'
+      preLoaderRoute: typeof WorkspaceNotesRouteImport
+      parentRoute: typeof WorkspaceRouteRoute
+    }
     '/workspace/sessions/$id': {
       id: '/workspace/sessions/$id'
       path: '/sessions/$id'
@@ -152,11 +171,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface WorkspaceRouteRouteChildren {
+  WorkspaceNotesRoute: typeof WorkspaceNotesRoute
   WorkspaceIndexRoute: typeof WorkspaceIndexRoute
   WorkspaceSessionsIdRoute: typeof WorkspaceSessionsIdRoute
 }
 
 const WorkspaceRouteRouteChildren: WorkspaceRouteRouteChildren = {
+  WorkspaceNotesRoute: WorkspaceNotesRoute,
   WorkspaceIndexRoute: WorkspaceIndexRoute,
   WorkspaceSessionsIdRoute: WorkspaceSessionsIdRoute,
 }
