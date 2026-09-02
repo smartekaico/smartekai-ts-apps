@@ -12,6 +12,13 @@ Spec: `.agents/specs/2026-09-01-medical-os-tanstack-start-migration-design.md`
 `feat/medical-os-tanstack-start-migration` — Tasks 1–9 implemented and verified
 (commits `e054e68..4841a23`), merged into `main`.
 
+## Follow-up executed 2026-09-02
+`.agents/plans/2026-09-02-monorepo-dependency-updates.md` — safe same-major bumps,
+unused-dep removals, phantom-dep declarations — executed on
+`chore/dependency-updates` (gates green vs pre-existing lint baseline; both apps
+retested). Major-version bumps (ai SDK v7, biome v2, lucide 1.x, etc.) remain
+deferred — each needs its own scoped plan.
+
 ## Source of Truth
 The implementation plan file is the source of truth for task-by-task steps. See its 9 tasks:
 1. Root monorepo config (turbo.json outputs add `.output/**`, .gitignore)

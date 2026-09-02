@@ -1,12 +1,15 @@
 # Monorepo Dependency Updates — Triage
 
-**Not yet executed.** `npm outdated --workspaces` was run on 2026-09-02 while the
-`feat/medical-os-tanstack-start-migration` branch had live, uncommitted state in
-the shared working directory. No `npm install`/`npm update`/`package.json` edits
-were made — running installs against a shared `node_modules` tree while another
-session has uncommitted dependency changes in flight risks corrupting its state.
-**Do not run any command in this file until that branch's work is committed or
-that session is confirmed idle.**
+**Executed 2026-09-02 on `chore/dependency-updates`:** safe same-major bumps
+(`npm update` + exact-pin bumps react/react-dom 19.2.5→19.2.8, next 16.2.4→16.3.4,
+@base-ui/react 1.4.1→1.7.0 resolved), unused-dep removals, and phantom-dep
+declarations all landed. Gates: type-check + build green repo-wide; lint failures
+identical to pre-update baseline (6 pre-existing: ai/auth/billing/crw/db `eslint
+--ext` scripts + legal-os biome a11y). Retest: medical-os dev+prod all routes 200,
+real Gemini SOAP call OK, console clean; legal-os dev+prod `/en` 200 (one dev-only
+`<html>` font-class hydration notice, absent in production). Major bumps 1–7
+below remain deferred; `tsx` borderline item remains undecided; knip sweep not
+run.
 
 ## Safe now: same-major-version bumps (patch/minor, `npm update` respects existing caret ranges)
 

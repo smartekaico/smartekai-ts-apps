@@ -63,6 +63,7 @@ export declare const auth: import("better-auth").Auth<{
             signInMagicLink: import("better-auth").StrictEndpoint<"/sign-in/magic-link", {
                 method: "POST";
                 requireHeaders: true;
+                use: import("better-auth").Middleware<import("better-auth").MiddlewareOptions, (inputContext: import("better-auth").MiddlewareInputContext<import("better-auth").MiddlewareOptions>) => Promise<void>>[];
                 body: import("better-auth").ZodObject<{
                     email: import("better-auth").ZodEmail;
                     name: import("better-auth").ZodOptional<import("better-auth").ZodString>;
@@ -105,7 +106,7 @@ export declare const auth: import("better-auth").Auth<{
                     errorCallbackURL: import("better-auth").ZodOptional<import("better-auth").ZodString>;
                     newUserCallbackURL: import("better-auth").ZodOptional<import("better-auth").ZodString>;
                 }, import("zod/v4/core").$strip>;
-                use: ((inputContext: import("better-auth").MiddlewareInputContext<import("better-auth").MiddlewareOptions>) => Promise<void>)[];
+                use: import("better-auth").Middleware<import("better-auth").MiddlewareOptions, (inputContext: import("better-auth").MiddlewareInputContext<import("better-auth").MiddlewareOptions>) => Promise<void>>[];
                 requireHeaders: true;
                 metadata: {
                     openapi: {
