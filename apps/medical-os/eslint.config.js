@@ -14,6 +14,6 @@ export default [
     },
   },
   {
-    ignores: ["eslint.config.js", "postcss.config.js", "tailwind.config.js", ".next/**"],
+    ignores: ["eslint.config.js", "postcss.config.js", "tailwind.config.js", ".next/**", ".output/**"],
   },
 ];
