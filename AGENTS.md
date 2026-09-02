@@ -161,9 +161,7 @@ Reference for whenever it's worth building — don't invent this speculatively.
 ## 10. This repo
 
 - **Apps:** `apps/legal-os` and `apps/medical-os` are the two real Next.js 16 /
-  React 19 apps, run via Turborepo + npm workspaces. `apps/legal-canonical` is a
-  reference-only snapshot (no `package.json`, not a workspace member) kept for
-  diffing legal-os against its upstream source — never treat it as buildable.
+  React 19 apps, run via Turborepo + npm workspaces.
 - **Shared packages** (`packages/*`) hold everything cross-app: `db` (Neon
   Postgres + Drizzle, separate legal/medical databases), `auth` (Better Auth, org
   plugin, multi-tenant), `billing` (FIFO credit ledger), `ai` (Deepgram
