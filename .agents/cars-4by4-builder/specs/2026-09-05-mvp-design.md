@@ -121,16 +121,20 @@ but:
 - `@react-three/fiber` + `@react-three/drei` for the canvas, mounted through a
   client-only boundary (dynamic import / custom boundary) to avoid SSR hydration
   mismatches, per the SOP's note.
-- **Assets are placeholders for this spec.** Ship sample/placeholder `.glb` files under
-  `apps/cars-4by4-builder/public/models/` — no object storage (S3/R2) is provisioned.
-  `vehicles.baseModelUrl` / `parts.proxy3dModelUrl` just store paths like
-  `/models/lc300.glb`.
+- **Assets are placeholders for this spec — as procedural primitives, not `.glb`
+  files.** Generating valid placeholder binary GLBs (via a Node exporter or hand-authored
+  glTF JSON) is real asset-pipeline risk for a shape nobody will look at twice. Instead, a
+  small keyed map (vehicle/part id → primitive shape: box, cylinder, etc.) renders plain
+  `<mesh><boxGeometry/>…` R3F primitives directly. `vehicles.baseModelUrl` /
+  `parts.proxy3dModelUrl` store a `placeholder:<shape>` sentinel for now instead of a
+  file path; no object storage (S3/R2) is provisioned this round.
 - Real vehicle GLBs (licensed/modeled LC300, Wrangler JL, Tacoma + the 4 accessory
   proxies: `bullbar_heavy`, `prerunner_bumper`, `platform_roofrack`, `hardshell_tent`,
   with Blender-rigged anchor points) are **out of scope** — a separate, external
-  deliverable (3D modeling/licensing work), not something this plan produces. The
-  pipeline is built end-to-end against placeholders so swapping in real assets later is a
-  drop-in path change, not a rebuild.
+  deliverable (3D modeling/licensing work), not something this plan produces. Swapping
+  them in later means the canvas component grows a `useGLTF(url)` branch alongside the
+  primitive-shape branch, keyed off whether the stored value is a real path or a
+  `placeholder:` sentinel — a contained addition, not a rebuild.
 - Optimization step (`gltf-transform`, draco compression, 1024×1024 texture cap,
   4–6MB budget) is documented but only exercised once real assets exist.
 
