@@ -4,16 +4,16 @@
 Replace Next.js with TanStack Start in `apps/medical-os`, keeping Turborepo unchanged, with zero behavior change to routes/UI/API contracts. Swap `apps/medical-os` App Router → TanStack Start (React Router file-based routing, Vite + Nitro build), fix `packages/marketing`'s `next/link`, add like-for-like Nitro build output support in `turbo.json`, and add a Dockerfile for Dokploy.
 
 ## Plan
-`.agents/plans/2026-09-01-medical-os-tanstack-start-migration.md`
+`.agents/medical/plans/2026-09-01-medical-os-tanstack-start-migration.md`
 
-Spec: `.agents/specs/2026-09-01-medical-os-tanstack-start-migration-design.md`
+Spec: `.agents/medical/specs/2026-09-01-medical-os-tanstack-start-migration-design.md`
 
 ## Branch
 `feat/medical-os-tanstack-start-migration` — Tasks 1–9 implemented and verified
 (commits `e054e68..4841a23`), merged into `main`.
 
 ## Follow-up executed 2026-09-02
-`.agents/plans/2026-09-02-monorepo-dependency-updates.md` — safe same-major bumps,
+`.agents/monorepo/plans/2026-09-02-monorepo-dependency-updates.md` — safe same-major bumps,
 unused-dep removals, phantom-dep declarations — executed on
 `chore/dependency-updates` (gates green vs pre-existing lint baseline; both apps
 retested). Major-version bumps (ai SDK v7, biome v2, lucide 1.x, etc.) remain

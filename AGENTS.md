@@ -69,11 +69,16 @@ Beyond the skill's defaults:
 - **Deployment:** Dokploy on a self-managed VPS, no remote git configured
   from this machine. One Dokploy application per app, built via
   `turbo prune <app> --docker` + a per-app `Dockerfile`.
-- **Plans and specs live under `.agents/`**, not `docs/`: `.agents/plans/active.md`
-  is current work state; `.agents/plans/` and `.agents/specs/` hold
-  point-in-time design docs and plans, kept for history. The `superpowers`
-  skills default to `docs/superpowers/...` — redirect them to
-  `.agents/specs/`/`.agents/plans/` explicitly at invocation time (their own
-  documented override mechanism; not automatic).
+- **Plans, specs, and SOPs live under `.agents/<app>/`**, not `docs/` — one
+  folder per app (`.agents/medical/`, `.agents/legal/`), plus
+  `.agents/monorepo/` for cross-cutting work that spans apps or touches shared
+  `packages/*`. Each has `plans/`, `specs/`, and `sops/`: `plans/active.md` is
+  that app's current work state, other `plans/`/`specs/` files are
+  point-in-time design docs and implementation plans kept for history, and
+  `sops/` holds standing reference material (e.g. platform docs a user pastes
+  in) relevant to that app. The `superpowers` skills default to
+  `docs/superpowers/...` — redirect them to `.agents/<app>/specs/`/
+  `.agents/<app>/plans/` explicitly at invocation time (their own documented
+  override mechanism; not automatic).
 - **Logs** (`.agents/logs/*.md`): one file per notable decision, root cause,
   or troubleshooting session.
