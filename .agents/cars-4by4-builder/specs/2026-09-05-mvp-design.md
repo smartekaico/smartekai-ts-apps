@@ -23,7 +23,7 @@ is not another `legal-os`/`medical-os`-shaped app.
 - **Package manager:** npm workspaces, per repo convention — SOP's `pnpm run db:seed`
   becomes `npm run db:seed --workspace=apps/cars-4by4-builder` (or a `turbo run db:seed
   --filter=cars-4by4-builder` task).
-- **UI primitives:** `@smartekai/ui` (shadcn/Radix) — do not re-run `shadcn init` in this
+- **UI primitives:** `@smartekai/ui` (Base UI + CVA design system) — do not re-run `shadcn init` in this
   app; consume the shared package like the other two apps do.
 - **Deployment:** Dokploy on the existing self-managed VPS — `turbo prune
   cars-4by4-builder --docker` + a per-app `Dockerfile`, same as `legal-os`/`medical-os`.
@@ -140,9 +140,14 @@ but:
   (no Zustand — no other app in this repo uses it, and search params give free
   shareable/bookmarkable builds).
 - Layout matches the SOP's mockup: 3D canvas (~70% viewport) left, category-accordion
-  parts panel (~30%, `Sheet` on mobile) right, running total bar along the bottom.
-- Components sourced from `@smartekai/ui`: `Button`, `Sheet`, `Dialog`, `Progress`,
-  `Card`, `Badge`, `Tabs`, `Separator`.
+  parts panel (~30%, a slide-over drawer on mobile) right, running total bar along the
+  bottom.
+- `@smartekai/ui` only exports `Button`, `Card`, `Input`, `Label` today — no
+  Sheet/Dialog/Progress/Badge/Tabs/Separator. This spec does **not** extend that shared
+  package (it's a bespoke Base UI + CVA system deserving its own design pass, not a
+  blind addition here). The configurator's category switcher, mobile drawer, and weight
+  progress bar are built as local components inside `apps/cars-4by4-builder`, styled with
+  Tailwind directly, composed with `Button`/`Card`/`Input`/`Label` where they fit.
 
 ## 7. Catalog seeding
 
