@@ -13,7 +13,7 @@ dev:        npm run dev              # turbo run dev — or dev:legal / dev:medi
 typecheck:  npm run type-check       # turbo run type-check
 lint:       npm run lint             # turbo run lint
 test:       none — no test suite exists in this repo yet
-gate:       none — no scripts/gate.sh exists yet
+gate:       ./scripts/gate.sh
 ```
 
 Per-app extras: `apps/legal-os` also has `db:push` / `db:studio` (Drizzle) and
@@ -62,9 +62,10 @@ Beyond the skill's defaults:
   (shared landing sections, framework-neutral — plain `<a>` tags, not
   `next/link`), `ui` (shadcn/Radix primitives), `emails` (React Email
   templates).
-- **No test suite, no CI, no `scripts/gate.sh`.** Validation is manual:
-  type-check + lint + build via Turborepo, plus a real click-through of the
-  changed flow.
+- **No test suite, no CI.** `scripts/gate.sh` runs typecheck/lint/build plus a
+  secret scan and a forbidden-paths check; there's no test step to run yet and
+  no CI wiring to call it automatically. Validation is otherwise manual: the
+  gate, plus a real click-through of the changed flow.
 - **Deployment:** Dokploy on a self-managed VPS, no remote git configured
   from this machine. One Dokploy application per app, built via
   `turbo prune <app> --docker` + a per-app `Dockerfile`.
