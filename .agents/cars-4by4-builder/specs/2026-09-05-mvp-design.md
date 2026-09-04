@@ -64,7 +64,7 @@ export const parts = pgTable("parts", {
 
 export const builds = pgTable("builds", {
   id: text("id").primaryKey(),
-  userId: text("user_id").references(() => users.id), // nullable — anonymous by default; FK resolves against dbCars's own users rows, not legal/medical's
+  userId: text("user_id").references(() => carsUsers.id), // nullable — anonymous by default
   vehicleId: text("vehicle_id").references(() => vehicles.id).notNull(),
   selectedPartIds: text("selected_part_ids").array().notNull(),
   totalCost: numeric("total_cost", { precision: 10, scale: 2 }).notNull(),
@@ -85,7 +85,7 @@ const carsSql = neon(process.env.DATABASE_NEONDB_SMARTEKAI!);
 export const dbCars = drizzle({ client: carsSql, schema });
 ```
 
-## 4. Auth — separate Better Auth instance, same package
+## 4. Auth — separate Better Auth instance, own minimal schema
 
 The existing `@smartekai/auth` export (`packages/auth/src/index.ts`) is a *single* shared
 instance whose Better Auth tables are physically stored in the default (legal) database,
@@ -94,21 +94,27 @@ plugin plus legal/medical-specific `additionalFields` (`activeOrganizationId`,
 `industryRole`, `creditBalance`). None of that belongs to a public consumer app with its
 own dedicated database, so `cars-4by4-builder` does **not** join it.
 
-Instead, `apps/cars-4by4-builder` constructs its own `betterAuth()` instance (own file,
-e.g. `apps/cars-4by4-builder/src/lib/auth.ts`), same construction style as
-`packages/auth`, but:
+The existing `users` table in `packages/db/src/schema.ts` isn't reusable either — it has
+legal/medical-specific `NOT NULL` columns baked in (`industryRole` defaulting to
+`"LEGAL"`, plus `firmName`, `subscriptionTier`, `firmBranding`), which would land
+meaningless values on every cars-app user row. So `packages/db/src/schema.ts` gets a
+**second, minimal set of auth tables** — `carsUsers`, `carsSessions`, `carsAccounts`,
+`carsVerifications` — carrying only the columns Better Auth's core + anonymous plugin
+actually need, alongside `vehicles`/`parts`/`builds`. Same file (DB access stays inside
+`packages/db`), same Postgres table-naming style, just a separate table family scoped to
+the `dbCars` connection.
 
-- `drizzleAdapter(dbCars, { schema: { user: users, session: sessions, account: accounts,
-  verification: verifications } })` — reuses the *table shapes* already defined in
-  `packages/db/src/schema.ts` (no new user/session table definitions), just points at the
-  new dedicated database. No `organization`/`member`/`invitation` mapped in.
+`apps/cars-4by4-builder` then constructs its own `betterAuth()` instance (own file, e.g.
+`apps/cars-4by4-builder/src/lib/auth.ts`), same construction style as `packages/auth`,
+but:
+
+- `drizzleAdapter(dbCars, { schema: { user: carsUsers, session: carsSessions, account:
+  carsAccounts, verification: carsVerifications } })`. No `organization`/`member`/
+  `invitation` mapped in — there is no org plugin here.
 - `trustedOrigins` includes this app's own subdomain (e.g. `cars.smartekai.com`), not the
   legal/medical ones.
 - Plugins for MVP: **anonymous session** + **email/password** only. OAuth (Google/Apple)
   and email OTP from the SOP are explicitly deferred — flagged in §8, not built now.
-- `DB access stays inside packages/db` invariant is preserved: both the connection
-  (`dbCars`) and the table schemas live in `packages/db`; the app only constructs the
-  auth instance and imports from there.
 
 ## 5. 3D & asset pipeline
 
