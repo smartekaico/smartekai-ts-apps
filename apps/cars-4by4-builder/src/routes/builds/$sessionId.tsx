@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { PDFDownloadLink } from "@react-pdf/renderer";
 import { getSession } from "@/lib/queries";
 import { BeforeAfterSlider } from "@/components/BeforeAfterSlider";
+import { BuildReportPdf } from "@/components/BuildReportPdf";
 import { getAdvisories } from "@/lib/advisories";
 
 export const Route = createFileRoute("/builds/$sessionId")({
@@ -80,6 +82,18 @@ function BuildReport() {
           ))}
         </ul>
       </section>
+
+      {session.transformedImageUrl && (
+        <div className="mt-4">
+          <PDFDownloadLink
+            document={<BuildReportPdf renderUrl={session.transformedImageUrl} parts={parts} advisories={advisories} />}
+            fileName="4x4-build-quote.pdf"
+            className="rounded-md border border-border px-3 py-1.5 text-sm"
+          >
+            {({ loading }) => (loading ? "Preparing PDF…" : "Download PDF Quote")}
+          </PDFDownloadLink>
+        </div>
+      )}
 
       <div className="mt-6 flex gap-2">
         <button
