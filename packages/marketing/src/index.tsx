@@ -590,6 +590,7 @@ export function SecuritySection({
 
 export function MarketingFooter({
   logoText = "SmarTekAI",
+  tagline = "A compound AI SaaS platform for launching industry products from a reusable core engine.",
   productLinks = defaultMarketingProducts.map(({ name, href }) => ({
     label: name,
     href,
@@ -597,6 +598,7 @@ export function MarketingFooter({
   companyLinks = defaultNavItems,
 }: {
   logoText?: string;
+  tagline?: string;
   productLinks?: MarketingNavItem[];
   companyLinks?: MarketingNavItem[];
 }) {
@@ -608,8 +610,7 @@ export function MarketingFooter({
             <BrandMark label={logoText} />
           </div>
           <p className="max-w-md text-sm font-medium leading-7 text-slate-400">
-            A compound AI SaaS platform for launching industry products from a
-            reusable core engine.
+            {tagline}
           </p>
         </div>
         <FooterColumn title="Products" links={productLinks} />

@@ -184,23 +184,33 @@ export function SoapNoteEditor({
         subjective: {
           ...prev.subjective,
           chiefComplaint:
+            generatedSoap.subjective?.clientComplaint ||
             generatedSoap.subjective?.chiefComplaint ||
-            generatedSoap.subjective?.historyOfPresentIllness ||
             "",
           historyOfPresentIllness:
             generatedSoap.subjective?.historyOfPresentIllness || "",
+          pastMedicalHistory: generatedSoap.subjective?.relevantHistory || "",
+          medications: generatedSoap.subjective?.medications || "",
+          allergies: generatedSoap.subjective?.allergies || "",
         },
         objective: {
           ...prev.objective,
+          vitalSigns: generatedSoap.objective?.vitalSigns || "",
           physicalExam: generatedSoap.objective?.physicalExam || "",
+          labResults: generatedSoap.objective?.labResults || "",
+          imaging: generatedSoap.objective?.imaging || "",
         },
         assessment: {
           ...prev.assessment,
           primaryDiagnosis: generatedSoap.assessment?.primaryDiagnosis || "",
+          differentialDiagnoses:
+            generatedSoap.assessment?.differentialDiagnoses || "",
         },
         plan: {
           ...prev.plan,
+          medications: generatedSoap.plan?.medications || "",
           followUp: generatedSoap.plan?.followUp || "",
+          patientEducation: generatedSoap.plan?.clientEducation || "",
         },
       }));
     } catch (error) {
@@ -262,12 +272,12 @@ export function SoapNoteEditor({
             onTranscriptionComplete={handleTranscriptionComplete}
             maxDuration={300}
           />
-          {transcription && (
-            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-slate-600">
-                  Transcription
-                </span>
+          <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold text-slate-600">
+                Transcription
+              </span>
+              {transcription && (
                 <Button
                   size="sm"
                   variant="outline"
@@ -284,12 +294,16 @@ export function SoapNoteEditor({
                     </>
                   )}
                 </Button>
-              </div>
-              <p className="text-sm text-slate-700 line-clamp-4">
-                {transcription}
-              </p>
+              )}
             </div>
-          )}
+            <Textarea
+              value={transcription}
+              onChange={(e) => setTranscription(e.target.value)}
+              placeholder="Record a consultation above, or paste/type the transcript here to generate a SOAP note..."
+              rows={4}
+              className="bg-white text-sm"
+            />
+          </div>
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -24,7 +24,7 @@ interface StatCard {
   icon: React.ComponentType<{ className?: string }>;
   color: string;
   bg: string;
-  href: string;
+  href?: string;
 }
 
 interface RecentSession {
@@ -44,7 +44,6 @@ const mockStats: StatCard[] = [
     icon: Users,
     color: "text-blue-600",
     bg: "bg-blue-100",
-    href: "#clients",
   },
   {
     name: "Total Sessions",
@@ -52,7 +51,6 @@ const mockStats: StatCard[] = [
     icon: Activity,
     color: "text-emerald-600",
     bg: "bg-emerald-100",
-    href: "#sessions",
   },
   {
     name: "SOAP Notes",
@@ -60,7 +58,7 @@ const mockStats: StatCard[] = [
     icon: FileText,
     color: "text-purple-600",
     bg: "bg-purple-100",
-    href: "#notes",
+    href: "/workspace/notes",
   },
 ];
 
@@ -69,63 +67,8 @@ const mockSessions: RecentSession[] = [];
 export function MedicalDashboard() {
   const [isFabOpen, setIsFabOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [stats, setStats] = useState<StatCard[]>(mockStats);
-  const [sessions, setSessions] = useState<RecentSession[]>(mockSessions);
-  const [loading, setLoading] = useState(false);
-
-  // Fetch data on mount
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
-    setLoading(true);
-    try {
-      // Mock data fetch - replace with actual API calls
-      const clientsRes = await fetch("/api/medical/clients").catch(() => null);
-      const sessionsRes = await fetch("/api/medical/sessions").catch(() => null);
-      const notesRes = await fetch("/api/medical/notes").catch(() => null);
-
-      const clients = clientsRes?.ok ? await clientsRes.json() : [];
-      const sessionData = sessionsRes?.ok ? await sessionsRes.json() : [];
-      const notes = notesRes?.ok ? await notesRes.json() : [];
-
-      setStats([
-        {
-          name: "Total Clients",
-          value: Array.isArray(clients) ? clients.length : 0,
-          icon: Users,
-          color: "text-blue-600",
-          bg: "bg-blue-100",
-          href: "#clients",
-        },
-        {
-          name: "Total Sessions",
-          value: Array.isArray(sessionData) ? sessionData.length : 0,
-          icon: Activity,
-          color: "text-emerald-600",
-          bg: "bg-emerald-100",
-          href: "#sessions",
-        },
-        {
-          name: "SOAP Notes",
-          value: Array.isArray(notes) ? notes.length : 0,
-          icon: FileText,
-          color: "text-purple-600",
-          bg: "bg-purple-100",
-          href: "#notes",
-        },
-      ]);
-
-      if (Array.isArray(sessionData)) {
-        setSessions(sessionData.slice(0, 5));
-      }
-    } catch (error) {
-      console.error("Error fetching dashboard data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const stats = mockStats;
+  const sessions = mockSessions;
 
   const filteredSessions = sessions.filter(
     (session) =>
@@ -165,9 +108,15 @@ export function MedicalDashboard() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {stats.map((stat) => (
-            <a key={stat.name} href={stat.href}>
-              <Card className="hover:shadow-md transition-all duration-200 cursor-pointer border-slate-100">
+          {stats.map((stat) => {
+            const card = (
+              <Card
+                className={cn(
+                  "border-slate-100",
+                  stat.href &&
+                    "hover:shadow-md transition-all duration-200 cursor-pointer",
+                )}
+              >
                 <CardContent className="p-4 sm:p-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -175,7 +124,7 @@ export function MedicalDashboard() {
                         {stat.name}
                       </p>
                       <p className="text-3xl sm:text-4xl font-black text-slate-900 mt-2">
-                        {loading ? "-" : stat.value}
+                        {stat.value}
                       </p>
                     </div>
                     <div className={cn("p-3 rounded-2xl", stat.bg)}>
@@ -184,8 +133,15 @@ export function MedicalDashboard() {
                   </div>
                 </CardContent>
               </Card>
-            </a>
-          ))}
+            );
+            return stat.href ? (
+              <a key={stat.name} href={stat.href}>
+                {card}
+              </a>
+            ) : (
+              <div key={stat.name}>{card}</div>
+            );
+          })}
         </div>
 
         {/* Recent Sessions */}
@@ -209,12 +165,7 @@ export function MedicalDashboard() {
           </div>
 
           <div className="divide-y divide-slate-50">
-            {loading ? (
-              <div className="p-8 text-center">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-indigo-600 mx-auto" />
-                <p className="text-sm text-slate-500 mt-3">Loading sessions...</p>
-              </div>
-            ) : filteredSessions.length === 0 ? (
+            {filteredSessions.length === 0 ? (
               <div className="p-8 text-center">
                 <Stethoscope className="h-12 w-12 text-slate-200 mx-auto mb-4" />
                 <p className="text-slate-500 font-medium">
@@ -300,15 +251,6 @@ export function MedicalDashboard() {
                 >
                   <Activity className="h-5 w-5" />
                   <span className="hidden sm:inline">New Session</span>
-                </Button>
-              </a>
-              <a href="#clients/new">
-                <Button
-                  size="lg"
-                  className="rounded-2xl gap-2 shadow-xl bg-blue-600 hover:bg-blue-700"
-                >
-                  <Users className="h-5 w-5" />
-                  <span className="hidden sm:inline">New Client</span>
                 </Button>
               </a>
             </div>

@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "main": "src/index.tsx",
   "types": "src/index.tsx",
+  "exports": {
+    ".": "./src/index.tsx",
+    "./landing": "./src/landing.tsx"
+  },
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
