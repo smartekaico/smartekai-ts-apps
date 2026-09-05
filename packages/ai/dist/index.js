@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.vehicleDetectionSchema = exports.detectVehicle = exports.soapNoteSchema = exports.generateSoapNote = exports.transcribeMedicalAudio = void 0;
+exports.generateUpgradeRender = exports.vehicleDetectionSchema = exports.detectVehicle = exports.soapNoteSchema = exports.generateSoapNote = exports.transcribeMedicalAudio = void 0;
 var transcription_1 = require("./transcription");
 Object.defineProperty(exports, "transcribeMedicalAudio", { enumerable: true, get: function () { return transcription_1.transcribeMedicalAudio; } });
 var soap_generator_1 = require("./soap-generator");
@@ -9,3 +9,5 @@ Object.defineProperty(exports, "soapNoteSchema", { enumerable: true, get: functi
 var vehicle_detector_1 = require("./vehicle-detector");
 Object.defineProperty(exports, "detectVehicle", { enumerable: true, get: function () { return vehicle_detector_1.detectVehicle; } });
 Object.defineProperty(exports, "vehicleDetectionSchema", { enumerable: true, get: function () { return vehicle_detector_1.vehicleDetectionSchema; } });
+var upgrade_render_1 = require("./upgrade-render");
+Object.defineProperty(exports, "generateUpgradeRender", { enumerable: true, get: function () { return upgrade_render_1.generateUpgradeRender; } });
