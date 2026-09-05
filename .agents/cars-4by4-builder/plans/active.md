@@ -2065,7 +2065,7 @@ git commit -m "feat(cars-4by4-builder): add /builds/\$sessionId report route"
 - Modify: `apps/cars-4by4-builder/src/routes/builds/$sessionId.tsx`
 - Modify: `apps/cars-4by4-builder/package.json`
 
-- [ ] **Step 1: Add the dependency**
+- [x] **Step 1: Add the dependency**
 
 ```json
     "@react-pdf/renderer": "^4.1.0",
@@ -2075,7 +2075,7 @@ git commit -m "feat(cars-4by4-builder): add /builds/\$sessionId report route"
 npm install
 ```
 
-- [ ] **Step 2: Create `src/components/BuildReportPdf.tsx`**
+- [x] **Step 2: Create `src/components/BuildReportPdf.tsx`**
 
 ```typescript
 import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
@@ -2125,7 +2125,7 @@ export function BuildReportPdf({
 }
 ```
 
-- [ ] **Step 3: Add the download link to the report route**
+- [x] **Step 3: Add the download link to the report route**
 
 In `src/routes/builds/$sessionId.tsx`, add imports:
 
@@ -2149,7 +2149,7 @@ Add below the advisory `<section>`:
       )}
 ```
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 ```bash
 npm run type-check --workspace=apps/cars-4by4-builder
@@ -2158,11 +2158,15 @@ npm run build --workspace=apps/cars-4by4-builder
 
 Expected: both pass — `build` in particular surfaces any SSR incompatibility from `@react-pdf/renderer` immediately, since `PDFDownloadLink` renders through this server-rendered route.
 
+> **Note (2026-09-06):** `@react-pdf/renderer@4.9.0` installed; build bundles it cleanly into the SSR output (react-pdf libraries appear in `.output/server/_libs/`) — no SSR incompatibility. The plan snippet's `Part` type (`priceUsd: string`, `laborHoursEst: string`) is correct — Drizzle `numeric` maps to `string` in generated types.
+
 - [ ] **Step 5: Manual browser verification**
 
 Open a build report, click "Download PDF Quote", confirm a PDF downloads showing the generated render image, part list, and advisory notes.
 
-- [ ] **Step 6: Commit**
+> **BLOCKED (2026-09-06):** needs a completed session to open a report — requires the live pipeline (seeded DB + Gemini/FAL creds). Code complete and committed in `3b69728`.
+
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/cars-4by4-builder/src/components/BuildReportPdf.tsx "apps/cars-4by4-builder/src/routes/builds/\$sessionId.tsx" apps/cars-4by4-builder/package.json package-lock.json
