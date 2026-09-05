@@ -5,14 +5,19 @@
 Today, marketing/landing pages are distributed: `medical-os` renders its own
 home page via `@smartekai/marketing`'s `MarketingLandingPage`; `legal-os`
 hasn't adopted that component yet. There's no single public entry point that
-introduces the whole product line (Legal OS, Medical OS, and the in-progress
-4by4 Builder) before a visitor picks one and logs in.
+introduces the product line before a visitor picks one and logs in.
 
 ## Goal
 
 A new app, `apps/www`, serves as the single public-facing home + product
-showcase for all three products, with each product's page linking out to
-that product's own login/signup.
+showcase, with each product's page linking out to that product's own
+login/signup.
+
+**Legal OS is excluded from this build.** It's getting its own update
+separately; adding it to `apps/www` now would mean either showcasing an
+experience that's about to change, or redoing the page shortly after. Add it
+as a normal `status: "live"` entry once that update lands — no special
+handling needed then, just a new config entry.
 
 ## Decisions (from brainstorming)
 
@@ -27,10 +32,10 @@ that product's own login/signup.
 - **i18n:** English-only for now. Arabic (or any other language) gets added
   later per-app, the same way legal-os already has it — not an
   apps/www-wide decision made up front.
-- **Products included:** Legal OS, Medical OS, **and** 4by4 Builder, despite
-  4by4 Builder targeting a different audience (consumer/enthusiast vs.
-  B2B legal/medical) — one unified brand umbrella per the user's explicit
-  call.
+- **Products included at launch:** Medical OS (live) and 4by4 Builder
+  (coming-soon), despite 4by4 Builder targeting a different audience
+  (consumer/enthusiast vs. B2B legal/medical) — one unified brand umbrella
+  per the user's explicit call. **Legal OS is deferred** — see Context.
 - **Login/signup:** separate per app, no SSO. `apps/www` links out to each
   product's own `/login` and `/signup` via env-var-configured absolute
   URLs. Building real cross-app SSO (shared cookie domain, Better Auth
@@ -60,11 +65,14 @@ that product's own login/signup.
 
 ### Routes
 
-- `/` — home: brand hero, platform-value section, a 3-tile product
-  showcase (Legal OS / Medical OS / 4by4 Builder), footer.
-- `/products/legal-os` — full feature page for Legal OS.
+- `/` — home: brand hero, platform-value section, a 2-tile product
+  showcase (Medical OS / 4by4 Builder), footer.
 - `/products/medical-os` — full feature page for Medical OS.
 - `/products/4by4-builder` — full feature page for 4by4 Builder.
+
+`/products/legal-os` is not built now — adding a third `ProductEntry` and
+route later, once Legal OS's update lands, is a same-shape follow-up, not a
+rework of this app.
 
 Each product page ends in CTAs to that product's login/signup.
 
@@ -75,7 +83,7 @@ A single typed config drives both the home page's showcase tiles and each
 
 ```ts
 interface ProductEntry {
-  slug: "legal-os" | "medical-os" | "4by4-builder";
+  slug: "medical-os" | "4by4-builder"; // extend with "legal-os" later
   name: string;
   tagline: string;
   features: { title: string; description: string }[];
@@ -109,6 +117,8 @@ product apps is a Dokploy/DNS decision at deploy time, not decided here.
 
 ## Out of scope
 
+- Legal OS's product page/showcase entry — deferred until its own separate
+  update lands, then added as a same-shape `ProductEntry`.
 - Cross-app SSO.
 - Actual marketing copy for any of the three products (separate content spec).
 - Retrofitting the Apple-style visual system onto `legal-os`/`medical-os`.
