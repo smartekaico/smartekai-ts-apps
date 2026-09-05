@@ -47,11 +47,31 @@ detectedColor, angle, validationError }` per the SOP's shape.
 
 ### 3.2 Image generation — also extends `@smartekai/ai`
 
-A new `generateUpgradeRender(originalImageUrl: string, prompt: string)` export wraps
-Fal.ai's FLUX inpainting endpoint (`@fal-ai/client`), same "thin wrapper" shape as
-`transcription.ts` wraps Deepgram. New env var: `FAL_KEY` (a new Fal.ai account/API key —
-this one genuinely is new external infrastructure the user needs to provision; I can't
-create that account).
+The SOP names "Flux Inpainting" generically, but real inpainting APIs (e.g. `fal-ai/
+flux-lora/inpainting`) require an explicit `mask_url` marking *where* to edit — this SOP
+never accounts for generating one, and building a segmentation/masking step is well
+beyond MVP scope. The actual right fit, verified against Fal.ai's docs, is
+**`fal-ai/flux-pro/kontext`**: mask-free, instruction-based image editing — just a
+`prompt` + `image_url`, no mask. That's what "mount this bull bar onto this photo" needs.
+
+A new `generateUpgradeRender(originalImageUrl: string, prompt: string)` export wraps this
+endpoint via `@fal-ai/client`, same "thin wrapper" shape as `transcription.ts` wraps
+Deepgram:
+
+```typescript
+import { fal } from "@fal-ai/client";
+
+export async function generateUpgradeRender(originalImageUrl: string, prompt: string) {
+  const result = await fal.subscribe("fal-ai/flux-pro/kontext", {
+    input: { prompt, image_url: originalImageUrl },
+    logs: false,
+  });
+  return result.data.images[0].url as string;
+}
+```
+
+New env var: `FAL_KEY` (a new Fal.ai account/API key — this one genuinely is new external
+infrastructure the user needs to provision; I can't create that account).
 
 ### 3.3 Object storage — new `packages/storage` package, backed by Neon Object Storage
 
