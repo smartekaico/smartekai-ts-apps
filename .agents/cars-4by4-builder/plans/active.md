@@ -2177,7 +2177,7 @@ git commit -m "feat(cars-4by4-builder): add PDF quote export"
 
 ## Final gate
 
-- [ ] **Run the full repo gate**
+- [x] **Run the full repo gate**
 
 ```bash
 ./scripts/gate.sh
@@ -2185,6 +2185,10 @@ git commit -m "feat(cars-4by4-builder): add PDF quote export"
 
 Expected: `gate: PASSED`.
 
+> **Result (2026-09-06): NOT PASSED — pre-existing, out of scope.** `./scripts/gate.sh` fails at `lint` on the shared packages `@smartekai/ai`, `@smartekai/billing`, `@smartekai/storage`, `@smartekai/auth`, `@smartekai/crw` with **"ESLint couldn't find an eslint.config.* file" (ESLint 10.9.1 requires flat config; those packages have none)**. Not caused by this branch — those packages are untouched except for the Task 8 `@smartekai/ai` Fal change, which predates the config gap and its lint was already broken then. The cars-4by4-builder app itself passes `type-check`, `lint`, and `build` independently (`npm run build/type-check/lint --workspace=apps/cars-4by4-builder` all green after Task 18). Fixing the shared packages' lint config is out of this plan's scope and deferred.
+
 - [ ] **Full manual click-through** (per `AGENTS.md`'s validation strategy — no automated test suite substitutes for this)
 
 `/` → select several upgrades across categories → `/upload` → upload a real photo of an SUV/truck → wait through generation → land on `/builds/<id>` → confirm the before/after slider, itemized quote, advisory notes, PDF download, and "Share My Build" all work → paste an invalid photo (e.g. a sedan or a blurry image) through the same flow and confirm the toast rejection instead of a broken generation attempt.
+
+> **BLOCKED (2026-09-06):** requires the live pipeline end to end — seeded `parts` DB (Task 12 push/seed deferred), Gemini and FAL keys in the worktree env (only the main repo's `.env.local` has them, and lacks `GOOGLE_AI_API_KEY`/`FAL_KEY`). All routes/components are implemented; every code-level step passed type-check/lint/build.
