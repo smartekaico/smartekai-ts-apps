@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.creditBucketsRelations = exports.auditLogsRelations = exports.soapNotesRelations = exports.medicalEncountersRelations = exports.patientsRelations = exports.organizationsRelations = exports.usersRelations = exports.products = exports.models = exports.demoRequests = exports.platformInvites = exports.auditLogs = exports.creditBuckets = exports.medicalTemplates = exports.soapNotes = exports.medicalEncounters = exports.patients = exports.ledgers = exports.appointments = exports.savedDocuments = exports.kbUploadLog = exports.kbChunks = exports.knowledgeBase = exports.generatedContracts = exports.contractTemplates = exports.sessionEvents = exports.sessionDocs = exports.sessionChats = exports.workSessions = exports.cases = exports.clients = exports.caseAnalyses = exports.caseCategories = exports.jurisdictions = exports.verifications = exports.accounts = exports.sessions = exports.invitations = exports.members = exports.organizations = exports.users = exports.vector = void 0;
+exports.creditBucketsRelations = exports.auditLogsRelations = exports.soapNotesRelations = exports.medicalEncountersRelations = exports.patientsRelations = exports.organizationsRelations = exports.usersRelations = exports.upgradeSessions = exports.parts = exports.carsVerifications = exports.carsAccounts = exports.carsSessions = exports.carsUsers = exports.products = exports.models = exports.demoRequests = exports.platformInvites = exports.auditLogs = exports.creditBuckets = exports.medicalTemplates = exports.soapNotes = exports.medicalEncounters = exports.patients = exports.ledgers = exports.appointments = exports.savedDocuments = exports.kbUploadLog = exports.kbChunks = exports.knowledgeBase = exports.generatedContracts = exports.contractTemplates = exports.sessionEvents = exports.sessionDocs = exports.sessionChats = exports.workSessions = exports.cases = exports.clients = exports.caseAnalyses = exports.caseCategories = exports.jurisdictions = exports.verifications = exports.accounts = exports.sessions = exports.invitations = exports.members = exports.organizations = exports.users = exports.vector = void 0;
 const pg_core_1 = require("drizzle-orm/pg-core");
 const drizzle_orm_1 = require("drizzle-orm");
 // Vector type for pgvector (768-dim for Gemini embeddings)
@@ -520,6 +520,81 @@ exports.products = (0, pg_core_1.pgTable)("products", {
         .notNull()
         .references(() => exports.models.id),
     updatedAt: (0, pg_core_1.timestamp)("updated_at").defaultNow().notNull(),
+});
+// ============================================
+// CARS 4X4 CUSTOMIZER TABLES (dedicated DB — see dbCars in client.ts)
+// ============================================
+exports.carsUsers = (0, pg_core_1.pgTable)("cars_user", {
+    id: (0, pg_core_1.text)("id").primaryKey(),
+    name: (0, pg_core_1.text)("name").notNull(),
+    email: (0, pg_core_1.text)("email").notNull().unique(),
+    emailVerified: (0, pg_core_1.boolean)("email_verified").notNull(),
+    image: (0, pg_core_1.text)("image"),
+    isAnonymous: (0, pg_core_1.boolean)("is_anonymous").default(false),
+    createdAt: (0, pg_core_1.timestamp)("created_at").notNull(),
+    updatedAt: (0, pg_core_1.timestamp)("updated_at").notNull(),
+});
+exports.carsSessions = (0, pg_core_1.pgTable)("cars_session", {
+    id: (0, pg_core_1.text)("id").primaryKey(),
+    userId: (0, pg_core_1.text)("user_id")
+        .notNull()
+        .references(() => exports.carsUsers.id, { onDelete: "cascade" }),
+    token: (0, pg_core_1.text)("token").notNull(),
+    expiresAt: (0, pg_core_1.timestamp)("expires_at").notNull(),
+    ipAddress: (0, pg_core_1.text)("ip_address"),
+    userAgent: (0, pg_core_1.text)("user_agent"),
+    createdAt: (0, pg_core_1.timestamp)("created_at").notNull(),
+    updatedAt: (0, pg_core_1.timestamp)("updated_at").notNull(),
+}, (table) => ({
+    tokenIdx: (0, pg_core_1.index)("cars_session_token_idx").on(table.token),
+    userIdx: (0, pg_core_1.index)("cars_session_user_idx").on(table.userId),
+}));
+exports.carsAccounts = (0, pg_core_1.pgTable)("cars_account", {
+    id: (0, pg_core_1.text)("id").primaryKey(),
+    userId: (0, pg_core_1.text)("user_id")
+        .notNull()
+        .references(() => exports.carsUsers.id, { onDelete: "cascade" }),
+    accountId: (0, pg_core_1.text)("account_id").notNull(),
+    providerId: (0, pg_core_1.text)("provider_id").notNull(),
+    accessToken: (0, pg_core_1.text)("access_token"),
+    refreshToken: (0, pg_core_1.text)("refresh_token"),
+    expiresAt: (0, pg_core_1.timestamp)("expires_at"),
+    password: (0, pg_core_1.text)("password"),
+    createdAt: (0, pg_core_1.timestamp)("created_at").notNull(),
+    updatedAt: (0, pg_core_1.timestamp)("updated_at").notNull(),
+}, (table) => ({
+    userIdx: (0, pg_core_1.index)("cars_account_user_idx").on(table.userId),
+}));
+exports.carsVerifications = (0, pg_core_1.pgTable)("cars_verification", {
+    id: (0, pg_core_1.text)("id").primaryKey(),
+    identifier: (0, pg_core_1.text)("identifier").notNull(),
+    value: (0, pg_core_1.text)("value").notNull(),
+    expiresAt: (0, pg_core_1.timestamp)("expires_at").notNull(),
+    createdAt: (0, pg_core_1.timestamp)("created_at").notNull(),
+    updatedAt: (0, pg_core_1.timestamp)("updated_at").notNull(),
+});
+exports.parts = (0, pg_core_1.pgTable)("parts", {
+    id: (0, pg_core_1.text)("id").primaryKey(),
+    name: (0, pg_core_1.text)("name").notNull(),
+    category: (0, pg_core_1.text)("category").notNull(), // "front_bumper" | "wheels_tires" | "roof_tent" | "lift_kit" | "snorkel" | "lighting"
+    brand: (0, pg_core_1.text)("brand").notNull(),
+    priceUsd: (0, pg_core_1.numeric)("price_usd", { precision: 10, scale: 2 }).notNull(),
+    laborHoursEst: (0, pg_core_1.numeric)("labor_hours_est", { precision: 4, scale: 1 }).notNull(),
+    fitmentDifficulty: (0, pg_core_1.text)("fitment_difficulty").notNull(), // "Direct Bolt-On" | "Minor Trimming" | "Custom Fabrication"
+    aiPromptSnippet: (0, pg_core_1.text)("ai_prompt_snippet").notNull(),
+    imageUrl: (0, pg_core_1.text)("image_url").notNull(),
+    affiliateUrl: (0, pg_core_1.text)("affiliate_url").notNull(),
+});
+exports.upgradeSessions = (0, pg_core_1.pgTable)("upgrade_sessions", {
+    id: (0, pg_core_1.text)("id").primaryKey(),
+    userId: (0, pg_core_1.text)("user_id").references(() => exports.carsUsers.id), // nullable — guest by default
+    originalImageUrl: (0, pg_core_1.text)("original_image_url").notNull(),
+    transformedImageUrl: (0, pg_core_1.text)("transformed_image_url"),
+    detectedVehicle: (0, pg_core_1.jsonb)("detected_vehicle"), // { make, model, year, color }
+    selectedPartIds: (0, pg_core_1.text)("selected_part_ids").array().notNull(),
+    status: (0, pg_core_1.text)("status").default("pending").notNull(), // "pending" | "processing" | "completed" | "failed"
+    isPublic: (0, pg_core_1.boolean)("is_public").default(true),
+    createdAt: (0, pg_core_1.timestamp)("created_at").defaultNow().notNull(),
 });
 // ============================================
 // RELATIONS
