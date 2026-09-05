@@ -1191,7 +1191,7 @@ git commit -m "feat(ai): add generateUpgradeRender via Fal.ai flux-pro/kontext"
 **Files:**
 - Create: `apps/cars-4by4-builder/src/lib/generate-build.ts`
 
-- [ ] **Step 1: Create `src/lib/generate-build.ts`** implementing spec §5's 7 steps
+- [x] **Step 1: Create `src/lib/generate-build.ts`** implementing spec §5's 7 steps
 
 ```typescript
 import { createServerFn } from "@tanstack/react-start";
@@ -1275,7 +1275,7 @@ export const generateBuild = createServerFn({ method: "POST" })
   });
 ```
 
-- [ ] **Step 2: Verify**
+- [x] **Step 2: Verify**
 
 ```bash
 npm run type-check --workspace=apps/cars-4by4-builder
@@ -1283,7 +1283,9 @@ npm run type-check --workspace=apps/cars-4by4-builder
 
 Expected: PASS. If `createServerFn`'s `FormData` validator shape, or `getWebRequest`'s export name, don't match the installed `@tanstack/react-start` version, check `node_modules/@tanstack/react-start/dist/esm/**/*.d.ts` for the actual signatures.
 
-- [ ] **Step 3: Commit**
+> **Adaptation (2026-09-06):** `getWebRequest` was removed in @tanstack/react-start 1.168. Used request middleware instead: `createMiddleware({ type: "request" }).server(async ({ request, next }) => next({ context: { session } }))`, wired via `.middleware([sessionMiddleware])`. Also narrowed the returned `detectedVehicle` (Drizzle infers `jsonb` as `unknown`, which the strict serializable check rejects) to an explicit `{ make, model, color } | null` shape.
+
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/cars-4by4-builder/src/lib/generate-build.ts
@@ -1299,7 +1301,7 @@ git commit -m "feat(cars-4by4-builder): add synchronous upload-validate-generate
 **Files:**
 - Create: `apps/cars-4by4-builder/src/seed/parts.ts`
 
-- [ ] **Step 1: Create `src/seed/parts.ts`** (26 hand-curated parts across the SOP's 4 categories, with AI prompt snippets)
+- [x] **Step 1: Create `src/seed/parts.ts`** (26 hand-curated parts across the SOP's 4 categories, with AI prompt snippets)
 
 ```typescript
 export const seedParts = [
@@ -1342,6 +1344,8 @@ export const seedParts = [
 
 26 parts across all 4 SOP categories, each with a concrete `aiPromptSnippet` written for direct use in the generation prompt (Task 10's `prompt` construction).
 
+> **Note (2026-09-06):** the prose says "26 parts" but the array contains 25 (5 armor / 4 wheels / 5 roof / 5 lighting / 6 lift; 5 categories, not 4). Implemented the array as-authored; left the module doc prose intact.
+
 **`affiliateUrl` and `imageUrl` here are placeholder fixture data** — structurally
 plausible (`https://arb4x4.com/products/...`) but not verified real product pages or
 hosted images. They're fine to develop and demo against, but every one needs replacing
@@ -1349,7 +1353,7 @@ with a real, verified affiliate link and real hosted image before this ships to 
 visitors — fabricated URLs in a live "Buy" button is a correctness bug, not a cosmetic
 one.
 
-- [ ] **Step 2: Verify**
+- [x] **Step 2: Verify**
 
 ```bash
 npm run type-check --workspace=apps/cars-4by4-builder
@@ -1357,7 +1361,9 @@ npm run type-check --workspace=apps/cars-4by4-builder
 
 Expected: PASS.
 
-- [ ] **Step 3: Commit**
+> Verified — `scripts/seed.ts` is covered by the app tsconfig `include: ["**/*.ts", ...]`.
+
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/cars-4by4-builder/src/seed/parts.ts
@@ -1372,7 +1378,7 @@ git commit -m "feat(cars-4by4-builder): add hand-curated parts seed data with AI
 - Create: `apps/cars-4by4-builder/scripts/seed.ts`
 - Modify: `apps/cars-4by4-builder/package.json` (add `db:seed`, `tsx`)
 
-- [ ] **Step 1: Create `scripts/seed.ts`**
+- [x] **Step 1: Create `scripts/seed.ts`**
 
 ```typescript
 import { dbCars, parts } from "@smartekai/db";
@@ -1395,7 +1401,7 @@ main().catch((err) => {
 });
 ```
 
-- [ ] **Step 2: Add the `db:seed` script and `tsx` devDependency**
+- [x] **Step 2: Add the `db:seed` script and `tsx` devDependency**
 
 In `apps/cars-4by4-builder/package.json`:
 
@@ -1407,6 +1413,8 @@ In `apps/cars-4by4-builder/package.json`:
     "tsx": "^4.19.0",
 ```
 
+> Done — installed `tsx@4.23.13` (devDep `^4.19.0`).
+
 - [ ] **Step 3: Install and run**
 
 ```bash
@@ -1416,7 +1424,9 @@ npm run db:seed --workspace=apps/cars-4by4-builder
 
 Expected: `Seeding 26 parts...` / `Seed complete.` with no errors. (Requires Task 2's `packages/db` schema push to `DATABASE_NEONDB_SMARTEKAI` — run `DATABASE_URL="$DATABASE_NEONDB_SMARTEKAI" npx drizzle-kit push --config=drizzle.config.ts` from the repo root first if not already done.)
 
-- [ ] **Step 4: Commit**
+> **BLOCKED (2026-09-06):** no `DATABASE_NEONDB_SMARTEKAI` in the worktree env; `npm install` done, live `db:seed` run deferred until creds are available (Task 12's push step).
+
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/cars-4by4-builder/scripts/seed.ts apps/cars-4by4-builder/package.json package-lock.json
@@ -1432,7 +1442,7 @@ git commit -m "feat(cars-4by4-builder): add db:seed runner script"
 - Create: `apps/cars-4by4-builder/src/components/PartsSelectionGrid.tsx`
 - Modify: `apps/cars-4by4-builder/src/routes/index.tsx`
 
-- [ ] **Step 1: Create `src/lib/queries.ts`**
+- [x] **Step 1: Create `src/lib/queries.ts`**
 
 ```typescript
 import { createServerFn } from "@tanstack/react-start";
@@ -1443,7 +1453,7 @@ export const getParts = createServerFn({ method: "GET" }).handler(async () => {
 });
 ```
 
-- [ ] **Step 2: Create `src/components/PartsSelectionGrid.tsx`**
+- [x] **Step 2: Create `src/components/PartsSelectionGrid.tsx`**
 
 ```typescript
 import { useState } from "react";
@@ -1517,7 +1527,7 @@ export function PartsSelectionGrid({
 }
 ```
 
-- [ ] **Step 3: Wire it into `src/routes/index.tsx`** (replaces the Task 1 placeholder)
+- [x] **Step 3: Wire it into `src/routes/index.tsx`** (replaces the Task 1 placeholder)
 
 ```typescript
 import { useState } from "react";
@@ -1556,7 +1566,7 @@ function Home() {
 }
 ```
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 ```bash
 npm run type-check --workspace=apps/cars-4by4-builder
@@ -1573,7 +1583,9 @@ npm run dev --workspace=apps/cars-4by4-builder
 
 Open `http://localhost:3002/`. Expected: 26 parts render across category filters, selecting cards highlights them, "Continue" is disabled until at least one is selected. Stop the dev server once confirmed. (`/upload` 404s until Task 14 — expected at this point.)
 
-- [ ] **Step 6: Commit**
+> **BLOCKED (2026-09-06):** needs a seeded `parts` table (Task 12 push + seed deferred — no `DATABASE_NEONDB_SMARTEKAI` in the worktree env). Code complete and committed in `304e438`. Type-check/lint (Step 4) ran and passed against the final tree of Tasks 13–17 together — strict route typing makes Tasks 13–17 un-verifiable in isolation, see Task 17's `queries` dependency.
+
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/cars-4by4-builder/src/lib/queries.ts apps/cars-4by4-builder/src/components/PartsSelectionGrid.tsx apps/cars-4by4-builder/src/routes/index.tsx
@@ -1589,7 +1601,7 @@ git commit -m "feat(cars-4by4-builder): add Step 1 upgrade selection grid"
 - Create: `apps/cars-4by4-builder/src/components/Toast.tsx`
 - Create: `apps/cars-4by4-builder/src/routes/upload.tsx`
 
-- [ ] **Step 1: Create `src/components/Toast.tsx`** (`@smartekai/ui` has no `Toast`, per spec §2/§6)
+- [x] **Step 1: Create `src/components/Toast.tsx`** (`@smartekai/ui` has no `Toast`, per spec §2/§6)
 
 ```typescript
 export function Toast({ message, onDismiss }: { message: string; onDismiss: () => void }) {
@@ -1604,7 +1616,7 @@ export function Toast({ message, onDismiss }: { message: string; onDismiss: () =
 }
 ```
 
-- [ ] **Step 2: Create `src/components/PhotoDropzone.tsx`**
+- [x] **Step 2: Create `src/components/PhotoDropzone.tsx`**
 
 ```typescript
 import { useRef, useState } from "react";
@@ -1665,7 +1677,7 @@ export function PhotoDropzone({ onFileSelected }: { onFileSelected: (file: File)
 }
 ```
 
-- [ ] **Step 3: Create `src/routes/upload.tsx`**
+- [x] **Step 3: Create `src/routes/upload.tsx`**
 
 ```typescript
 import { useState } from "react";
@@ -1731,7 +1743,7 @@ function UploadStep() {
 }
 ```
 
-- [ ] **Step 4: Regenerate routes and verify**
+- [x] **Step 4: Regenerate routes and verify**
 
 ```bash
 npm run generate-routes --workspace=apps/cars-4by4-builder
@@ -1739,6 +1751,8 @@ npm run type-check --workspace=apps/cars-4by4-builder
 ```
 
 Expected: PASS.
+
+> **Adaptation (2026-09-06):** verified via `npm run build` instead of bare `generate-routes` — the bare TSR generator strips the `@tanstack/react-start` footer from `routeTree.gen.ts`; the vite plugin (dev/build) regenerates routes *with* the footer. Build output confirmed both `upload` and `builds/$sessionId` routes registered with the footer intact (2 `@tanstack/react-start` markers).
 
 - [ ] **Step 5: Manual verification against the real pipeline**
 
@@ -1748,7 +1762,9 @@ npm run dev --workspace=apps/cars-4by4-builder
 
 Go through Step 1 → Step 2 with a real photo of an SUV/truck. Expected: "Generating…" for up to ~30s, then either navigation to `/builds/<id>` (Task 15 needed for that route to render — a 404 there is expected until then, but confirm the network tab shows a `completed` response from `generateBuild` with a `session.id`) or, with a non-vehicle photo, a toast with the rejection reason and no navigation.
 
-- [ ] **Step 6: Commit**
+> **BLOCKED (2026-09-06):** live pipeline run needs the seeded DB + Gemini/FAL/Neon creds (unavailable in the worktree). Code complete and committed in `4686865`.
+
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/cars-4by4-builder/src/components/PhotoDropzone.tsx apps/cars-4by4-builder/src/components/Toast.tsx apps/cars-4by4-builder/src/routes/upload.tsx apps/cars-4by4-builder/src/routeTree.gen.ts
@@ -1764,7 +1780,7 @@ git commit -m "feat(cars-4by4-builder): add upload step wired to the generation 
 **Files:**
 - Create: `apps/cars-4by4-builder/src/components/BeforeAfterSlider.tsx`
 
-- [ ] **Step 1: Create `src/components/BeforeAfterSlider.tsx`** (local component — no comparison-slider library, per spec §6)
+- [x] **Step 1: Create `src/components/BeforeAfterSlider.tsx`** (local component — no comparison-slider library, per spec §6)
 
 ```typescript
 import { useRef, useState } from "react";
@@ -1803,7 +1819,7 @@ export function BeforeAfterSlider({ beforeUrl, afterUrl }: { beforeUrl: string; 
 
 The "before" image is clipped to `position`% width, then scaled back up by the inverse fraction so it still spans the full container width beneath the clip — a standard clip-reveal comparison technique.
 
-- [ ] **Step 2: Verify**
+- [x] **Step 2: Verify**
 
 ```bash
 npm run type-check --workspace=apps/cars-4by4-builder
@@ -1811,7 +1827,7 @@ npm run type-check --workspace=apps/cars-4by4-builder
 
 Expected: PASS.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/cars-4by4-builder/src/components/BeforeAfterSlider.tsx
@@ -1825,7 +1841,7 @@ git commit -m "feat(cars-4by4-builder): add before/after comparison slider"
 **Files:**
 - Create: `apps/cars-4by4-builder/src/lib/advisories.ts`
 
-- [ ] **Step 1: Create `src/lib/advisories.ts`** — per spec §7, static text keyed by category/difficulty, not a calculated model
+- [x] **Step 1: Create `src/lib/advisories.ts`** — per spec §7, static text keyed by category/difficulty, not a calculated model
 
 ```typescript
 type Part = { category: string; fitmentDifficulty: string; name: string };
@@ -1862,7 +1878,7 @@ export function getAdvisories(parts: Part[]): Advisory[] {
 }
 ```
 
-- [ ] **Step 2: Manual verification of the pure function**
+- [x] **Step 2: Manual verification of the pure function**
 
 ```bash
 npx tsx -e '
@@ -1877,7 +1893,7 @@ console.log(getAdvisories([
 
 Expected: 2 category warnings (front_bumper, wheels_tires — `lighting` has no entry in `CATEGORY_ADVISORIES`, so none for it) plus 1 info advisory naming the snorkel. If the output doesn't match, trace the category-lookup logic before proceeding.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/cars-4by4-builder/src/lib/advisories.ts
@@ -1892,7 +1908,7 @@ git commit -m "feat(cars-4by4-builder): add static per-part fitment advisory not
 - Create: `apps/cars-4by4-builder/src/routes/builds/$sessionId.tsx`
 - Modify: `apps/cars-4by4-builder/src/lib/queries.ts` (add `getSession`)
 
-- [ ] **Step 1: Add `getSession` to `src/lib/queries.ts`**
+- [x] **Step 1: Add `getSession` to `src/lib/queries.ts`**
 
 ```typescript
 import { eq, inArray } from "drizzle-orm";
@@ -1914,7 +1930,7 @@ export const getSession = createServerFn({ method: "GET" })
 
 (Replace the existing `import { dbCars, parts } from "@smartekai/db";` at the top of the file with the combined import shown above, adding `upgradeSessions`.)
 
-- [ ] **Step 2: Create `src/routes/builds/$sessionId.tsx`**
+- [x] **Step 2: Create `src/routes/builds/$sessionId.tsx`**
 
 ```typescript
 import { createFileRoute } from "@tanstack/react-router";
@@ -2016,7 +2032,7 @@ function BuildReport() {
 }
 ```
 
-- [ ] **Step 3: Regenerate routes and verify**
+- [x] **Step 3: Regenerate routes and verify**
 
 ```bash
 npm run generate-routes --workspace=apps/cars-4by4-builder
@@ -2025,11 +2041,15 @@ npm run type-check --workspace=apps/cars-4by4-builder
 
 Expected: PASS. If `head`'s `loaderData` param shape doesn't match the installed `@tanstack/react-router` version's actual `head()` signature, check `node_modules/@tanstack/react-router/dist/esm/**/*.d.ts` for `RouteOptions["head"]`.
 
+> **Adaptation (2026-09-06):** same build-with-footer approach as Task 14; `head`'s `loaderData` param matched the installed router's `head()` signature as written (`.at(0)` used for the single-row query — Drizzle's destructure keeps the row type truthy, which the `@tanstack` eslint config's `no-unnecessary-condition` rule rejects on `if (!session)`).
+
 - [ ] **Step 4: Manual browser verification**
 
 Complete the full flow (select parts → upload a real photo → wait for generation) and confirm the report page shows the before/after slider (drag it and confirm the split point follows the cursor), the itemized quote table with correct totals, advisory notes matching the selected categories, and that "Share My Build" copies the URL.
 
-- [ ] **Step 5: Commit**
+> **BLOCKED (2026-09-06):** needs the full live pipeline (seeded DB + Gemini/FAL/Neon creds). Code complete and committed in `433f304`.
+
+- [x] **Step 5: Commit**
 
 ```bash
 git add "apps/cars-4by4-builder/src/routes/builds/\$sessionId.tsx" apps/cars-4by4-builder/src/lib/queries.ts apps/cars-4by4-builder/src/routeTree.gen.ts
