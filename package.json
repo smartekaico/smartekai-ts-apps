@@ -12,6 +12,7 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
+    "dev:cars": "turbo run dev --filter=cars-4by4-builder --output-logs=full",
     "dev:legal": "turbo run dev --filter=legal-os --output-logs=full",
     "dev:medical": "turbo run dev --filter=medical-os --output-logs=full",
     "lint": "turbo run lint",
