@@ -59,10 +59,11 @@ export const generateBuild = createServerFn({ method: "POST" })
       .map((p) => p.aiPromptSnippet)
       .join(", ")}. Professional automotive photography, realistic reflections, seamless fitment, 8k.`;
 
-    // Step 5: generate (awaited directly — no polling)
-    let transformedUrl: string;
+    // Step 5: generate (awaited directly — no polling). Gemini returns the
+    // image bytes directly, so there's no second URL to fetch afterward.
+    let generated: { data: Uint8Array; mediaType: string };
     try {
-      transformedUrl = await generateUpgradeRender(presignedUrl, prompt);
+      generated = await generateUpgradeRender(presignedUrl, prompt);
     } catch {
       return {
         status: "failed" as const,
@@ -70,15 +71,14 @@ export const generateBuild = createServerFn({ method: "POST" })
       };
     }
 
-    // Step 6: fetch the generated image and store it in the public bucket
-    const generatedResponse = await fetch(transformedUrl);
-    const generatedBuffer = Buffer.from(await generatedResponse.arrayBuffer());
-    const renderKey = `${crypto.randomUUID()}.jpg`;
+    // Step 6: store the generated image bytes in the public bucket
+    const extension = generated.mediaType.split("/")[1] ?? "jpg";
+    const renderKey = `${crypto.randomUUID()}.${extension}`;
     await uploadObject(
       BUCKETS.renders,
       renderKey,
-      generatedBuffer,
-      "image/jpeg",
+      Buffer.from(generated.data),
+      generated.mediaType,
     );
     const publicRenderUrl = getPublicUrl(BUCKETS.renders, renderKey);
 

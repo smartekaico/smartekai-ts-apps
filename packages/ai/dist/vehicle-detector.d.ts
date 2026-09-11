@@ -7,23 +7,7 @@ export declare const vehicleDetectionSchema: z.ZodObject<{
     detectedColor: z.ZodNullable<z.ZodString>;
     angle: z.ZodNullable<z.ZodString>;
     validationError: z.ZodNullable<z.ZodString>;
-}, "strip", z.ZodTypeAny, {
-    isValidVehicle: boolean;
-    vehicleType: string | null;
-    detectedMake: string | null;
-    detectedModel: string | null;
-    detectedColor: string | null;
-    angle: string | null;
-    validationError: string | null;
-}, {
-    isValidVehicle: boolean;
-    vehicleType: string | null;
-    detectedMake: string | null;
-    detectedModel: string | null;
-    detectedColor: string | null;
-    angle: string | null;
-    validationError: string | null;
-}>;
+}, z.core.$strip>;
 export type VehicleDetection = z.infer<typeof vehicleDetectionSchema>;
 /**
  * Validates that an uploaded photo is a usable exterior shot of a 4x4-style

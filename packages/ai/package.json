@@ -14,11 +14,10 @@
     "prepare": "npm run build"
   },
   "dependencies": {
-    "@fal-ai/client": "^1.2.0",
-    "ai": "^4.0.0",
-    "@ai-sdk/google": "^1.0.0",
+    "ai": "^6.0.138",
+    "@ai-sdk/google": "^3.0.61",
     "@deepgram/sdk": "^4.0.0",
-    "zod": "^3.22.0"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
