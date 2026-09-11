@@ -47,31 +47,56 @@ detectedColor, angle, validationError }` per the SOP's shape.
 
 ### 3.2 Image generation — also extends `@smartekai/ai`
 
-The SOP names "Flux Inpainting" generically, but real inpainting APIs (e.g. `fal-ai/
-flux-lora/inpainting`) require an explicit `mask_url` marking *where* to edit — this SOP
-never accounts for generating one, and building a segmentation/masking step is well
-beyond MVP scope. The actual right fit, verified against Fal.ai's docs, is
-**`fal-ai/flux-pro/kontext`**: mask-free, instruction-based image editing — just a
-`prompt` + `image_url`, no mask. That's what "mount this bull bar onto this photo" needs.
+**Superseded 2026-09-11: switched from Fal.ai to Gemini 3.1 Flash Image.** The SOP names
+"Flux Inpainting" generically, but real inpainting APIs (e.g. `fal-ai/flux-lora/inpainting`)
+require an explicit `mask_url` this SOP never accounts for producing — the original design
+here used `fal-ai/flux-pro/kontext` instead (mask-free, instruction-based editing), which
+worked, but required a separate Fal.ai account. That account hit a billing lock
+(`"User is locked. Reason: TOP_UP."`) before first use, and the user asked to consolidate
+onto Gemini instead — a model actually exists for this: **Gemini 3.1 Flash Image** ("Nano
+Banana 2"), Google's native image-generation/editing model, confirmed via Google's own
+model card to support Image + Text → Text + Image editing. Same mask-free shape Fal.ai's
+Kontext model had, now on the same provider `detectVehicle` already uses — one API key
+(`GOOGLE_AI_API_KEY`), no separate billing account, and it eliminates the Fal.ai blocker
+entirely.
 
 A new `generateUpgradeRender(originalImageUrl: string, prompt: string)` export wraps this
-endpoint via `@fal-ai/client`, same "thin wrapper" shape as `transcription.ts` wraps
-Deepgram:
+via the Vercel AI SDK's `generateText` with `responseModalities: ["TEXT", "IMAGE"]`, same
+"thin wrapper" shape as `transcription.ts` wraps Deepgram, same Gemini client construction
+as `vehicle-detector.ts`:
 
 ```typescript
-import { fal } from "@fal-ai/client";
+import { generateText } from "ai";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
+
+const google = createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_AI_API_KEY });
 
 export async function generateUpgradeRender(originalImageUrl: string, prompt: string) {
-  const result = await fal.subscribe("fal-ai/flux-pro/kontext", {
-    input: { prompt, image_url: originalImageUrl },
-    logs: false,
+  const result = await generateText({
+    model: google("models/gemini-3.1-flash-image"),
+    providerOptions: { google: { responseModalities: ["TEXT", "IMAGE"] } },
+    messages: [{
+      role: "user",
+      content: [
+        { type: "text", text: prompt },
+        { type: "image", image: originalImageUrl },
+      ],
+    }],
   });
-  return result.data.images[0].url as string;
+  const image = result.files.find((f) => f.mediaType.startsWith("image/"));
+  if (!image) throw new Error("Gemini did not return an image in the response");
+  return { data: image.uint8Array, mediaType: image.mediaType };
 }
 ```
 
-New env var: `FAL_KEY` (a new Fal.ai account/API key — this one genuinely is new external
-infrastructure the user needs to provision; I can't create that account).
+Note the return shape changed from a URL (Fal.ai's response) to raw bytes (Gemini's
+response) — the pipeline (§5) uploads those bytes to `cars-renders` directly, one fewer
+network round-trip than fetching a URL first. Verified against the real API: a real photo
+of a Toyota Land Cruiser Prado, prompted to add a bull bar, came back with a clean,
+photorealistic edit — background, angle, and vehicle color all preserved.
+
+No new env var — `GOOGLE_AI_API_KEY` already exists in this repo. `FAL_KEY` and
+`@fal-ai/client` are removed entirely.
 
 ### 3.3 Object storage — new `packages/storage` package, backed by Neon Object Storage
 
@@ -101,7 +126,7 @@ export async function uploadObject(bucket: string, key: string, body: Buffer, co
   await client.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: body, ContentType: contentType }));
 }
 
-// Used for the private cars-uploads bucket — Gemini/Fal.ai fetch the photo via this
+// Used for the private cars-uploads bucket — Gemini fetches the photo via this
 // short-lived URL instead of the object ever being made public.
 export async function getPresignedReadUrl(bucket: string, key: string, expiresInSeconds = 300) {
   return getSignedUrl(client, new GetObjectCommand({ Bucket: bucket, Key: key }), { expiresIn: expiresInSeconds });
@@ -112,7 +137,7 @@ export async function getPresignedReadUrl(bucket: string, key: string, expiresIn
 
 Two buckets, both on the same Neon project/branch as `dbCars`:
 - `cars-uploads` (**private**) — raw user photos. Never exposed directly; the pipeline
-  generates presigned GET URLs server-side when Gemini/Fal.ai need to fetch the image.
+  generates presigned GET URLs server-side when Gemini needs to fetch the image.
 - `cars-renders` (**public_read**) — AI-generated results. Served directly via their
   public URL for the before/after slider, share links, and OpenGraph preview tags.
 
@@ -221,8 +246,8 @@ keyed in the old plan.
 - Background job/polling infrastructure — synchronous only, per §5.
 - Any physics-based weight/GVM calculation — replaced by static per-part advisory text,
   per §7.
-- Provisioning the Fal.ai account/API key and authenticating `neonctl` for bucket
-  creation — external manual steps the user does, not something this plan executes.
+- Authenticating `neonctl` for bucket creation — an external manual step the user does,
+  not something this plan executes. (Fal.ai provisioning is no longer relevant — see §3.2.)
 - Multi-tenancy, OpenGraph image generation beyond pointing at the existing
   `transformedImageUrl` (no separate OG-image-generation step).
 
@@ -235,7 +260,7 @@ keyed in the old plan.
 2. **Storage & AI thin clients** — `packages/storage` (Neon Object Storage), buckets
    created, `@smartekai/ai`'s `detectVehicle`/`generateUpgradeRender` additions.
 3. **Upload → validate → generate pipeline** — the synchronous server function from §5,
-   end to end against the real Gemini + Fal.ai + Neon Object Storage services.
+   end to end against the real Gemini (both calls) + Neon Object Storage services.
 4. **Catalog & selection UI** — hand-curated `parts` seed data (new fields), the
    category-grid selection step.
 5. **Report page** — before/after slider, BOM table, advisory notes, PDF export, share
