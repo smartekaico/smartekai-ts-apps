@@ -1092,88 +1092,31 @@ git commit -m "feat(ai): add detectVehicle vision validation via Gemini"
 
 ---
 
-### Task 9: Fal.ai dependency + `generateUpgradeRender`
+### Task 9: `generateUpgradeRender` via Gemini 3.1 Flash Image
 
-**Files:**
-- Create: `packages/ai/src/upgrade-render.ts`
-- Modify: `packages/ai/src/index.ts`
-- Modify: `packages/ai/package.json`
+**Superseded 2026-09-11 — done, via Gemini instead of Fal.ai.** Fal.ai's account hit a
+billing lock (`"User is locked. Reason: TOP_UP."`) before first use; switched to Gemini
+3.1 Flash Image instead. See `.agents/cars-4by4-builder/specs/
+2026-09-05-ai-customizer-pivot-design.md` §3.2 for the full rationale and current
+implementation. Commit: `45b432c`.
 
-**Depends on:** `FAL_KEY` (plan header's external prerequisite #1).
-
-- [ ] **Step 1: Add the dependency**
-
-In `packages/ai/package.json`'s `dependencies`:
-
-```json
-    "@fal-ai/client": "^1.2.0",
-```
-
-```bash
-npm install
-```
-
-- [ ] **Step 2: Create `packages/ai/src/upgrade-render.ts`**
-
-```typescript
-import { fal } from "@fal-ai/client";
-
-fal.config({ credentials: process.env.FAL_KEY });
-
-/**
- * Mask-free, instruction-based image edit (fal-ai/flux-pro/kontext) — not
- * raw inpainting, which would need an explicit mask_url this pipeline has
- * no way to generate. Takes the user's original photo + a natural-language
- * description of the upgrades to apply, returns the generated image URL.
- */
-export async function generateUpgradeRender(
-  originalImageUrl: string,
-  prompt: string,
-): Promise<string> {
-  const result = await fal.subscribe("fal-ai/flux-pro/kontext", {
-    input: { prompt, image_url: originalImageUrl },
-    logs: false,
-  });
-
-  return result.data.images[0].url as string;
-}
-```
-
-- [ ] **Step 3: Export it from `packages/ai/src/index.ts`**
-
-```typescript
-export { generateUpgradeRender } from "./upgrade-render";
-```
-
-- [ ] **Step 4: Verify**
-
-```bash
-npm run build --workspace=packages/ai
-npm run type-check --workspace=packages/ai
-```
-
-Expected: both pass. If `fal.subscribe`'s return shape doesn't match `result.data.images[0].url`, check `node_modules/@fal-ai/client/dist/**/*.d.ts` for the actual response type — the exact field layout can vary slightly by model.
-
-- [ ] **Step 5: Manual verification against the real Fal.ai API**
-
-```bash
-npx tsx -e '
-import { generateUpgradeRender } from "@smartekai/ai";
-generateUpgradeRender(
-  "https://upload.wikimedia.org/wikipedia/commons/8/8a/2016_Toyota_Land_Cruiser_%28FJA300R%29_GXL_wagon_%282018-11-02%29_01.jpg",
-  "Add a matte black heavy-duty steel bull bar with round driving lights to the front of this vehicle. Photorealistic, seamless fitment."
-).then(console.log).catch(console.error);
-'
-```
-
-Expected: prints a URL to a generated image. Open it — confirm the vehicle now visibly has a bull bar and still resembles the original photo (same color, background, angle).
-
-- [ ] **Step 6: Commit**
-
-```bash
-git add packages/ai/src/upgrade-render.ts packages/ai/src/index.ts packages/ai/package.json package-lock.json
-git commit -m "feat(ai): add generateUpgradeRender via Fal.ai flux-pro/kontext"
-```
+- [x] Implemented `packages/ai/src/upgrade-render.ts` using `generateText` +
+  `providerOptions: { google: { responseModalities: ["TEXT", "IMAGE"] } }`, same Gemini
+  client construction as `vehicle-detector.ts`. Returns `{ data: Uint8Array, mediaType:
+  string }` (raw bytes), not a URL — the input-image content block is `{ type: "image",
+  image: originalImageUrl }` (the cookbook's `{ type: "file", data: new URL(...) }` shape
+  failed to fetch from a real Wikipedia URL in practice; `type: "image"` is the same shape
+  `detectVehicle` already uses successfully).
+- [x] Removed `@fal-ai/client` entirely; no `FAL_KEY` needed. `turbo.json`'s `globalEnv`
+  swapped `FAL_KEY` for `GOOGLE_AI_IMAGE_MODEL` (optional override, defaults to
+  `gemini-3.1-flash-image`).
+- [x] Corrected `packages/ai/package.json`'s stale declared ranges (`ai`, `@ai-sdk/google`,
+  `zod`) to match what the repo actually resolves — see commit `45b432c` for why this was
+  a real, not cosmetic, fix (it broke the build once a stale nested `node_modules` copy of
+  the old versions was removed).
+- [x] Verified against the real Gemini API twice: once standalone (added a bull bar to a
+  real photo), once through the full pipeline with two parts selected at once (bull bar +
+  beadlock wheels) — both rendered correctly, photorealistic, background/color preserved.
 
 ---
 
@@ -1408,16 +1351,7 @@ In `apps/cars-4by4-builder/package.json`:
 
 > Done — installed `tsx@4.23.13` (devDep `^4.19.0`).
 
-- [ ] **Step 3: Install and run**
-
-```bash
-npm install
-npm run db:seed --workspace=apps/cars-4by4-builder
-```
-
-Expected: `Seeding 26 parts...` / `Seed complete.` with no errors. (Requires Task 2's `packages/db` schema push to `DATABASE_NEONDB_SMARTEKAI` — run `DATABASE_URL="$DATABASE_NEONDB_SMARTEKAI" npx drizzle-kit push --config=drizzle.config.ts` from the repo root first if not already done.)
-
-> **BLOCKED (2026-09-06):** no `DATABASE_NEONDB_SMARTEKAI` in the worktree env; `npm install` done, live `db:seed` run deferred until creds are available (Task 12's push step).
+- [x] **Step 3: Install and run** — DONE 2026-09-11. Unblocked once `.env.local` was copied into the worktree. Two real bugs found and fixed running this for real the first time — a Node ESM/CJS dual-package-hazard Symbol mismatch, and `npm run db:seed` not auto-loading `.env.local` — see commit `8ae03a5`. Also had to enable the `pgvector` Postgres extension on this database (`CREATE EXTENSION IF NOT EXISTS vector;`) before `drizzle-kit push` would succeed — the shared `schema.ts` bundles legal/medical's vector-embedding tables too. Result: `Seeding 25 parts...` / `Seed complete.`, no errors.
 
 - [x] **Step 4: Commit**
 
@@ -1747,15 +1681,15 @@ Expected: PASS.
 
 > **Adaptation (2026-09-06):** verified via `npm run build` instead of bare `generate-routes` — the bare TSR generator strips the `@tanstack/react-start` footer from `routeTree.gen.ts`; the vite plugin (dev/build) regenerates routes *with* the footer. Build output confirmed both `upload` and `builds/$sessionId` routes registered with the footer intact (2 `@tanstack/react-start` markers).
 
-- [ ] **Step 5: Manual verification against the real pipeline**
-
-```bash
-npm run dev --workspace=apps/cars-4by4-builder
-```
-
-Go through Step 1 → Step 2 with a real photo of an SUV/truck. Expected: "Generating…" for up to ~30s, then either navigation to `/builds/<id>` (Task 15 needed for that route to render — a 404 there is expected until then, but confirm the network tab shows a `completed` response from `generateBuild` with a `session.id`) or, with a non-vehicle photo, a toast with the rejection reason and no navigation.
-
-> **BLOCKED (2026-09-06):** live pipeline run needs the seeded DB + Gemini/FAL/Neon creds (unavailable in the worktree). Code complete and committed in `4686865`.
+- [x] **Step 5: Manual verification against the real pipeline** — DONE 2026-09-11, via a
+  direct script exercising `generate-build.ts`'s exact same logic end to end (not yet a
+  literal browser click-through — that's still open, see the "Full manual click-through"
+  item under Final Gate below). Real photo → real Gemini vision validation → 2 real parts
+  fetched from the seeded DB → real Gemini image generation → uploaded to `cars-renders` →
+  `upgradeSessions` row saved. Result: `{isValidVehicle: true, detectedMake: "Toyota",
+  detectedModel: "Land Cruiser Prado", ...}`, then a photorealistic render with both
+  selected parts (bull bar + beadlock wheels) correctly applied, background/color
+  preserved. Test rows/objects cleaned up afterward.
 
 - [x] **Step 6: Commit**
 
@@ -2178,10 +2112,30 @@ git commit -m "feat(cars-4by4-builder): add PDF quote export"
 
 Expected: `gate: PASSED`.
 
-> **Result (2026-09-06): NOT PASSED — pre-existing, out of scope.** `./scripts/gate.sh` fails at `lint` on the shared packages `@smartekai/ai`, `@smartekai/billing`, `@smartekai/storage`, `@smartekai/auth`, `@smartekai/crw` with **"ESLint couldn't find an eslint.config.* file" (ESLint 10.9.1 requires flat config; those packages have none)**. Not caused by this branch — those packages are untouched except for the Task 8 `@smartekai/ai` Fal change, which predates the config gap and its lint was already broken then. The cars-4by4-builder app itself passes `type-check`, `lint`, and `build` independently (`npm run build/type-check/lint --workspace=apps/cars-4by4-builder` all green after Task 18). Fixing the shared packages' lint config is out of this plan's scope and deferred.
+> **Result (2026-09-06): NOT PASSED — pre-existing, out of scope.** `./scripts/gate.sh` fails at `lint` on the shared packages... (superseded below).
 
-- [ ] **Full manual click-through** (per `AGENTS.md`'s validation strategy — no automated test suite substitutes for this)
+> **Result (2026-09-11): shared-package lint fixed too — all switched from broken ESLint to
+> Biome (the tool actually in use elsewhere in the repo, per `legal-os`). `packages/ai`,
+> `auth`, `db`, `crw`, `billing`, `storage` all lint clean now (commits `ece4086`
+> through `b7be51b`). `./scripts/gate.sh` as a whole still reports FAILED — but only
+> because it also lints `apps/legal-os`, which has ~200 pre-existing lint errors unrelated
+> to any of this work; the user explicitly said to leave legal-os alone. Scoped to what
+> cars-4by4-builder actually depends on (`npx turbo run <task> --filter=cars-4by4-builder...`),
+> everything is fully green: **typecheck 4/4, lint 4/4, build 5/5.** This is the accurate
+> "gate passed" signal for this plan's scope.
+>
+> Also found and fixed along the way (all pre-existing, none caused by this branch):
+> `packages/db/src/` had compiled `.js`/`.d.ts` files committed alongside `.ts` source
+> since the repo's initial commit (dead weight, not referenced by `package.json`, now
+> excluded from lint via `packages/db/biome.json` rather than deleted); the `pgvector`
+> extension was never enabled on this Neon project; `GOOGLE_AI_API_KEY` vs `GEMINI_API_KEY`
+> naming mismatch in `.env.local`; `db:seed`'s dual-package-hazard + missing env-file load
+> (see Task 12).
 
-`/` → select several upgrades across categories → `/upload` → upload a real photo of an SUV/truck → wait through generation → land on `/builds/<id>` → confirm the before/after slider, itemized quote, advisory notes, PDF download, and "Share My Build" all work → paste an invalid photo (e.g. a sedan or a blurry image) through the same flow and confirm the toast rejection instead of a broken generation attempt.
-
-> **BLOCKED (2026-09-06):** requires the live pipeline end to end — seeded `parts` DB (Task 12 push/seed deferred), Gemini and FAL keys in the worktree env (only the main repo's `.env.local` has them, and lacks `GOOGLE_AI_API_KEY`/`FAL_KEY`). All routes/components are implemented; every code-level step passed type-check/lint/build.
+- [x] **Full manual click-through** (per `AGENTS.md`'s validation strategy — no automated test suite substitutes for this) — **partially done.** The full pipeline (upload → Gemini
+  vision validate → parts fetch → Gemini image generation → storage → DB save) was
+  verified end to end twice against real services (see Task 14 Step 5) — not yet via an
+  actual browser session clicking through `/` → `/upload` → `/builds/<id>`, including the
+  before/after slider, PDF download, and "Share My Build" button, or the invalid-photo
+  rejection path. That literal browser click-through is the one piece of this plan still
+  genuinely unverified.
