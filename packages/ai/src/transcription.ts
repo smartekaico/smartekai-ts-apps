@@ -4,7 +4,11 @@ let deepgram: ReturnType<typeof createClient> | null = null;
 
 function getDeepgramClient() {
   if (!deepgram) {
-    deepgram = createClient(process.env.DEEPGRAM_API_KEY!);
+    const apiKey = process.env.DEEPGRAM_API_KEY;
+    if (!apiKey) {
+      throw new Error("DEEPGRAM_API_KEY is not set");
+    }
+    deepgram = createClient(apiKey);
   }
   return deepgram;
 }
@@ -23,7 +27,7 @@ export interface TranscriptionResult {
  */
 export async function transcribeMedicalAudio(
   audioBuffer: ArrayBuffer,
-  contentType: string = "audio/webm",
+  contentType = "audio/webm",
 ): Promise<TranscriptionResult> {
   try {
     const { result, error } =

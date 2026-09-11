@@ -5,7 +5,11 @@ const sdk_1 = require("@deepgram/sdk");
 let deepgram = null;
 function getDeepgramClient() {
     if (!deepgram) {
-        deepgram = (0, sdk_1.createClient)(process.env.DEEPGRAM_API_KEY);
+        const apiKey = process.env.DEEPGRAM_API_KEY;
+        if (!apiKey) {
+            throw new Error("DEEPGRAM_API_KEY is not set");
+        }
+        deepgram = (0, sdk_1.createClient)(apiKey);
     }
     return deepgram;
 }
