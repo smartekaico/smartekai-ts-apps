@@ -7,7 +7,7 @@
     "build": "vite build",
     "dev": "vite dev --port 3002",
     "start": "node .output/server/index.mjs",
-    "db:seed": "tsx scripts/seed.ts",
+    "db:seed": "tsx --env-file=../../.env.local scripts/seed.ts",
     "generate-routes": "tsr generate",
     "lint": "eslint",
     "type-check": "tsc --noEmit"
