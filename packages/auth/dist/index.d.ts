@@ -34,7 +34,9 @@ export declare const auth: import("better-auth").Auth<{
     emailAndPassword: {
         enabled: true;
         sendResetPassword(data: {
-            user: any;
+            user: {
+                email: string;
+            };
             url: string;
             token: string;
         }): Promise<void>;
