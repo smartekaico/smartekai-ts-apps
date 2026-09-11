@@ -5,12 +5,20 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`${name} is not set — packages/storage needs it to reach Neon Object Storage`);
+  }
+  return value;
+}
+
 const client = new S3Client({
-  region: process.env.AWS_REGION,
-  endpoint: process.env.AWS_ENDPOINT_URL_S3,
+  region: requireEnv("AWS_REGION"),
+  endpoint: requireEnv("AWS_ENDPOINT_URL_S3"),
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+    accessKeyId: requireEnv("AWS_ACCESS_KEY_ID"),
+    secretAccessKey: requireEnv("AWS_SECRET_ACCESS_KEY"),
   },
   forcePathStyle: true, // required for a custom (non-AWS) S3 endpoint
 });
@@ -42,8 +50,7 @@ export async function getPresignedReadUrl(
 
 /** Public URL for an object in a public_read bucket — no signing needed. */
 export function getPublicUrl(bucket: string, key: string): string {
-  const endpoint = process.env.AWS_ENDPOINT_URL_S3!;
-  return `${endpoint}/${bucket}/${key}`;
+  return `${requireEnv("AWS_ENDPOINT_URL_S3")}/${bucket}/${key}`;
 }
 
 export const BUCKETS = {
