@@ -2,17 +2,21 @@ import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 import * as schema from "./schema";
 
+function requireEnv(...names: string[]): string {
+  for (const name of names) {
+    const value = process.env[name];
+    if (value) return value;
+  }
+  throw new Error(`None of [${names.join(", ")}] is set`);
+}
+
 // Support separate databases per application
-const legalSql = neon(
-  process.env.DATABASE_LEGAL_URL ?? process.env.DATABASE_URL!,
-);
-const medicalSql = neon(
-  process.env.DATABASE_MEDICAL_URL ?? process.env.DATABASE_URL!,
-);
-const carsSql = neon(process.env.DATABASE_NEONDB_SMARTEKAI!);
+const legalSql = neon(requireEnv("DATABASE_LEGAL_URL", "DATABASE_URL"));
+const medicalSql = neon(requireEnv("DATABASE_MEDICAL_URL", "DATABASE_URL"));
+const carsSql = neon(requireEnv("DATABASE_NEONDB_SMARTEKAI"));
 
 // Default database (uses DATABASE_URL or DATABASE_LEGAL_URL for backward compatibility)
-const sql = neon(process.env.DATABASE_URL ?? process.env.DATABASE_LEGAL_URL!);
+const sql = neon(requireEnv("DATABASE_URL", "DATABASE_LEGAL_URL"));
 
 export const db = drizzle({ client: sql, schema });
 

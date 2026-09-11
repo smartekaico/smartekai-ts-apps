@@ -12,7 +12,7 @@
     "watch": "tsc -w",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
-    "lint": "eslint src --ext .ts,.tsx",
+    "lint": "npx @biomejs/biome lint --write ./src",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
