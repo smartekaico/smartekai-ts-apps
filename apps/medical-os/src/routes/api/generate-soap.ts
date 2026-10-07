@@ -17,7 +17,9 @@ export const Route = createFileRoute("/api/generate-soap")({
 
           const soap = await generateSoapNote(transcription);
 
-          return Response.json({ success: true, soap });
+          // generateSoapNote returns { soap: {...} } (the AI object schema's
+          // root key); unwrap so clients consume the note sections directly.
+          return Response.json({ success: true, soap: soap.soap });
         } catch (error) {
           console.error("SOAP generation error:", error);
           return Response.json(

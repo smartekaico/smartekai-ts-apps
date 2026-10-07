@@ -22,7 +22,10 @@ if [ -n "$DIFF_CONTENT" ] && echo "$DIFF_CONTENT" | grep -Eq "$SECRET_PATTERN"; 
 fi
 
 step "forbidden paths"
-FORBIDDEN='apps/[^/]+/\.next/|apps/[^/]+/dist/|\.agents/skills/'
+# apps/*/.next/ and apps/*/dist/ are build outputs -- never commit. .agents/skills/
+# is intentionally editable: skills like lean-build live there and lean-build
+# discipline (per AGENTS.md) explicitly authors them.
+FORBIDDEN='apps/[^/]+/\.next/|apps/[^/]+/dist/'
 if [ -n "$CHANGED" ] && echo "$CHANGED" | grep -Eq "$FORBIDDEN"; then
   echo "  touched paths AGENTS.md marks never-touch:" >&2
   echo "$CHANGED" | grep -E "$FORBIDDEN" | sed 's/^/    /' >&2

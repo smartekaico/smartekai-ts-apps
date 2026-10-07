@@ -4,11 +4,7 @@ import { useRouterState } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
-  MessageSquare,
   FileText,
-  Calendar,
-  Users,
-  Settings,
   Stethoscope,
   Mic,
 } from "lucide-react";
@@ -27,32 +23,9 @@ const mainNav: NavItem[] = [
     icon: <LayoutDashboard className="h-5 w-5" />,
   },
   {
-    label: "Sessions",
-    href: "/workspace/sessions",
-    icon: <MessageSquare className="h-5 w-5" />,
-  },
-  {
     label: "SOAP Notes",
     href: "/workspace/notes",
     icon: <FileText className="h-5 w-5" />,
-  },
-  {
-    label: "Clients",
-    href: "/workspace/clients",
-    icon: <Users className="h-5 w-5" />,
-  },
-  {
-    label: "Appointments",
-    href: "/workspace/appointments",
-    icon: <Calendar className="h-5 w-5" />,
-  },
-];
-
-const bottomNav: NavItem[] = [
-  {
-    label: "Settings",
-    href: "/workspace/settings",
-    icon: <Settings className="h-5 w-5" />,
   },
 ];
 
@@ -85,22 +58,13 @@ export function MedicalSidebar() {
 
       {/* Quick Actions */}
       <div className="p-3 border-b border-slate-100">
-        <div className="grid grid-cols-2 gap-2">
-          <a
-            href="/workspace/sessions/new"
-            className="flex items-center justify-center gap-2 px-3 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl font-bold text-xs transition-colors"
-          >
-            <Mic className="h-4 w-4" />
-            New Session
-          </a>
-          <a
-            href="/workspace/clients/new"
-            className="flex items-center justify-center gap-2 px-3 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl font-bold text-xs transition-colors"
-          >
-            <Users className="h-4 w-4" />
-            Add Client
-          </a>
-        </div>
+        <a
+          href="/workspace/sessions/new"
+          className="flex items-center justify-center gap-2 px-3 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl font-bold text-xs transition-colors"
+        >
+          <Mic className="h-4 w-4" />
+          New Session
+        </a>
       </div>
 
       {/* Main Navigation */}
@@ -130,27 +94,6 @@ export function MedicalSidebar() {
         })}
       </nav>
 
-      {/* Bottom Navigation */}
-      <div className="p-3 border-t border-slate-100">
-        {bottomNav.map((item) => {
-          const active = isActive(item.href);
-          return (
-            <a
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all",
-                active
-                  ? "bg-rose-50 text-rose-600 font-bold"
-                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
-              )}
-            >
-              {item.icon}
-              {item.label}
-            </a>
-          );
-        })}
-      </div>
     </aside>
   );
 }

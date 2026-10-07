@@ -54,8 +54,9 @@ export declare function SecuritySection({ id, eyebrow, title, description, cards
     description?: string;
     cards?: MarketingCard[];
 }): import("react/jsx-runtime").JSX.Element;
-export declare function MarketingFooter({ logoText, productLinks, companyLinks, }: {
+export declare function MarketingFooter({ logoText, tagline, productLinks, companyLinks, }: {
     logoText?: string;
+    tagline?: string;
     productLinks?: MarketingNavItem[];
     companyLinks?: MarketingNavItem[];
 }): import("react/jsx-runtime").JSX.Element;
