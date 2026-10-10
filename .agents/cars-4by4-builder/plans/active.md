@@ -2521,7 +2521,7 @@ Manual: `/` renders the empty-gallery message (no curated builds until Task 13),
 - Modify: `apps/cars-4by4-builder/src/styles.css`, `apps/cars-4by4-builder/src/routes/__root.tsx`
 - Create: `apps/cars-4by4-builder/src/components/SiteHeader.tsx`, `RegionSwitch.tsx`, `SiteFooter.tsx`
 
-- [ ] **Step 1: Replace `src/styles.css`** (spec §6 → `2026-09-12` spec §2 palette)
+- [x] **Step 1: Replace `src/styles.css`** (spec §6 → `2026-09-12` spec §2 palette)
 
 ```css
 @tailwind base;
@@ -2577,7 +2577,7 @@ Manual: `/` renders the empty-gallery message (no curated builds until Task 13),
 }
 ```
 
-- [ ] **Step 2: Create `src/components/RegionSwitch.tsx`**
+- [x] **Step 2: Create `src/components/RegionSwitch.tsx`**
 
 ```tsx
 import { useRouter } from "@tanstack/react-router";
@@ -2616,7 +2616,7 @@ export function RegionSwitch({ region }: { region: Region }) {
 }
 ```
 
-- [ ] **Step 3: Create `src/components/SiteHeader.tsx`**
+- [x] **Step 3: Create `src/components/SiteHeader.tsx`**
 
 ```tsx
 import { Link } from "@tanstack/react-router";
@@ -2642,7 +2642,7 @@ export function SiteHeader({ region }: { region: Region }) {
 }
 ```
 
-- [ ] **Step 4: Create `src/components/SiteFooter.tsx`** (copy per spec §6 — disclosure is required on every page)
+- [x] **Step 4: Create `src/components/SiteFooter.tsx`** (copy per spec §6 — disclosure is required on every page)
 
 ```tsx
 export function SiteFooter() {
@@ -2658,7 +2658,7 @@ export function SiteFooter() {
 }
 ```
 
-- [ ] **Step 5: Replace `src/routes/__root.tsx`**
+- [x] **Step 5: Replace `src/routes/__root.tsx`**
 
 ```tsx
 import { HeadContent, Link, Outlet, Scripts, createRootRoute } from "@tanstack/react-router";
@@ -2724,7 +2724,7 @@ function NotFound() {
 }
 ```
 
-- [ ] **Step 6: Verify, build, manual check, commit**
+- [x] **Step 6: Verify, build, manual check, commit**
 
 ```bash
 npx turbo run type-check lint build --filter=cars-4by4-builder...
@@ -3027,6 +3027,8 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ---
 
 ## Execution log
+
+**2026-10-11 — Task 12 DONE** (`8100adb feat(cars-4by4-builder): rugged dark theme, site header with region switch, disclosure footer`; 5 files, +126/−26). Replaced `src/styles.css` (dark charcoal/amber palette, `color-scheme: dark`, `antialiased`, `h1/h2/h3` extrabold, `bg-texture` retained) and `src/routes/__root.tsx` (added `loader: () => getRegion()`, `component: RootLayout` wrapping `<SiteHeader>`+`<Outlet>`+`<SiteFooter>` in a flex column, `notFoundComponent: NotFound`); created `src/components/{RegionSwitch,SiteHeader,SiteFooter}.tsx`. Verified: Step 6 turbo type-check/lint/build **13/13 green** (10 cached). Dev smoke (automatable): `/` and `/build` → 200; SSR includes header brand (`Builder</span>`), `aria-label="Region"` group, and all three footer disclosure lines; served CSS contains `24 8% 10%` + `28 85% 52%` (dark theme); vehicle filter chips (All/Toyota/Nissan/Jeep) render. **Region plumbing proven server-side:** default request → `US aria-pressed="true"`/`GCC false`; `Cookie: region=gcc` → `US false`/`GCC true`, confirming `requestRegion()` → `getRegion()` on the root loader. Spec-compliance review: ✅ byte-for-byte (all 5 files exact incl. `—` in footer; `shellComponent`+`component` split intact; `React.ReactNode` used without a React import, matching the pre-existing compiling pattern). Code-quality review (inline): ✅ ready to merge — semantic `<header>/<footer>`, RegionSwitch `role="group"`+`aria-pressed`+`type="button"` and cookie `max-age=31536000; samesite=lax` (matches Task 4's `getRegion` parse); disclosure present on every page. `@fontsource-variable/inter` was already a dep. No new deps; `routeTree.gen.ts` untouched (no route files changed). Interactive-only item deferred: GCC switch flipping an on-screen `AED …` price needs a build with parts (no curated builds until Task 13) → covered in Task 15's browser click-through. No blockers.
 
 **2026-10-11 — Task 11 DONE** (`05ef840 feat(cars-4by4-builder): gallery-first home page`; 4 files, +111/−118). Created `src/components/BuildCard.tsx` (36 lines); rewrote `src/routes/index.tsx` (86 lines, hero + `bg-texture` featured `<BeforeAfterSlider>` + `Popular builds` filter chips + responsive `BuildCard` grid + empty-gallery fallback); deleted `src/lib/queries.ts` (26) and `src/components/PartsSelectionGrid.tsx` (69) via `git rm`. Verified: Step 4 turbo type-check/lint/build **13/13 green** (10 cached); `routeTree.gen.ts` unchanged (no route added — correct). **Fixes the pre-existing `/` 500** (carried from Task 3–10): deleting `queries.ts` removes the shared-schema `parts`/`upgradeSessions` imports. Dev smoke (automatable): `/` → **200**, rendering `Build your 4x4 before you buy` / `Build yours` / `Popular builds` / `Gallery builds are on the way` / `Start your own build` (empty gallery is expected until Task 13 seeds curated builds); `/build` → 200; `/builds/does-not-exist` → 404. Spec-compliance review: ✅ byte-for-byte (both files exact incl. `—` title/caption em-dashes, `{" "}` empty-state spacing, `"all"` sentinel; commit = the 2 files + 2 deletions only; message byte-exact). Code-quality review (inline): ✅ ready to merge — `BuildCard` uses `loading="lazy"` + descriptive `alt`, links via typed `params={{ slug }}`; filter chips `aria-pressed` + `type="button"`; empty state offers a `/build` CTA; `{...b}` extra fields legal on spread; `<img>` (not Next) is correct for TanStack Start. No new deps. No blockers.
 
