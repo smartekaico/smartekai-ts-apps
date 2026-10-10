@@ -2363,7 +2363,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - Rewrite: `apps/cars-4by4-builder/src/routes/index.tsx`
 - Delete: `src/lib/queries.ts`, `src/components/PartsSelectionGrid.tsx`
 
-- [ ] **Step 1: Create `src/components/BuildCard.tsx`**
+- [x] **Step 1: Create `src/components/BuildCard.tsx`**
 
 ```tsx
 import { Link } from "@tanstack/react-router";
@@ -2404,7 +2404,7 @@ export function BuildCard({
 }
 ```
 
-- [ ] **Step 2: Rewrite `src/routes/index.tsx`**
+- [x] **Step 2: Rewrite `src/routes/index.tsx`**
 
 ```tsx
 import { useState } from "react";
@@ -2495,13 +2495,13 @@ function Home() {
 }
 ```
 
-- [ ] **Step 3: Delete the replaced files**
+- [x] **Step 3: Delete the replaced files**
 
 ```bash
 git rm apps/cars-4by4-builder/src/lib/queries.ts apps/cars-4by4-builder/src/components/PartsSelectionGrid.tsx
 ```
 
-- [ ] **Step 4: Verify, build, commit**
+- [x] **Step 4: Verify, build, commit**
 
 ```bash
 npx turbo run type-check lint build --filter=cars-4by4-builder...
@@ -3027,6 +3027,8 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ---
 
 ## Execution log
+
+**2026-10-11 — Task 11 DONE** (`05ef840 feat(cars-4by4-builder): gallery-first home page`; 4 files, +111/−118). Created `src/components/BuildCard.tsx` (36 lines); rewrote `src/routes/index.tsx` (86 lines, hero + `bg-texture` featured `<BeforeAfterSlider>` + `Popular builds` filter chips + responsive `BuildCard` grid + empty-gallery fallback); deleted `src/lib/queries.ts` (26) and `src/components/PartsSelectionGrid.tsx` (69) via `git rm`. Verified: Step 4 turbo type-check/lint/build **13/13 green** (10 cached); `routeTree.gen.ts` unchanged (no route added — correct). **Fixes the pre-existing `/` 500** (carried from Task 3–10): deleting `queries.ts` removes the shared-schema `parts`/`upgradeSessions` imports. Dev smoke (automatable): `/` → **200**, rendering `Build your 4x4 before you buy` / `Build yours` / `Popular builds` / `Gallery builds are on the way` / `Start your own build` (empty gallery is expected until Task 13 seeds curated builds); `/build` → 200; `/builds/does-not-exist` → 404. Spec-compliance review: ✅ byte-for-byte (both files exact incl. `—` title/caption em-dashes, `{" "}` empty-state spacing, `"all"` sentinel; commit = the 2 files + 2 deletions only; message byte-exact). Code-quality review (inline): ✅ ready to merge — `BuildCard` uses `loading="lazy"` + descriptive `alt`, links via typed `params={{ slug }}`; filter chips `aria-pressed` + `type="button"`; empty state offers a `/build` CTA; `{...b}` extra fields legal on spread; `<img>` (not Next) is correct for TanStack Start. No new deps. No blockers.
 
 **2026-10-11 — Task 10 DONE** (`38e20b5 feat(cars-4by4-builder): add /build configurator and /builds/$slug page with async render`; 9 files, +470/−335). Created `src/components/PhotoStep.tsx`, `src/routes/build.tsx`, `src/routes/builds/$slug.tsx`; modified `src/components/BuildReportPdf.tsx` (region pricing + totals); deleted `src/routes/upload.tsx`, `src/routes/builds/$sessionId.tsx`, `src/lib/generate-build.ts` (`git rm`); regenerated `src/routeTree.gen.ts` (now `/build` + `/builds/$slug`, no `/upload`/`$sessionId`). Verified: Step 6 turbo type-check/lint/build **13/13 green**; commit subject byte-exact incl. literal `$slug`. **Deviation (plan-level ordering conflict, resolved by a 1-line bridge):** Step 6 first failed because `src/routes/index.tsx:18` still did `navigate({ to: "/upload", search: { parts: selected } })` — a **Task 11** file that the regenerated route tree no longer type-checks once `/upload` is deleted (the plan's own note "`index.tsx` still uses `queries.ts` — replaced in Task 11" missed that deleting the route breaks its typed navigation *now*). Fix: changed that single line to `to: "/build"` (valid `parts` search on `/build`); `index.tsx` is fully rewritten in Task 11, so this is a throwaway bridge, not scope expansion. Also confirmed `/`'s 500 is **pre-existing** (uncaused by Task 10): `src/lib/queries.ts` imports `parts`/`upgradeSessions` from the **shared** `@smartekai/db` schema, dropped in Task 3 — Task 11 replaces both `index.tsx` and `queries.ts`. Step 7 (dev-server manual check): automated smoke only — `/build` SSR 200 rendering "Pick your truck" (title "Build your 4x4"); `/builds/does-not-exist` → 404; `/upload` → 404. Interactive items 1–5 (URL param flow, preset totals, 12-cap disable, non-vehicle rejection, real-photo → generate → progress → result) require a real truck photo + Gemini and are deferred to Task 15 Step 2's browser click-through. No new deps. No blockers.
 
