@@ -1328,7 +1328,7 @@ Expected: `routeTree.gen.ts` now contains `/go/$partId` and `/sitemap.xml`.
 - Create: `apps/cars-4by4-builder/src/components/PartImage.tsx`, `FitmentBadge.tsx`, `BuildProgress.tsx`, `ShareButton.tsx`, `PartCard.tsx`, `CategoryTabs.tsx`, `PresetPills.tsx`, `VehiclePicker.tsx`, `BuildFooter.tsx`, `ShopList.tsx`
 - Modify: `Toast.tsx`, `BeforeAfterSlider.tsx`, `PhotoDropzone.tsx`
 
-- [ ] **Step 1: `PartImage.tsx`**
+- [x] **Step 1: `PartImage.tsx`**
 
 ```tsx
 import { cn } from "@/lib/utils";
@@ -1339,7 +1339,7 @@ export function PartImage({ src, alt, className }: { src: string; alt: string; c
 }
 ```
 
-- [ ] **Step 2: `FitmentBadge.tsx`**
+- [x] **Step 2: `FitmentBadge.tsx`**
 
 ```tsx
 import { FITMENT_BADGES } from "@/lib/catalog";
@@ -1361,7 +1361,7 @@ export function FitmentBadge({ difficulty }: { difficulty: string }) {
 }
 ```
 
-- [ ] **Step 3: `BuildProgress.tsx`**
+- [x] **Step 3: `BuildProgress.tsx`**
 
 ```tsx
 import { useEffect, useState } from "react";
@@ -1386,7 +1386,7 @@ export function BuildProgress() {
 }
 ```
 
-- [ ] **Step 4: `ShareButton.tsx`**
+- [x] **Step 4: `ShareButton.tsx`**
 
 ```tsx
 import { useState } from "react";
@@ -1406,7 +1406,7 @@ export function ShareButton() {
 }
 ```
 
-- [ ] **Step 5: `PartCard.tsx`**
+- [x] **Step 5: `PartCard.tsx`**
 
 ```tsx
 import type { PublicPart } from "@/lib/builds";
@@ -1455,7 +1455,7 @@ export function PartCard({
 }
 ```
 
-- [ ] **Step 6: `CategoryTabs.tsx`**
+- [x] **Step 6: `CategoryTabs.tsx`**
 
 ```tsx
 import { CATEGORIES, CATEGORY_LABELS } from "@/lib/catalog";
@@ -1494,7 +1494,7 @@ export function CategoryTabs({
 }
 ```
 
-- [ ] **Step 7: `PresetPills.tsx`**
+- [x] **Step 7: `PresetPills.tsx`**
 
 ```tsx
 import type { ConfiguratorData } from "@/lib/builds";
@@ -1534,7 +1534,7 @@ export function PresetPills({
 }
 ```
 
-- [ ] **Step 8: `VehiclePicker.tsx`**
+- [x] **Step 8: `VehiclePicker.tsx`**
 
 ```tsx
 import type { ConfiguratorData } from "@/lib/builds";
@@ -1567,7 +1567,7 @@ export function VehiclePicker({ vehicles, onPick }: { vehicles: Vehicle[]; onPic
 }
 ```
 
-- [ ] **Step 9: `BuildFooter.tsx`**
+- [x] **Step 9: `BuildFooter.tsx`**
 
 ```tsx
 import { Button } from "@smartekai/ui";
@@ -1606,7 +1606,7 @@ export function BuildFooter({
 }
 ```
 
-- [ ] **Step 10: `ShopList.tsx`**
+- [x] **Step 10: `ShopList.tsx`**
 
 ```tsx
 import type { PublicPart } from "@/lib/builds";
@@ -1654,7 +1654,7 @@ export function ShopList({ parts, region, buildId }: { parts: PublicPart[]; regi
 }
 ```
 
-- [ ] **Step 11: Replace `Toast.tsx`**
+- [x] **Step 11: Replace `Toast.tsx`**
 
 ```tsx
 export function Toast({ message, onDismiss }: { message: string; onDismiss: () => void }) {
@@ -1672,7 +1672,7 @@ export function Toast({ message, onDismiss }: { message: string; onDismiss: () =
 }
 ```
 
-- [ ] **Step 12: Replace `BeforeAfterSlider.tsx`** (clip-path instead of width math; pointer + keyboard support)
+- [x] **Step 12: Replace `BeforeAfterSlider.tsx`** (clip-path instead of width math; pointer + keyboard support)
 
 ```tsx
 import { useRef, useState } from "react";
@@ -1728,7 +1728,7 @@ export function BeforeAfterSlider({ beforeUrl, afterUrl }: { beforeUrl: string; 
 }
 ```
 
-- [ ] **Step 13: Update `PhotoDropzone.tsx`** — restrict accepted types, add a disabled state, and strengthen the empty state
+- [x] **Step 13: Update `PhotoDropzone.tsx`** — restrict accepted types, add a disabled state, and strengthen the empty state
 
 Replace the whole file with:
 
@@ -1800,7 +1800,7 @@ export function PhotoDropzone({ onFileSelected, disabled }: { onFileSelected: (f
 }
 ```
 
-- [ ] **Step 14: Add the `bg-texture` utility** — append to `src/styles.css` (the full theme lands in Task 12; components need the class now):
+- [x] **Step 14: Add the `bg-texture` utility** — append to `src/styles.css` (the full theme lands in Task 12; components need the class now):
 
 ```css
 @layer components {
@@ -1814,7 +1814,7 @@ export function PhotoDropzone({ onFileSelected, disabled }: { onFileSelected: (f
 }
 ```
 
-- [ ] **Step 15: Verify and commit**
+- [x] **Step 15: Verify and commit**
 
 ```bash
 npx turbo run type-check lint --filter=cars-4by4-builder...
@@ -3027,6 +3027,8 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ---
 
 ## Execution log
+
+**2026-10-11 — Task 9 DONE** (`2fa6fff feat(cars-4by4-builder): add configurator and build-page UI components`; 14 files, +352/−35). Created 10 components (`PartImage`, `FitmentBadge`, `BuildProgress`, `ShareButton`, `PartCard`, `CategoryTabs`, `PresetPills`, `VehiclePicker`, `BuildFooter`, `ShopList`) and replaced 3 (`Toast`, `BeforeAfterSlider`, `PhotoDropzone`); appended the `bg-texture` utility to `src/styles.css` (tailwind directives + existing content preserved). Verified: Step 15 turbo type-check/lint 8/8 green; `git show --name-status` = exactly the 10 adds + 3 modifies + `styles.css`, no deps/`turbo.json`/routes touched. Spec-compliance review: ✅ byte-for-byte (`BeforeAfterSlider.tsx` + `PhotoDropzone.tsx` fully diffed; special chars `…` `–` `—` `↗` `⇆` `·` present in the 4 expected files; commit message byte-exact; only `src/components` + `src/styles.css` staged). Code-quality review (inline): ✅ ready to merge — `ShopList` buy link carries `rel="sponsored noopener noreferrer"` + `target="_blank"` with a "Link coming soon" fallback when not buyable; `PartCard` only disables unselected cards (deselect still works) and sets `aria-pressed`; `BeforeAfterSlider` adds a hidden range input for keyboard + pointer capture; `PhotoDropzone` restricts `accept`, adds disabled/keyboard/drag states (client-side type/size still enforced server-side in Task 7). No new deps; legacy `BuildReportPdf.tsx`/`PartsSelectionGrid.tsx` left untouched. No blockers.
 
 **2026-10-11 — Task 8 DONE** (`600d817 feat(cars-4by4-builder): add affiliate click redirect and sitemap routes`; 4 files, +119/−13). Created `src/routes/go/$partId.ts` and `src/routes/sitemap[.]xml.ts` (both byte-for-byte vs plan); appended `CARS_DAILY_RENDER_CAP` + `PUBLIC_SITE_URL` to `turbo.json` `globalEnv` (all 12 existing vars preserved in order); regenerated `routeTree.gen.ts` (now contains `/go/$partId` and `/sitemap.xml`). Verified: `npm run generate-routes` OK; Step 4 turbo type-check/lint 8/8 green. Spec-compliance review: ✅ byte-for-byte (both route files identical; commit = the 2 routes + `routeTree.gen.ts` + `turbo.json` only; message byte-exact; no deps). Code-quality review (inline): ✅ ready to merge — redirect target is DB-controlled `affiliateUrls[region]` (not user input → no open-redirect); 404 when the region has no link; click logged with `build` truncated to 64 chars; sitemap only emits curated+completed slugs with `PUBLIC_SITE_URL ?? request origin` and an explicit `application/xml` content-type. Both handlers are `server`-only (no client bundle). No blockers.
 
