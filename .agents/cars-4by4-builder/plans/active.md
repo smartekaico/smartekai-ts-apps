@@ -1835,13 +1835,13 @@ These two routes link to each other, so they land in one task.
 - Modify: `apps/cars-4by4-builder/src/components/BuildReportPdf.tsx`
 - Delete: `src/routes/upload.tsx`, `src/routes/builds/$sessionId.tsx`, `src/lib/generate-build.ts`
 
-- [ ] **Step 1: Delete the replaced files**
+- [x] **Step 1: Delete the replaced files**
 
 ```bash
 git rm apps/cars-4by4-builder/src/routes/upload.tsx "apps/cars-4by4-builder/src/routes/builds/\$sessionId.tsx" apps/cars-4by4-builder/src/lib/generate-build.ts
 ```
 
-- [ ] **Step 2: Create `src/components/PhotoStep.tsx`**
+- [x] **Step 2: Create `src/components/PhotoStep.tsx`**
 
 ```tsx
 import { useState } from "react";
@@ -1943,7 +1943,7 @@ export function PhotoStep({
 }
 ```
 
-- [ ] **Step 3: Create `src/routes/build.tsx`**
+- [x] **Step 3: Create `src/routes/build.tsx`**
 
 ```tsx
 import { useState } from "react";
@@ -2082,7 +2082,7 @@ function Configurator() {
 }
 ```
 
-- [ ] **Step 4: Update `src/components/BuildReportPdf.tsx` for region pricing and totals**
+- [x] **Step 4: Update `src/components/BuildReportPdf.tsx` for region pricing and totals**
 
 Replace the file with:
 
@@ -2159,7 +2159,7 @@ export function BuildReportPdf({
 }
 ```
 
-- [ ] **Step 5: Create `src/routes/builds/$slug.tsx`**
+- [x] **Step 5: Create `src/routes/builds/$slug.tsx`**
 
 ```tsx
 import { useEffect } from "react";
@@ -2323,7 +2323,7 @@ function BuildPage() {
 }
 ```
 
-- [ ] **Step 6: Regenerate routes, verify, build**
+- [x] **Step 6: Regenerate routes, verify, build**
 
 ```bash
 npm run generate-routes --workspace=cars-4by4-builder
@@ -2332,7 +2332,7 @@ npx turbo run type-check lint build --filter=cars-4by4-builder...
 
 Expected: green. `routeTree.gen.ts` has `/build` and `/builds/$slug`, no `/upload` or `/builds/$sessionId`. (`src/routes/index.tsx` still uses `queries.ts` — replaced in Task 11.)
 
-- [ ] **Step 7: Manual check (dev server)**
+- [x] **Step 7: Manual check (dev server)**
 
 ```bash
 npm run dev --workspace=cars-4by4-builder     # http://localhost:3002
@@ -2345,7 +2345,7 @@ npm run dev --workspace=cars-4by4-builder     # http://localhost:3002
 5. Drop a real truck photo → green "✓ …" badge → Generate → lands on `/builds/<uuid>` with progress, then the result without a manual refresh.
 6. Open `/builds/does-not-exist` → 404 page.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add -A apps/cars-4by4-builder/src
@@ -3027,6 +3027,8 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ---
 
 ## Execution log
+
+**2026-10-11 — Task 10 DONE** (`38e20b5 feat(cars-4by4-builder): add /build configurator and /builds/$slug page with async render`; 9 files, +470/−335). Created `src/components/PhotoStep.tsx`, `src/routes/build.tsx`, `src/routes/builds/$slug.tsx`; modified `src/components/BuildReportPdf.tsx` (region pricing + totals); deleted `src/routes/upload.tsx`, `src/routes/builds/$sessionId.tsx`, `src/lib/generate-build.ts` (`git rm`); regenerated `src/routeTree.gen.ts` (now `/build` + `/builds/$slug`, no `/upload`/`$sessionId`). Verified: Step 6 turbo type-check/lint/build **13/13 green**; commit subject byte-exact incl. literal `$slug`. **Deviation (plan-level ordering conflict, resolved by a 1-line bridge):** Step 6 first failed because `src/routes/index.tsx:18` still did `navigate({ to: "/upload", search: { parts: selected } })` — a **Task 11** file that the regenerated route tree no longer type-checks once `/upload` is deleted (the plan's own note "`index.tsx` still uses `queries.ts` — replaced in Task 11" missed that deleting the route breaks its typed navigation *now*). Fix: changed that single line to `to: "/build"` (valid `parts` search on `/build`); `index.tsx` is fully rewritten in Task 11, so this is a throwaway bridge, not scope expansion. Also confirmed `/`'s 500 is **pre-existing** (uncaused by Task 10): `src/lib/queries.ts` imports `parts`/`upgradeSessions` from the **shared** `@smartekai/db` schema, dropped in Task 3 — Task 11 replaces both `index.tsx` and `queries.ts`. Step 7 (dev-server manual check): automated smoke only — `/build` SSR 200 rendering "Pick your truck" (title "Build your 4x4"); `/builds/does-not-exist` → 404; `/upload` → 404. Interactive items 1–5 (URL param flow, preset totals, 12-cap disable, non-vehicle rejection, real-photo → generate → progress → result) require a real truck photo + Gemini and are deferred to Task 15 Step 2's browser click-through. No new deps. No blockers.
 
 **2026-10-11 — Task 9 DONE** (`2fa6fff feat(cars-4by4-builder): add configurator and build-page UI components`; 14 files, +352/−35). Created 10 components (`PartImage`, `FitmentBadge`, `BuildProgress`, `ShareButton`, `PartCard`, `CategoryTabs`, `PresetPills`, `VehiclePicker`, `BuildFooter`, `ShopList`) and replaced 3 (`Toast`, `BeforeAfterSlider`, `PhotoDropzone`); appended the `bg-texture` utility to `src/styles.css` (tailwind directives + existing content preserved). Verified: Step 15 turbo type-check/lint 8/8 green; `git show --name-status` = exactly the 10 adds + 3 modifies + `styles.css`, no deps/`turbo.json`/routes touched. Spec-compliance review: ✅ byte-for-byte (`BeforeAfterSlider.tsx` + `PhotoDropzone.tsx` fully diffed; special chars `…` `–` `—` `↗` `⇆` `·` present in the 4 expected files; commit message byte-exact; only `src/components` + `src/styles.css` staged). Code-quality review (inline): ✅ ready to merge — `ShopList` buy link carries `rel="sponsored noopener noreferrer"` + `target="_blank"` with a "Link coming soon" fallback when not buyable; `PartCard` only disables unselected cards (deselect still works) and sets `aria-pressed`; `BeforeAfterSlider` adds a hidden range input for keyboard + pointer capture; `PhotoDropzone` restricts `accept`, adds disabled/keyboard/drag states (client-side type/size still enforced server-side in Task 7). No new deps; legacy `BuildReportPdf.tsx`/`PartsSelectionGrid.tsx` left untouched. No blockers.
 
