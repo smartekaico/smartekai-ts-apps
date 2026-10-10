@@ -757,7 +757,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 **Files:**
 - Create: `apps/cars-4by4-builder/src/server/rate-limit.ts`, `request.ts`, `images.ts`, `render-core.ts`, `generate.ts`
 
-- [ ] **Step 1: Create `src/server/rate-limit.ts`**
+- [x] **Step 1: Create `src/server/rate-limit.ts`**
 
 ```ts
 type Rule = { key: string; limit: number; windowMs: number };
@@ -793,7 +793,7 @@ export const renderRules = (ip: string): Rule[] => [
 export const photoRules = (ip: string): Rule[] => [{ key: `photo:h:${ip}`, limit: 20, windowMs: HOUR }];
 ```
 
-- [ ] **Step 2: Create `src/server/request.ts`**
+- [x] **Step 2: Create `src/server/request.ts`**
 
 ```ts
 import { getRequest, getRequestIP } from "@tanstack/react-start/server";
@@ -811,7 +811,7 @@ export function requestIp(): string {
 }
 ```
 
-- [ ] **Step 3: Create `src/server/images.ts`**
+- [x] **Step 3: Create `src/server/images.ts`**
 
 ```ts
 import { BUCKETS, getPresignedReadUrl, getPublicUrl } from "@smartekai/storage";
@@ -830,7 +830,7 @@ export function publicImageUrl(key: string): string {
 }
 ```
 
-- [ ] **Step 4: Create `src/server/render-core.ts`**
+- [x] **Step 4: Create `src/server/render-core.ts`**
 
 ```ts
 import { generateUpgradeRender } from "@smartekai/ai";
@@ -854,7 +854,7 @@ export async function renderUpgrade(input: {
 }
 ```
 
-- [ ] **Step 5: Create `src/server/generate.ts`**
+- [x] **Step 5: Create `src/server/generate.ts`**
 
 ```ts
 import { eq, inArray } from "drizzle-orm";
@@ -896,7 +896,7 @@ export async function runGeneration(buildId: string): Promise<void> {
 }
 ```
 
-- [ ] **Step 6: Spot-check the rate limiter**
+- [x] **Step 6: Spot-check the rate limiter**
 
 ```bash
 cd apps/cars-4by4-builder
@@ -910,7 +910,7 @@ cd ../..
 
 Expected: `[ true, true, true, true, true, false ] true`
 
-- [ ] **Step 7: Verify and commit**
+- [x] **Step 7: Verify and commit**
 
 ```bash
 npx turbo run type-check lint --filter=cars-4by4-builder...
@@ -3027,6 +3027,8 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ---
 
 ## Execution log
+
+**2026-10-11 — Task 6 DONE** (`34700c4 feat(cars-4by4-builder): add rate limiter, request context, image URLs and async generation`; 5 files, +114). Created `src/server/{rate-limit,request,images,render-core,generate}.ts`, all byte-for-byte vs plan. Verified: Step 6 spot-check re-run → `[ true, true, true, true, true, false ] true`; Step 7 turbo type-check/lint 8/8 green. Spec-compliance review: ✅ (all 5 files exact incl. em-dash in `"Generation failed — try again."`; the deliberate relative-import/no-`drizzle-orm` split kept for `render-core`/`images` vs alias+`drizzle` for `generate`; commit message byte-exact; only `src/server` staged; no deps). Code-quality review (inline): ✅ ready to merge — dependency exports all confirmed present (`generateUpgradeRender`, storage fns, `getRequest`/`getRequestIP` resolve via the `@tanstack/react-start/server` re-export chain); `getDbCars()` lazy inside `runGeneration`; `render-core`/`images` import-free of drizzle as intended. Process note carried from Task 5: code-quality was verified inline (commands are sub-second; the heavyweight review subagent was the time sink). No blockers.
 
 **2026-10-10 — Task 5 DONE** (`c549a1dc feat(cars-4by4-builder): seed vehicles, re-categorized parts and presets`; 4 files, +95/−39). Created `src/seed/{vehicles,presets}.ts`; rewrote `src/seed/parts.ts` (21 placeholder parts, new categories) and `scripts/seed.ts` (idempotent upserts via `@smartekai/db/cars`, preserves `stockImageKey`). Verified: Step 5 output `21 9 []` (re-confirmed independently, 0.65s); Step 6 seed printed the 4 expected lines; live DB rows confirmed read-only `vehicles=3, parts=21, presets=9`; Step 7 turbo type-check/lint 8/8 green (0 cached). Spec-compliance review: ✅ byte-for-byte (all 4 files exact vs plan; 21 parts across the 5 allowed categories; `SeedPart` non-exported; em-dashes/`°` intact; commit message byte-exact; no deps). Code-quality review: ✅ ready to merge — no dup part ids / preset ids / preset slugs; every `preset.vehicleId`, `part.vehicleIds`, `preset.partIds` ref resolves; all `imageUrl` empty and `affiliateUrls` `{}`; `getDbCars()` invoked only inside `main()` (env-var safe); categories exactly match `CATEGORIES`. Process note: two review subagent runs were cancelled before completion — diagnosis showed the *commands* are all sub-second (turbo 0.4s cached, step 5 0.65s, seed 6.2s wall / 0.64s CPU where ~5.5s is npm+neon-http teardown, not a hang); the time sink was the heavyweight `general` review subagent itself, so the Task 5 code-quality verification was performed inline instead. Carry-forward: Task 4's "do NOT run db:seed before Task 5" is now resolved.
 
