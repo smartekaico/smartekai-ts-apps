@@ -26,6 +26,7 @@ export default defineConfig(({ mode }) => {
       external: [
         "@smartekai/ui",
         "@smartekai/db",
+        "@smartekai/db/cars",
         "@smartekai/ai",
         "@smartekai/storage",
       ],

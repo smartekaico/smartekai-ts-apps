@@ -5,6 +5,10 @@
   "types": "dist/index.d.ts",
   "exports": {
     ".": "./dist/index.js",
+    "./cars": {
+      "types": "./dist/cars/index.d.ts",
+      "default": "./dist/cars/index.js"
+    },
     "./*": "./dist/*"
   },
   "scripts": {
@@ -12,6 +16,7 @@
     "watch": "tsc -w",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
+    "db:push:cars": "drizzle-kit push --config=drizzle.cars.config.ts",
     "lint": "npx @biomejs/biome lint --write ./src",
     "type-check": "tsc --noEmit"
   },
