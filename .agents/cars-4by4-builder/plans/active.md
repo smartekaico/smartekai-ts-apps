@@ -441,7 +441,7 @@ Expected: drizzle-kit lists creating `vehicles`, `parts`, `presets`, `builds`, `
 - Create: `apps/cars-4by4-builder/src/lib/catalog.ts`, `src/lib/region.ts`, `src/lib/pricing.ts`, `src/lib/prompt.ts`
 - Modify: `apps/cars-4by4-builder/src/lib/advisories.ts`
 
-- [ ] **Step 1: Create `src/lib/catalog.ts`**
+- [x] **Step 1: Create `src/lib/catalog.ts`**
 
 ```ts
 export const CATEGORIES = ["armor", "wheels_tires", "overland", "suspension", "lighting"] as const;
@@ -464,7 +464,7 @@ export const FITMENT_BADGES: Record<string, { label: string; tone: "ok" | "warn"
 };
 ```
 
-- [ ] **Step 2: Create `src/lib/region.ts`**
+- [x] **Step 2: Create `src/lib/region.ts`**
 
 ```ts
 export type Region = "us" | "gcc";
@@ -494,7 +494,7 @@ export function formatPrice(usd: number, region: Region): string {
 }
 ```
 
-- [ ] **Step 3: Create `src/lib/pricing.ts`**
+- [x] **Step 3: Create `src/lib/pricing.ts`**
 
 ```ts
 export const LABOR_RATE_USD = 100;
@@ -509,7 +509,7 @@ export function summarize(parts: PricedPart[]) {
 }
 ```
 
-- [ ] **Step 4: Create `src/lib/prompt.ts`** (relative-import-free so scripts can use it)
+- [x] **Step 4: Create `src/lib/prompt.ts`** (relative-import-free so scripts can use it)
 
 ```ts
 type Detected = { make: string | null; model: string | null; color: string | null } | null;
@@ -529,7 +529,7 @@ export function buildRenderPrompt(vehicleDesc: string, snippets: string[]): stri
 }
 ```
 
-- [ ] **Step 5: Update `src/lib/advisories.ts` category keys**
+- [x] **Step 5: Update `src/lib/advisories.ts` category keys**
 
 Replace the `CATEGORY_ADVISORIES` constant with:
 
@@ -543,7 +543,7 @@ const CATEGORY_ADVISORIES: Record<string, string> = {
 };
 ```
 
-- [ ] **Step 6: Spot-check the pure functions**
+- [x] **Step 6: Spot-check the pure functions**
 
 ```bash
 cd apps/cars-4by4-builder
@@ -564,7 +564,7 @@ $2,450 AED 8,998
 { partsUsd: 3500, laborHours: 5.5, laborUsd: 550, totalUsd: 4050 }
 ```
 
-- [ ] **Step 7: Verify and commit**
+- [x] **Step 7: Verify and commit**
 
 ```bash
 npx turbo run type-check lint --filter=cars-4by4-builder...
@@ -3027,6 +3027,8 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ---
 
 ## Execution log
+
+**2026-10-10 — Task 4 DONE** (`ffc390b feat(cars-4by4-builder): add region, pricing, catalog and prompt helpers`). Created `src/lib/{catalog,region,pricing,prompt}.ts`; replaced `CATEGORY_ADVISORIES` keys in `advisories.ts` with the new catalog categories (logic/types untouched). Verified: spot-check output matches expected exactly (`gcc us us` / `$2,450 AED 8,998` / `{ partsUsd: 3500, laborHours: 5.5, laborUsd: 550, totalUsd: 4050 }`); turbo type-check/lint 8/8 green (`--force`, 0 cached). Spec-compliance review: ✅ (byte-for-byte; only advisories constant changed; no deps; commit message exact). Code-quality review: ✅ ready to merge — no critical/important; all four files genuinely pure (zero imports, `prompt.ts` fully import-free for Task 6 scripts), cookie regex validated against Task 12's RegionSwitch format. Minor (deferred/plan-level): no EOF newlines on new files (cosmetic); `.filter(Boolean)` doesn't narrow `string|null` under TS 6 (inert today); empty-snippets prompt has dangling comma (callers always pass ≥1); `FITMENT_BADGES`/`CATEGORY_ADVISORIES` are `Record<string, …>` not exhaustively keyed — plan amendment suggested for later. Carry forward: **do NOT run `npm run db:seed` before Task 5** — old `src/seed/parts.ts` still uses the previous category keys (`front_bumper`, `roof_tent`, `lift_kit`); Task 5 rewrites it first.
 
 **2026-10-10 — Task 3 DONE** (database only — no code commits). User confirmed the ASK-FIRST step. Dropped `upgrade_sessions` + old-shape `parts` via raw SQL on `DATABASE_NEONDB_SMARTEKAI`, then ran `npm run db:push:cars --workspace=@smartekai/db`. Result: `vehicles`, `parts`, `presets`, `builds`, `outbound_clicks` created with exactly the planned column shapes (verified against information_schema); `upgrade_sessions` gone; `cars_user/session/account/verification` untouched. `tablesFilter` held — no leftover legal/medical table was modified or dropped. One deviation to carry forward: drizzle-kit's push attempted to drop the stray `cases_id_seq` sequence (a legal/medical leftover owned by `cases` still present in the cars DB) and failed with a dependency error, surfacing as a non-clean `drizzle-kit push` exit — the DB state itself is exactly as planned, and a re-run of `db:push:cars` should now be a no-op apart from that same tolerated sequence hiccup. Unrelated SSL-mode deprecation warning from `pg` (non-blocking).
 
