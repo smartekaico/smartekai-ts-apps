@@ -584,7 +584,7 @@ Part images and affiliate URLs stay empty until the user supplies real, permitte
 - Create: `apps/cars-4by4-builder/src/seed/vehicles.ts`, `src/seed/presets.ts`
 - Rewrite: `apps/cars-4by4-builder/src/seed/parts.ts`, `scripts/seed.ts`
 
-- [ ] **Step 1: Create `src/seed/vehicles.ts`**
+- [x] **Step 1: Create `src/seed/vehicles.ts`**
 
 ```ts
 export const seedVehicles = [
@@ -594,7 +594,7 @@ export const seedVehicles = [
 ];
 ```
 
-- [ ] **Step 2: Rewrite `src/seed/parts.ts`**
+- [x] **Step 2: Rewrite `src/seed/parts.ts`**
 
 ```ts
 // PLACEHOLDER CATALOG: imageUrl "" and affiliateUrls {} until real, permitted
@@ -650,7 +650,7 @@ export const seedParts = catalog.map((p) => ({
 }));
 ```
 
-- [ ] **Step 3: Create `src/seed/presets.ts`**
+- [x] **Step 3: Create `src/seed/presets.ts`**
 
 ```ts
 const PRESET_PARTS = {
@@ -675,7 +675,7 @@ export const seedPresets = Object.entries(VEHICLE_SLUGS).flatMap(([vehicleId, ve
 );
 ```
 
-- [ ] **Step 4: Rewrite `scripts/seed.ts`**
+- [x] **Step 4: Rewrite `scripts/seed.ts`**
 
 ```ts
 import { getDbCars, parts, presets, vehicles } from "@smartekai/db/cars";
@@ -714,7 +714,7 @@ main().catch((err) => {
 });
 ```
 
-- [ ] **Step 5: Verify every preset part exists**
+- [x] **Step 5: Verify every preset part exists**
 
 ```bash
 cd apps/cars-4by4-builder
@@ -730,7 +730,7 @@ cd ../..
 
 Expected: `21 9 []`
 
-- [ ] **Step 6: Run the seed (requires Task 3 done)**
+- [x] **Step 6: Run the seed (requires Task 3 done)**
 
 ```bash
 npm run db:seed --workspace=cars-4by4-builder
@@ -738,7 +738,7 @@ npm run db:seed --workspace=cars-4by4-builder
 
 Expected: `Seeding 3 vehicles...` / `Seeding 21 parts...` / `Seeding 9 presets...` / `Seed complete.`
 
-- [ ] **Step 7: Verify and commit**
+- [x] **Step 7: Verify and commit**
 
 ```bash
 npx turbo run type-check lint --filter=cars-4by4-builder...
@@ -3027,6 +3027,8 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ---
 
 ## Execution log
+
+**2026-10-10 — Task 5 DONE** (`c549a1dc feat(cars-4by4-builder): seed vehicles, re-categorized parts and presets`; 4 files, +95/−39). Created `src/seed/{vehicles,presets}.ts`; rewrote `src/seed/parts.ts` (21 placeholder parts, new categories) and `scripts/seed.ts` (idempotent upserts via `@smartekai/db/cars`, preserves `stockImageKey`). Verified: Step 5 output `21 9 []` (re-confirmed independently, 0.65s); Step 6 seed printed the 4 expected lines; live DB rows confirmed read-only `vehicles=3, parts=21, presets=9`; Step 7 turbo type-check/lint 8/8 green (0 cached). Spec-compliance review: ✅ byte-for-byte (all 4 files exact vs plan; 21 parts across the 5 allowed categories; `SeedPart` non-exported; em-dashes/`°` intact; commit message byte-exact; no deps). Code-quality review: ✅ ready to merge — no dup part ids / preset ids / preset slugs; every `preset.vehicleId`, `part.vehicleIds`, `preset.partIds` ref resolves; all `imageUrl` empty and `affiliateUrls` `{}`; `getDbCars()` invoked only inside `main()` (env-var safe); categories exactly match `CATEGORIES`. Process note: two review subagent runs were cancelled before completion — diagnosis showed the *commands* are all sub-second (turbo 0.4s cached, step 5 0.65s, seed 6.2s wall / 0.64s CPU where ~5.5s is npm+neon-http teardown, not a hang); the time sink was the heavyweight `general` review subagent itself, so the Task 5 code-quality verification was performed inline instead. Carry-forward: Task 4's "do NOT run db:seed before Task 5" is now resolved.
 
 **2026-10-10 — Task 4 DONE** (`ffc390b feat(cars-4by4-builder): add region, pricing, catalog and prompt helpers`). Created `src/lib/{catalog,region,pricing,prompt}.ts`; replaced `CATEGORY_ADVISORIES` keys in `advisories.ts` with the new catalog categories (logic/types untouched). Verified: spot-check output matches expected exactly (`gcc us us` / `$2,450 AED 8,998` / `{ partsUsd: 3500, laborHours: 5.5, laborUsd: 550, totalUsd: 4050 }`); turbo type-check/lint 8/8 green (`--force`, 0 cached). Spec-compliance review: ✅ (byte-for-byte; only advisories constant changed; no deps; commit message exact). Code-quality review: ✅ ready to merge — no critical/important; all four files genuinely pure (zero imports, `prompt.ts` fully import-free for Task 6 scripts), cookie regex validated against Task 12's RegionSwitch format. Minor (deferred/plan-level): no EOF newlines on new files (cosmetic); `.filter(Boolean)` doesn't narrow `string|null` under TS 6 (inert today); empty-snippets prompt has dangling comma (callers always pass ≥1); `FITMENT_BADGES`/`CATEGORY_ADVISORIES` are `Record<string, …>` not exhaustively keyed — plan amendment suggested for later. Carry forward: **do NOT run `npm run db:seed` before Task 5** — old `src/seed/parts.ts` still uses the previous category keys (`front_bumper`, `roof_tent`, `lift_kit`); Task 5 rewrites it first.
 
