@@ -1235,7 +1235,7 @@ If lint flags `as string | undefined` on `ACCEPTED_TYPES[...]` as unnecessary, t
 - Create: `apps/cars-4by4-builder/src/routes/go/$partId.ts`, `apps/cars-4by4-builder/src/routes/sitemap[.]xml.ts`
 - Modify: `turbo.json`
 
-- [ ] **Step 1: Create `src/routes/go/$partId.ts`**
+- [x] **Step 1: Create `src/routes/go/$partId.ts`**
 
 ```ts
 import { createFileRoute } from "@tanstack/react-router";
@@ -1272,7 +1272,7 @@ export const Route = createFileRoute("/go/$partId")({
 });
 ```
 
-- [ ] **Step 2: Create `src/routes/sitemap[.]xml.ts`**
+- [x] **Step 2: Create `src/routes/sitemap[.]xml.ts`**
 
 ```ts
 import { createFileRoute } from "@tanstack/react-router";
@@ -1303,11 +1303,11 @@ export const Route = createFileRoute("/sitemap.xml")({
 });
 ```
 
-- [ ] **Step 3: Add the two env vars to `turbo.json` `globalEnv`**
+- [x] **Step 3: Add the two env vars to `turbo.json` `globalEnv`**
 
 Append `"CARS_DAILY_RENDER_CAP"` and `"PUBLIC_SITE_URL"` to the `globalEnv` array.
 
-- [ ] **Step 4: Regenerate routes, verify, commit**
+- [x] **Step 4: Regenerate routes, verify, commit**
 
 ```bash
 npm run generate-routes --workspace=cars-4by4-builder
@@ -3027,6 +3027,8 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ---
 
 ## Execution log
+
+**2026-10-11 — Task 8 DONE** (`600d817 feat(cars-4by4-builder): add affiliate click redirect and sitemap routes`; 4 files, +119/−13). Created `src/routes/go/$partId.ts` and `src/routes/sitemap[.]xml.ts` (both byte-for-byte vs plan); appended `CARS_DAILY_RENDER_CAP` + `PUBLIC_SITE_URL` to `turbo.json` `globalEnv` (all 12 existing vars preserved in order); regenerated `routeTree.gen.ts` (now contains `/go/$partId` and `/sitemap.xml`). Verified: `npm run generate-routes` OK; Step 4 turbo type-check/lint 8/8 green. Spec-compliance review: ✅ byte-for-byte (both route files identical; commit = the 2 routes + `routeTree.gen.ts` + `turbo.json` only; message byte-exact; no deps). Code-quality review (inline): ✅ ready to merge — redirect target is DB-controlled `affiliateUrls[region]` (not user input → no open-redirect); 404 when the region has no link; click logged with `build` truncated to 64 chars; sitemap only emits curated+completed slugs with `PUBLIC_SITE_URL ?? request origin` and an explicit `application/xml` content-type. Both handlers are `server`-only (no client bundle). No blockers.
 
 **2026-10-11 — Task 7 DONE** (`c1ea1fa feat(cars-4by4-builder): add checkPhoto/startBuild/getBuild/gallery server functions`; 1 file, +281). Created `src/lib/builds.ts` verbatim (exports `getRegion`, `getConfigurator`, `PublicPart`/`ConfiguratorData`, `checkPhoto`, `startBuild`, `getBuild`, `getGallery`). All pre-flight symbol checks passed (`detectVehicle` → `VehicleDetection` with the spec's field names; every referenced schema column exists). Verified: Step 2 turbo type-check/lint 8/8 green (the documented `as string | undefined` lint note did **not** fire → line left verbatim). Spec-compliance review: ✅ byte-for-byte (281 lines; 10 em-dashes intact at 85/105/146/149/182/201; commit is the single file; message byte-exact; no deps). Code-quality review (inline): ✅ ready to merge — `checkPhoto` rate-limits + type/size-checks **before** upload and deletes the object on detection throw and on invalid vehicle (no orphans); key is `uploads/${uuid}.${ext}`, never the user filename; `startBuild` dedupes ids, caps `MAX_PARTS`, verifies fitment via `vehicleIds`, enforces daily cap, and guards the draft→processing update with `eq(status, "draft")`; `void runGeneration(id)` intentionally un-awaited (page polls `getBuild`); `getBuild` throws `notFound()` on draft and lazily marks stale `processing` → `failed`; `getGallery` skips builds missing slug/renderKey then sorts by vehicle order → preset sort. No raw SQL, no new deps. No blockers.
 
