@@ -14,10 +14,9 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.dbCars = exports.dbMedical = exports.dbLegal = exports.db = void 0;
+exports.dbMedical = exports.dbLegal = exports.db = void 0;
 __exportStar(require("./schema"), exports);
 var client_1 = require("./client");
 Object.defineProperty(exports, "db", { enumerable: true, get: function () { return client_1.db; } });
 Object.defineProperty(exports, "dbLegal", { enumerable: true, get: function () { return client_1.dbLegal; } });
 Object.defineProperty(exports, "dbMedical", { enumerable: true, get: function () { return client_1.dbMedical; } });
-Object.defineProperty(exports, "dbCars", { enumerable: true, get: function () { return client_1.dbCars; } });

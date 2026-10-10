@@ -8,7 +8,6 @@ import {
   customType,
   index,
   serial,
-  numeric,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -621,96 +620,6 @@ export const products = pgTable("products", {
     .notNull()
     .references(() => models.id),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-// ============================================
-// CARS 4X4 CUSTOMIZER TABLES (dedicated DB — see dbCars in client.ts)
-// ============================================
-
-export const carsUsers = pgTable("cars_user", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull(),
-  email: text("email").notNull().unique(),
-  emailVerified: boolean("email_verified").notNull(),
-  image: text("image"),
-  isAnonymous: boolean("is_anonymous").default(false),
-  createdAt: timestamp("created_at").notNull(),
-  updatedAt: timestamp("updated_at").notNull(),
-});
-
-export const carsSessions = pgTable(
-  "cars_session",
-  {
-    id: text("id").primaryKey(),
-    userId: text("user_id")
-      .notNull()
-      .references(() => carsUsers.id, { onDelete: "cascade" }),
-    token: text("token").notNull(),
-    expiresAt: timestamp("expires_at").notNull(),
-    ipAddress: text("ip_address"),
-    userAgent: text("user_agent"),
-    createdAt: timestamp("created_at").notNull(),
-    updatedAt: timestamp("updated_at").notNull(),
-  },
-  (table) => ({
-    tokenIdx: index("cars_session_token_idx").on(table.token),
-    userIdx: index("cars_session_user_idx").on(table.userId),
-  }),
-);
-
-export const carsAccounts = pgTable(
-  "cars_account",
-  {
-    id: text("id").primaryKey(),
-    userId: text("user_id")
-      .notNull()
-      .references(() => carsUsers.id, { onDelete: "cascade" }),
-    accountId: text("account_id").notNull(),
-    providerId: text("provider_id").notNull(),
-    accessToken: text("access_token"),
-    refreshToken: text("refresh_token"),
-    expiresAt: timestamp("expires_at"),
-    password: text("password"),
-    createdAt: timestamp("created_at").notNull(),
-    updatedAt: timestamp("updated_at").notNull(),
-  },
-  (table) => ({
-    userIdx: index("cars_account_user_idx").on(table.userId),
-  }),
-);
-
-export const carsVerifications = pgTable("cars_verification", {
-  id: text("id").primaryKey(),
-  identifier: text("identifier").notNull(),
-  value: text("value").notNull(),
-  expiresAt: timestamp("expires_at").notNull(),
-  createdAt: timestamp("created_at").notNull(),
-  updatedAt: timestamp("updated_at").notNull(),
-});
-
-export const parts = pgTable("parts", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull(),
-  category: text("category").notNull(), // "front_bumper" | "wheels_tires" | "roof_tent" | "lift_kit" | "snorkel" | "lighting"
-  brand: text("brand").notNull(),
-  priceUsd: numeric("price_usd", { precision: 10, scale: 2 }).notNull(),
-  laborHoursEst: numeric("labor_hours_est", { precision: 4, scale: 1 }).notNull(),
-  fitmentDifficulty: text("fitment_difficulty").notNull(), // "Direct Bolt-On" | "Minor Trimming" | "Custom Fabrication"
-  aiPromptSnippet: text("ai_prompt_snippet").notNull(),
-  imageUrl: text("image_url").notNull(),
-  affiliateUrl: text("affiliate_url").notNull(),
-});
-
-export const upgradeSessions = pgTable("upgrade_sessions", {
-  id: text("id").primaryKey(),
-  userId: text("user_id").references(() => carsUsers.id), // nullable — guest by default
-  originalImageUrl: text("original_image_url").notNull(),
-  transformedImageUrl: text("transformed_image_url"),
-  detectedVehicle: jsonb("detected_vehicle"), // { make, model, year, color }
-  selectedPartIds: text("selected_part_ids").array().notNull(),
-  status: text("status").default("pending").notNull(), // "pending" | "processing" | "completed" | "failed"
-  isPublic: boolean("is_public").default(true),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // ============================================

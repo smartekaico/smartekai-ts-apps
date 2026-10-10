@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.dbCars = exports.dbMedical = exports.dbLegal = exports.db = void 0;
+exports.dbMedical = exports.dbLegal = exports.db = void 0;
 const neon_http_1 = require("drizzle-orm/neon-http");
 const serverless_1 = require("@neondatabase/serverless");
 const schema = __importStar(require("./schema"));
@@ -48,11 +48,9 @@ function requireEnv(...names) {
 // Support separate databases per application
 const legalSql = (0, serverless_1.neon)(requireEnv("DATABASE_LEGAL_URL", "DATABASE_URL"));
 const medicalSql = (0, serverless_1.neon)(requireEnv("DATABASE_MEDICAL_URL", "DATABASE_URL"));
-const carsSql = (0, serverless_1.neon)(requireEnv("DATABASE_NEONDB_SMARTEKAI"));
 // Default database (uses DATABASE_URL or DATABASE_LEGAL_URL for backward compatibility)
 const sql = (0, serverless_1.neon)(requireEnv("DATABASE_URL", "DATABASE_LEGAL_URL"));
 exports.db = (0, neon_http_1.drizzle)({ client: sql, schema });
 // Dedicated database connections
 exports.dbLegal = (0, neon_http_1.drizzle)({ client: legalSql, schema });
 exports.dbMedical = (0, neon_http_1.drizzle)({ client: medicalSql, schema });
-exports.dbCars = (0, neon_http_1.drizzle)({ client: carsSql, schema });

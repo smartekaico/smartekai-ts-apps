@@ -2,12 +2,12 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { anonymous } from "better-auth/plugins";
 import {
-  dbCars,
+  getDbCars,
   carsUsers,
   carsSessions,
   carsAccounts,
   carsVerifications,
-} from "@smartekai/db";
+} from "@smartekai/db/cars";
 
 const getBaseUrl = () => {
   if (typeof window !== "undefined") return "";
@@ -22,7 +22,7 @@ export const auth = betterAuth({
     "http://cars.smartekai.com",
     process.env.BETTER_AUTH_URL || "",
   ].filter(Boolean),
-  database: drizzleAdapter(dbCars, {
+  database: drizzleAdapter(getDbCars(), {
     provider: "pg",
     schema: {
       user: carsUsers,
