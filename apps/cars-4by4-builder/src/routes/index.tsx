@@ -15,7 +15,7 @@ function Home() {
   const navigate = useNavigate();
 
   function handleContinue() {
-    navigate({ to: "/upload", search: { parts: selected } });
+    navigate({ to: "/build", search: { parts: selected } });
   }
 
   return (
