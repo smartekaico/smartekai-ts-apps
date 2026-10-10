@@ -929,7 +929,7 @@ If `getRequest`/`getRequestIP` fail to resolve from `@tanstack/react-start/serve
 **Files:**
 - Create: `apps/cars-4by4-builder/src/lib/builds.ts`
 
-- [ ] **Step 1: Create `src/lib/builds.ts`**
+- [x] **Step 1: Create `src/lib/builds.ts`**
 
 ```ts
 import { createServerFn } from "@tanstack/react-start";
@@ -1215,7 +1215,7 @@ export const getGallery = createServerFn({ method: "GET" }).handler(async () => 
 });
 ```
 
-- [ ] **Step 2: Verify and commit**
+- [x] **Step 2: Verify and commit**
 
 ```bash
 npx turbo run type-check lint --filter=cars-4by4-builder...
@@ -3027,6 +3027,8 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ---
 
 ## Execution log
+
+**2026-10-11 — Task 7 DONE** (`c1ea1fa feat(cars-4by4-builder): add checkPhoto/startBuild/getBuild/gallery server functions`; 1 file, +281). Created `src/lib/builds.ts` verbatim (exports `getRegion`, `getConfigurator`, `PublicPart`/`ConfiguratorData`, `checkPhoto`, `startBuild`, `getBuild`, `getGallery`). All pre-flight symbol checks passed (`detectVehicle` → `VehicleDetection` with the spec's field names; every referenced schema column exists). Verified: Step 2 turbo type-check/lint 8/8 green (the documented `as string | undefined` lint note did **not** fire → line left verbatim). Spec-compliance review: ✅ byte-for-byte (281 lines; 10 em-dashes intact at 85/105/146/149/182/201; commit is the single file; message byte-exact; no deps). Code-quality review (inline): ✅ ready to merge — `checkPhoto` rate-limits + type/size-checks **before** upload and deletes the object on detection throw and on invalid vehicle (no orphans); key is `uploads/${uuid}.${ext}`, never the user filename; `startBuild` dedupes ids, caps `MAX_PARTS`, verifies fitment via `vehicleIds`, enforces daily cap, and guards the draft→processing update with `eq(status, "draft")`; `void runGeneration(id)` intentionally un-awaited (page polls `getBuild`); `getBuild` throws `notFound()` on draft and lazily marks stale `processing` → `failed`; `getGallery` skips builds missing slug/renderKey then sorts by vehicle order → preset sort. No raw SQL, no new deps. No blockers.
 
 **2026-10-11 — Task 6 DONE** (`34700c4 feat(cars-4by4-builder): add rate limiter, request context, image URLs and async generation`; 5 files, +114). Created `src/server/{rate-limit,request,images,render-core,generate}.ts`, all byte-for-byte vs plan. Verified: Step 6 spot-check re-run → `[ true, true, true, true, true, false ] true`; Step 7 turbo type-check/lint 8/8 green. Spec-compliance review: ✅ (all 5 files exact incl. em-dash in `"Generation failed — try again."`; the deliberate relative-import/no-`drizzle-orm` split kept for `render-core`/`images` vs alias+`drizzle` for `generate`; commit message byte-exact; only `src/server` staged; no deps). Code-quality review (inline): ✅ ready to merge — dependency exports all confirmed present (`generateUpgradeRender`, storage fns, `getRequest`/`getRequestIP` resolve via the `@tanstack/react-start/server` re-export chain); `getDbCars()` lazy inside `runGeneration`; `render-core`/`images` import-free of drizzle as intended. Process note carried from Task 5: code-quality was verified inline (commands are sub-second; the heavyweight review subagent was the time sink). No blockers.
 
