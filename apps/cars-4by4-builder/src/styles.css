@@ -33,3 +33,13 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .bg-texture {
+    background-image: repeating-linear-gradient(
+      135deg,
+      hsl(var(--foreground) / 0.035) 0 1px,
+      transparent 1px 12px
+    );
+  }
+}
