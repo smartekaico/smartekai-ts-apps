@@ -12,7 +12,9 @@
     "AWS_ACCESS_KEY_ID",
     "AWS_SECRET_ACCESS_KEY",
     "AWS_REGION",
-    "GOOGLE_AI_IMAGE_MODEL"
+    "GOOGLE_AI_IMAGE_MODEL",
+    "CARS_DAILY_RENDER_CAP",
+    "PUBLIC_SITE_URL"
   ],
   "tasks": {
     "build": {

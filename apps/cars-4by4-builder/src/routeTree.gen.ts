@@ -10,13 +10,20 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as UploadRouteImport } from './routes/upload'
 import { Route as BuildsSessionIdRouteImport } from './routes/builds/$sessionId'
+import { Route as GoPartIdRouteImport } from './routes/go/$partId'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const UploadRoute = UploadRouteImport.update({
@@ -29,6 +36,11 @@ const BuildsSessionIdRoute = BuildsSessionIdRouteImport.update({
   path: '/builds/$sessionId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GoPartIdRoute = GoPartIdRouteImport.update({
+  id: '/go/$partId',
+  path: '/go/$partId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -37,35 +49,62 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
   '/builds/$sessionId': typeof BuildsSessionIdRoute
+  '/go/$partId': typeof GoPartIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
   '/builds/$sessionId': typeof BuildsSessionIdRoute
+  '/go/$partId': typeof GoPartIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upload': typeof UploadRoute
   '/builds/$sessionId': typeof BuildsSessionIdRoute
+  '/go/$partId': typeof GoPartIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/upload' | '/builds/$sessionId' | '/api/auth/$'
+  fullPaths:
+    | '/'
+    | '/sitemap.xml'
+    | '/upload'
+    | '/builds/$sessionId'
+    | '/go/$partId'
+    | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/upload' | '/builds/$sessionId' | '/api/auth/$'
-  id: '__root__' | '/' | '/upload' | '/builds/$sessionId' | '/api/auth/$'
+  to:
+    | '/'
+    | '/sitemap.xml'
+    | '/upload'
+    | '/builds/$sessionId'
+    | '/go/$partId'
+    | '/api/auth/$'
+  id:
+    | '__root__'
+    | '/'
+    | '/sitemap.xml'
+    | '/upload'
+    | '/builds/$sessionId'
+    | '/go/$partId'
+    | '/api/auth/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   UploadRoute: typeof UploadRoute
   BuildsSessionIdRoute: typeof BuildsSessionIdRoute
+  GoPartIdRoute: typeof GoPartIdRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
@@ -76,6 +115,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/upload': {
@@ -92,6 +138,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BuildsSessionIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/go/$partId': {
+      id: '/go/$partId'
+      path: '/go/$partId'
+      fullPath: '/go/$partId'
+      preLoaderRoute: typeof GoPartIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -104,19 +157,12 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   UploadRoute: UploadRoute,
   BuildsSessionIdRoute: BuildsSessionIdRoute,
+  GoPartIdRoute: GoPartIdRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
