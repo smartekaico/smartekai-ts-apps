@@ -2931,7 +2931,7 @@ Expected: 9 × `→ completed` (each ~1–2 min; costs 9 Gemini image generation
 **Files:**
 - Modify: `packages/db/src/schema.ts`, `packages/db/src/client.ts`, `packages/db/src/index.ts`, `apps/cars-4by4-builder/src/lib/auth.ts`
 
-- [ ] **Step 1: Confirm nothing else imports the old names**
+- [x] **Step 1: Confirm nothing else imports the old names**
 
 ```bash
 grep -rn "dbCars\|upgradeSessions\|carsUsers\|carsSessions\|carsAccounts\|carsVerifications" apps packages --include=*.ts --include=*.tsx -l | grep -v "/dist/\|node_modules\|packages/db/src/cars/"
@@ -2939,17 +2939,17 @@ grep -rn "dbCars\|upgradeSessions\|carsUsers\|carsSessions\|carsAccounts\|carsVe
 
 Expected: only `packages/db/src/schema.ts`, `packages/db/src/client.ts`, `packages/db/src/index.ts`, `apps/cars-4by4-builder/src/lib/auth.ts`.
 
-- [ ] **Step 2: Delete the cars block from `packages/db/src/schema.ts`** — the whole section from the `// CARS 4X4 CUSTOMIZER TABLES` banner comment through the end of `upgradeSessions` (stop before the `// RELATIONS` banner). If `numeric` is then unused in that file, remove it from the `drizzle-orm/pg-core` import.
+- [x] **Step 2: Delete the cars block from `packages/db/src/schema.ts`** — the whole section from the `// CARS 4X4 CUSTOMIZER TABLES` banner comment through the end of `upgradeSessions` (stop before the `// RELATIONS` banner). If `numeric` is then unused in that file, remove it from the `drizzle-orm/pg-core` import.
 
-- [ ] **Step 3: In `packages/db/src/client.ts`** delete the line `const carsSql = neon(requireEnv("DATABASE_NEONDB_SMARTEKAI"));` and the line `export const dbCars = drizzle({ client: carsSql, schema });`.
+- [x] **Step 3: In `packages/db/src/client.ts`** delete the line `const carsSql = neon(requireEnv("DATABASE_NEONDB_SMARTEKAI"));` and the line `export const dbCars = drizzle({ client: carsSql, schema });`.
 
-- [ ] **Step 4: In `packages/db/src/index.ts`** change the client export to:
+- [x] **Step 4: In `packages/db/src/index.ts`** change the client export to:
 
 ```ts
 export { db, dbLegal, dbMedical } from "./client";
 ```
 
-- [ ] **Step 5: Replace the imports and adapter in `apps/cars-4by4-builder/src/lib/auth.ts`**
+- [x] **Step 5: Replace the imports and adapter in `apps/cars-4by4-builder/src/lib/auth.ts`**
 
 ```ts
 import { betterAuth } from "better-auth";
@@ -2966,7 +2966,7 @@ import {
 
 and change `database: drizzleAdapter(dbCars, {` to `database: drizzleAdapter(getDbCars(), {`. The rest of the file is unchanged.
 
-- [ ] **Step 6: Rebuild and verify both apps that depend on `@smartekai/db`**
+- [x] **Step 6: Rebuild and verify both apps that depend on `@smartekai/db`**
 
 ```bash
 npm run build --workspace=@smartekai/db
@@ -2975,7 +2975,7 @@ npx turbo run type-check lint build --filter=cars-4by4-builder... --filter=medic
 
 Expected: green. (`legal-os` is out of scope per the user.)
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add packages/db apps/cars-4by4-builder/src/lib/auth.ts
@@ -3027,6 +3027,8 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ---
 
 ## Execution log
+
+**2026-10-11 — Task 14 DONE** (`bce9a30 refactor(db): move cars tables fully into @smartekai/db/cars; drop dbCars from the shared client`; 10 files, +8/−1117 — the 4 source files + 6 rebuilt `packages/db/dist` artifacts). Removed the entire CARS block (banner → end of `upgradeSessions`: `cars_user`/`cars_session`/`cars_account`/`cars_verification`/`parts`/`upgrade_sessions`) from the shared `packages/db/src/schema.ts` and dropped the now-unused `numeric` import (`jsonb`/`index`/`serial` still used elsewhere → kept). `client.ts`: deleted `carsSql` + `export const dbCars`. `index.ts`: now `export { db, dbLegal, dbMedical }`. `apps/cars-4by4-builder/src/lib/auth.ts`: imports `{ getDbCars, carsUsers, carsSessions, carsAccounts, carsVerifications }` from `@smartekai/db/cars` and uses `drizzleAdapter(getDbCars(), { … })` (no longer pulls the eager shared client). Verified: Step 1 grep confined to exactly the 4 expected files; post-edit re-grep leaves only `auth.ts`'s *new* `@smartekai/db/cars` import (correct); `npm run build --workspace=@smartekai/db` clean; turbo type-check/lint/build `--filter=cars-4by4-builder... --filter=medical-os...` → **18/18 successful (7 cached)**. Runtime smoke: `@smartekai/db/cars` exposes `getDbCars`(function) + the 4 tables (objects); built shared `dist` no longer references `dbCars`/`carsUsers`/`upgradeSessions` (isolation proven). `auth.ts` diff byte-exact vs spec. No deviation. **Carry-forward to Task 15 / future shared pushes:** the legal/medical databases may still hold empty `parts`/`upgrade_sessions`/`cars_*` tables; a shared-schema `drizzle-kit push` will now offer to drop them — safe only after confirming they're empty (ask first). Also `AGENTS.md` still describes a single shared auth instance covering two apps (fine to leave per plan's "not in this plan").
 
 **2026-10-11 — Task 13 Steps 1–5 DONE** (`21adcac feat(cars-4by4-builder): add stock upload, gallery render and retention cleanup scripts`; 4 files, +133/−1). Created `scripts/upload-stock.ts` (validates vehicle, content-type whitelist, uploads to `BUCKETS.renders` under `stock/<id><ext>`, sets `vehicles.stockImageKey`), `scripts/render-gallery.ts` (one curated build per preset from the stock photo; idempotent — skips `completed` unless `--force`; pre-inserts a `processing` row before the paid render; marks `failed` on error), `scripts/cleanup.ts` (retention spec §2: drafts >24h + non-curated >90d; preserves `stock/` originals and clicks; deletes original/render objects). Added `stock:upload`/`gallery:render`/`cleanup` npm scripts via `tsx --env-file=../../.env.local`. Verified: turbo type-check+lint **8/8 successful (6 cached)** — both `cars-4by4-builder` tasks executed and passed; `npm run cleanup` → `cleanup: removed 0 builds` (safe; no stale rows). Spec-compliance review: ✅ all 3 scripts byte-for-byte (incl. `…`/`→` in render-gallery, `§2`/`—` in cleanup, and the inline comments); `package.json` diff = +3 scripts, no deps/lockfile change. Code-quality (inline): ✅ `INIT_CWD`-based path resolution, idempotent render, `Map`-dedup cleanup. **No new deps.** No route added → no `routeTree.gen.ts` change. **Step 6 NOT run: blocked pending user-supplied stock images for `lc300`/`patrol-y62`/`wrangler-jl` (3 photos), then `npm run gallery:render` (9 × Gemini renders).** Old-MVP operational scripts were already replaced by these during earlier tasks; nothing else to remove here.
 
