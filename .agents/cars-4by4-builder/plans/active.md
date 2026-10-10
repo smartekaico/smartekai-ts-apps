@@ -403,9 +403,9 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 Destructive on the cars database: drops `upgrade_sessions` and `parts` (both hold only seed/test data — 25 seeded parts and a few test sessions; no real users exist). **Stop and get explicit user confirmation before Step 1.**
 
-- [ ] **Step 1: Confirm with the user** — quote this task's first paragraph and wait for "yes".
+- [x] **Step 1: Confirm with the user** — quote this task's first paragraph and wait for "yes".
 
-- [ ] **Step 2: Drop the two tables being reshaped**
+- [x] **Step 2: Drop the two tables being reshaped**
 
 ```bash
 cd packages/db
@@ -423,7 +423,7 @@ cd ../..
 
 Expected: `dropped`.
 
-- [ ] **Step 3: Push**
+- [x] **Step 3: Push**
 
 ```bash
 npm run db:push:cars --workspace=@smartekai/db
@@ -431,7 +431,7 @@ npm run db:push:cars --workspace=@smartekai/db
 
 Expected: drizzle-kit lists creating `vehicles`, `parts`, `presets`, `builds`, `outbound_clicks`, and no changes to `cars_*`. If it proposes dropping anything not in that list, abort (Ctrl-C) and report — `tablesFilter` should prevent it.
 
-- [ ] **Step 4: No commit** (database change only). Record the result under "Execution log" at the bottom of this plan.
+- [x] **Step 4: No commit** (database change only). Record the result under "Execution log" at the bottom of this plan.
 
 ---
 
@@ -3027,6 +3027,8 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ---
 
 ## Execution log
+
+**2026-10-10 — Task 3 DONE** (database only — no code commits). User confirmed the ASK-FIRST step. Dropped `upgrade_sessions` + old-shape `parts` via raw SQL on `DATABASE_NEONDB_SMARTEKAI`, then ran `npm run db:push:cars --workspace=@smartekai/db`. Result: `vehicles`, `parts`, `presets`, `builds`, `outbound_clicks` created with exactly the planned column shapes (verified against information_schema); `upgrade_sessions` gone; `cars_user/session/account/verification` untouched. `tablesFilter` held — no leftover legal/medical table was modified or dropped. One deviation to carry forward: drizzle-kit's push attempted to drop the stray `cases_id_seq` sequence (a legal/medical leftover owned by `cases` still present in the cars DB) and failed with a dependency error, surfacing as a non-clean `drizzle-kit push` exit — the DB state itself is exactly as planned, and a re-run of `db:push:cars` should now be a no-op apart from that same tolerated sequence hiccup. Unrelated SSL-mode deprecation warning from `pg` (non-blocking).
 
 **2026-10-10 — Task 2 DONE** (`d404e1f feat(db): add @smartekai/db/cars entry…`). Created `packages/db/src/cars/{schema,client,index}.ts` + `drizzle.cars.config.ts`; added `./cars` export + `db:push:cars` script; added `@smartekai/db/cars` to Vite SSR externals. Verified: `dist/cars` 6 files, db build clean, turbo type-check/lint/build 13/13. Spec-compliance review: ✅ (byte-for-byte; additive constraint held — shared schema/client/index untouched). Code-quality review: ✅ ready to merge (no critical/important). Verified findings: `tablesFilter` genuinely protects non-cars tables (drizzle-kit introspection filters before diff); `require("@smartekai/db/cars")` import-safe with env unset, only `getDbCars()` throws; committed dist is drift-free. Notes carried forward: Task 3 must drop old-shape `parts` BEFORE pushing (filter includes `parts`, reordering would diff old→new shape); Task 14 must also kill the eager `dbCars` in the *shared* `client.ts` (`requireEnv` at module load). Minor: no EOF newlines on new files (cosmetic); pre-existing committed `.js`/`.d.ts` siblings under `packages/db/src/` (untouched).
 
