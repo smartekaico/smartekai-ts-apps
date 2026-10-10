@@ -1,36 +1,51 @@
-export const seedParts = [
-  // Armor & Protection
-  { id: "arb-summit-bullbar", name: "ARB Summit Bull Bar", category: "front_bumper", brand: "ARB", priceUsd: "2450.00", laborHoursEst: "3.5", fitmentDifficulty: "Minor Trimming", aiPromptSnippet: "a matte black heavy-duty steel bull bar with integrated recovery hooks and round driving lights mounted on the front bumper", imageUrl: "https://arb4x4.com/images/summit-bull-bar.jpg", affiliateUrl: "https://arb4x4.com/products/summit-bull-bar" },
-  { id: "arb-stealthbar", name: "ARB StealthBar", category: "front_bumper", brand: "ARB", priceUsd: "1890.00", laborHoursEst: "2.0", fitmentDifficulty: "Direct Bolt-On", aiPromptSnippet: "a low-profile matte black stealth front bumper with integrated fog lights", imageUrl: "https://arb4x4.com/images/stealthbar.jpg", affiliateUrl: "https://arb4x4.com/products/stealthbar" },
-  { id: "ironman-rock-sliders", name: "Ironman 4x4 Rock Sliders", category: "front_bumper", brand: "Ironman 4x4", priceUsd: "890.00", laborHoursEst: "2.0", fitmentDifficulty: "Direct Bolt-On", aiPromptSnippet: "black powder-coated steel rock slider side steps running along the rocker panels", imageUrl: "https://ironman4x4.com/images/rock-sliders.jpg", affiliateUrl: "https://ironman4x4.com/products/rock-sliders" },
-  { id: "smittybilt-src", name: "Smittybilt SRC Side Armor", category: "front_bumper", brand: "Smittybilt", priceUsd: "620.00", laborHoursEst: "1.5", fitmentDifficulty: "Direct Bolt-On", aiPromptSnippet: "textured black tubular side armor bars along the rocker panels", imageUrl: "https://smittybilt.com/images/src-side-armor.jpg", affiliateUrl: "https://smittybilt.com/products/src-side-armor" },
-  { id: "arb-underbody-armor", name: "ARB Underbody Armor Kit", category: "front_bumper", brand: "ARB", priceUsd: "540.00", laborHoursEst: "2.0", fitmentDifficulty: "Custom Fabrication", aiPromptSnippet: "a visible steel skid plate beneath the front bumper", imageUrl: "https://arb4x4.com/images/underbody-armor.jpg", affiliateUrl: "https://arb4x4.com/products/underbody-armor" },
+// PLACEHOLDER CATALOG: imageUrl "" and affiliateUrls {} until real, permitted
+// values are supplied (spec §7). Buy buttons stay hidden for parts without a
+// URL in the visitor's region. vehicleIds = all three until real fitment data.
+const ALL = ["lc300", "patrol-y62", "wrangler-jl"];
 
+type SeedPart = {
+  id: string;
+  name: string;
+  category: string;
+  brand: string;
+  priceUsd: string;
+  laborHoursEst: string;
+  fitmentDifficulty: string;
+  aiPromptSnippet: string;
+};
+
+const catalog: SeedPart[] = [
+  // Armor
+  { id: "arb-summit-bullbar", name: "ARB Summit Bull Bar", category: "armor", brand: "ARB", priceUsd: "2450.00", laborHoursEst: "3.5", fitmentDifficulty: "Minor Trimming", aiPromptSnippet: "a matte black heavy-duty steel bull bar with integrated recovery points and round driving lights on the front bumper" },
+  { id: "arb-stealthbar", name: "ARB StealthBar", category: "armor", brand: "ARB", priceUsd: "1890.00", laborHoursEst: "2.0", fitmentDifficulty: "Direct Bolt-On", aiPromptSnippet: "a low-profile matte black stealth front bumper with integrated fog lights" },
+  { id: "ironman-rock-sliders", name: "Ironman 4x4 Rock Sliders", category: "armor", brand: "Ironman 4x4", priceUsd: "890.00", laborHoursEst: "2.0", fitmentDifficulty: "Direct Bolt-On", aiPromptSnippet: "black powder-coated steel rock sliders along the rocker panels" },
+  { id: "smittybilt-src", name: "Smittybilt SRC Side Armor", category: "armor", brand: "Smittybilt", priceUsd: "620.00", laborHoursEst: "1.5", fitmentDifficulty: "Direct Bolt-On", aiPromptSnippet: "textured black tubular side armor bars along the rocker panels" },
+  { id: "arb-underbody-armor", name: "ARB Underbody Armor Kit", category: "armor", brand: "ARB", priceUsd: "540.00", laborHoursEst: "2.0", fitmentDifficulty: "Custom Fabrication", aiPromptSnippet: "a visible steel skid plate beneath the front bumper" },
   // Wheels & Tires
-  { id: "method-beadlock-701", name: "Method Race Wheels 701 Beadlock", category: "wheels_tires", brand: "Method", priceUsd: "1840.00", laborHoursEst: "1.5", fitmentDifficulty: "Direct Bolt-On", aiPromptSnippet: "bronze 17-inch beadlock wheels with visible beadlock rings", imageUrl: "https://methodracewheels.com/images/701-beadlock.jpg", affiliateUrl: "https://methodracewheels.com/products/701-beadlock" },
-  { id: "nitto-ridge-grappler-35", name: "35\" Nitto Ridge Grapplers", category: "wheels_tires", brand: "Nitto", priceUsd: "1600.00", laborHoursEst: "1.5", fitmentDifficulty: "Minor Trimming", aiPromptSnippet: "35-inch aggressive hybrid all-terrain/mud-terrain tires with deep chunky tread", imageUrl: "https://nittotire.com/images/ridge-grappler.jpg", affiliateUrl: "https://nittotire.com/products/ridge-grappler" },
-  { id: "bfg-km3-33", name: "33\" BFGoodrich KM3 Mud-Terrain", category: "wheels_tires", brand: "BFGoodrich", priceUsd: "1280.00", laborHoursEst: "1.0", fitmentDifficulty: "Direct Bolt-On", aiPromptSnippet: "33-inch aggressive mud-terrain tires with large tread blocks", imageUrl: "https://bfgoodrichtires.com/images/km3.jpg", affiliateUrl: "https://bfgoodrichtires.com/products/km3" },
-  { id: "fuel-vector-wheels", name: "Fuel Vector Off-Road Wheels", category: "wheels_tires", brand: "Fuel", priceUsd: "1120.00", laborHoursEst: "1.0", fitmentDifficulty: "Direct Bolt-On", aiPromptSnippet: "matte black 18-inch off-road wheels with a deep concave design", imageUrl: "https://fuelwheels.com/images/vector.jpg", affiliateUrl: "https://fuelwheels.com/products/vector" },
+  { id: "method-beadlock-701", name: "Method 701 Beadlock Wheels", category: "wheels_tires", brand: "Method", priceUsd: "1840.00", laborHoursEst: "1.5", fitmentDifficulty: "Direct Bolt-On", aiPromptSnippet: "bronze 17-inch beadlock-style wheels with visible bolt rings" },
+  { id: "nitto-ridge-grappler-35", name: "35\" Nitto Ridge Grappler Tires", category: "wheels_tires", brand: "Nitto", priceUsd: "1600.00", laborHoursEst: "1.5", fitmentDifficulty: "Minor Trimming", aiPromptSnippet: "35-inch aggressive hybrid all-terrain/mud-terrain tires with deep chunky tread" },
+  { id: "bfg-km3-33", name: "33\" BFGoodrich KM3 Mud-Terrain Tires", category: "wheels_tires", brand: "BFGoodrich", priceUsd: "1280.00", laborHoursEst: "1.0", fitmentDifficulty: "Direct Bolt-On", aiPromptSnippet: "33-inch mud-terrain tires with large tread blocks" },
+  { id: "fuel-vector-wheels", name: "Fuel Vector Wheels", category: "wheels_tires", brand: "Fuel", priceUsd: "1120.00", laborHoursEst: "1.0", fitmentDifficulty: "Direct Bolt-On", aiPromptSnippet: "matte black 18-inch off-road wheels with a deep concave face" },
+  // Overland
+  { id: "frontrunner-slimline-ii", name: "Front Runner Slimline II Roof Rack", category: "overland", brand: "Front Runner", priceUsd: "1150.00", laborHoursEst: "1.5", fitmentDifficulty: "Direct Bolt-On", aiPromptSnippet: "a slim black aluminum platform roof rack mounted flush to the roofline" },
+  { id: "arb-esperance-tent", name: "ARB Esperance Rooftop Tent", category: "overland", brand: "ARB", priceUsd: "2200.00", laborHoursEst: "0.5", fitmentDifficulty: "Direct Bolt-On", aiPromptSnippet: "a closed grey hardshell rooftop tent on the roof rack" },
+  { id: "ironman-hardshell-tent", name: "Ironman 4x4 Hardshell Rooftop Tent", category: "overland", brand: "Ironman 4x4", priceUsd: "2450.00", laborHoursEst: "0.5", fitmentDifficulty: "Direct Bolt-On", aiPromptSnippet: "a low-profile black hardshell rooftop tent on the roof" },
+  { id: "arb-270-awning", name: "ARB 270° Awning", category: "overland", brand: "ARB", priceUsd: "890.00", laborHoursEst: "0.5", fitmentDifficulty: "Direct Bolt-On", aiPromptSnippet: "a rolled-up 270-degree awning bag mounted along the side of the roof rack" },
+  // Suspension
+  { id: "ome-bp51", name: "Old Man Emu BP-51 Suspension Kit", category: "suspension", brand: "Old Man Emu", priceUsd: "3200.00", laborHoursEst: "6.0", fitmentDifficulty: "Custom Fabrication", aiPromptSnippet: "a visibly lifted stance with about 2 inches more wheel gap" },
+  { id: "ironman-foam-cell", name: "Ironman 4x4 Foam Cell Suspension", category: "suspension", brand: "Ironman 4x4", priceUsd: "1620.00", laborHoursEst: "5.0", fitmentDifficulty: "Custom Fabrication", aiPromptSnippet: "a moderate 2-inch suspension lift with more ground clearance" },
+  { id: "rough-country-lift-kit", name: "Rough Country 2.5\" Lift Kit", category: "suspension", brand: "Rough Country", priceUsd: "980.00", laborHoursEst: "4.0", fitmentDifficulty: "Minor Trimming", aiPromptSnippet: "a 2.5-inch suspension lift with a more aggressive stance" },
+  { id: "bilstein-5100-shocks", name: "Bilstein 5100 Series Shocks", category: "suspension", brand: "Bilstein", priceUsd: "620.00", laborHoursEst: "2.0", fitmentDifficulty: "Direct Bolt-On", aiPromptSnippet: "yellow-bodied performance shock absorbers visible behind the wheels" },
+  // Lighting & Recovery
+  { id: "rigid-led-lightbar", name: "Rigid 40\" LED Light Bar", category: "lighting", brand: "Rigid Industries", priceUsd: "650.00", laborHoursEst: "1.0", fitmentDifficulty: "Minor Trimming", aiPromptSnippet: "a 40-inch LED light bar mounted above the windshield" },
+  { id: "kc-hilites-cube", name: "KC HiLiTES Cube LED Pods", category: "lighting", brand: "KC HiLiTES", priceUsd: "220.00", laborHoursEst: "0.5", fitmentDifficulty: "Direct Bolt-On", aiPromptSnippet: "a pair of small square LED pod lights on the A-pillars" },
+  { id: "ironman-snorkel", name: "Ironman 4x4 Snorkel", category: "lighting", brand: "Ironman 4x4", priceUsd: "310.00", laborHoursEst: "2.5", fitmentDifficulty: "Custom Fabrication", aiPromptSnippet: "a black safari snorkel running up the A-pillar to the roofline" },
+  { id: "warn-vr-evo-10s", name: "Warn VR EVO 10-S Winch", category: "lighting", brand: "Warn", priceUsd: "1050.00", laborHoursEst: "2.0", fitmentDifficulty: "Direct Bolt-On", aiPromptSnippet: "a black recovery winch mounted at the front center of the bumper" },
+];
 
-  // Overlanding & Roof Gear
-  { id: "frontrunner-slimline-ii", name: "Front Runner Slimline II Roof Platform", category: "roof_tent", brand: "Front Runner", priceUsd: "1150.00", laborHoursEst: "1.5", fitmentDifficulty: "Direct Bolt-On", aiPromptSnippet: "an ultra-slim aluminum platform roof rack mounted flush to the roofline", imageUrl: "https://frontrunneroutfitters.com/images/slimline-ii.jpg", affiliateUrl: "https://frontrunneroutfitters.com/products/slimline-ii" },
-  { id: "arb-esperance-tent", name: "ARB Esperance Rooftop Tent", category: "roof_tent", brand: "ARB", priceUsd: "2200.00", laborHoursEst: "0.5", fitmentDifficulty: "Direct Bolt-On", aiPromptSnippet: "a closed hardshell rooftop tent clamped to the roof rack", imageUrl: "https://arb4x4.com/images/esperance-tent.jpg", affiliateUrl: "https://arb4x4.com/products/esperance-tent" },
-  { id: "ironman-hardshell-tent", name: "Ironman 4x4 Hardshell Rooftop Tent", category: "roof_tent", brand: "Ironman 4x4", priceUsd: "2450.00", laborHoursEst: "0.5", fitmentDifficulty: "Direct Bolt-On", aiPromptSnippet: "a low-profile black hardshell rooftop tent", imageUrl: "https://ironman4x4.com/images/hardshell-tent.jpg", affiliateUrl: "https://ironman4x4.com/products/hardshell-tent" },
-  { id: "arb-270-awning", name: "ARB 270° Awning", category: "roof_tent", brand: "ARB", priceUsd: "890.00", laborHoursEst: "0.5", fitmentDifficulty: "Direct Bolt-On", aiPromptSnippet: "a 270-degree fabric awning deployed from the side of the roof rack", imageUrl: "https://arb4x4.com/images/270-awning.jpg", affiliateUrl: "https://arb4x4.com/products/270-awning" },
-  { id: "arb-fridge-freezer", name: "ARB 63QT Fridge Freezer", category: "roof_tent", brand: "ARB", priceUsd: "1180.00", laborHoursEst: "0.2", fitmentDifficulty: "Direct Bolt-On", aiPromptSnippet: "a portable fridge freezer visible through the open rear cargo area", imageUrl: "https://arb4x4.com/images/fridge-freezer.jpg", affiliateUrl: "https://arb4x4.com/products/fridge-freezer" },
-
-  // Off-Road Lighting & Extras
-  { id: "rigid-led-lightbar", name: "Rigid Industries 40\" LED Light Bar", category: "lighting", brand: "Rigid Industries", priceUsd: "650.00", laborHoursEst: "1.0", fitmentDifficulty: "Minor Trimming", aiPromptSnippet: "a 40-inch LED light bar mounted above the windshield or on the roof rack", imageUrl: "https://rigidindustries.com/images/40-led-bar.jpg", affiliateUrl: "https://rigidindustries.com/products/40-led-bar" },
-  { id: "ironman-snorkel", name: "Ironman 4x4 Snorkel", category: "lighting", brand: "Ironman 4x4", priceUsd: "310.00", laborHoursEst: "2.5", fitmentDifficulty: "Custom Fabrication", aiPromptSnippet: "a black safari snorkel running up the A-pillar to the roofline", imageUrl: "https://ironman4x4.com/images/snorkel.jpg", affiliateUrl: "https://ironman4x4.com/products/snorkel" },
-  { id: "warn-vr-evo-10s", name: "Warn VR EVO 10-S Winch", category: "lighting", brand: "Warn", priceUsd: "1050.00", laborHoursEst: "2.0", fitmentDifficulty: "Direct Bolt-On", aiPromptSnippet: "a black recovery winch mounted at the front center of the bumper", imageUrl: "https://warn.com/images/vr-evo-10s.jpg", affiliateUrl: "https://warn.com/products/vr-evo-10s" },
-  { id: "kc-hilites-cube", name: "KC HiLiTES Cube LED Pod Lights", category: "lighting", brand: "KC HiLiTES", priceUsd: "220.00", laborHoursEst: "0.5", fitmentDifficulty: "Direct Bolt-On", aiPromptSnippet: "a pair of small square LED pod lights mounted on the front bumper or A-pillars", imageUrl: "https://kchilites.com/images/cube-leds.jpg", affiliateUrl: "https://kchilites.com/products/cube-leds" },
-
-  // Suspension / lift
-  { id: "ome-bp51", name: "Old Man Emu BP-51 Suspension Kit", category: "lift_kit", brand: "Old Man Emu", priceUsd: "3200.00", laborHoursEst: "6.0", fitmentDifficulty: "Custom Fabrication", aiPromptSnippet: "a visibly lifted stance with the wheel gap increased by about 2 inches", imageUrl: "https://oldmanemu4x4.com/images/bp51.jpg", affiliateUrl: "https://oldmanemu4x4.com/products/bp51" },
-  { id: "ironman-foam-cell", name: "Ironman 4x4 Foam Cell Suspension", category: "lift_kit", brand: "Ironman 4x4", priceUsd: "1620.00", laborHoursEst: "5.0", fitmentDifficulty: "Custom Fabrication", aiPromptSnippet: "a moderate 2-inch suspension lift with increased ground clearance", imageUrl: "https://ironman4x4.com/images/foam-cell.jpg", affiliateUrl: "https://ironman4x4.com/products/foam-cell" },
-  { id: "rough-country-lift-kit", name: "Rough Country 2.5\" Lift Kit", category: "lift_kit", brand: "Rough Country", priceUsd: "980.00", laborHoursEst: "4.0", fitmentDifficulty: "Minor Trimming", aiPromptSnippet: "a 2.5-inch suspension lift with a slightly more aggressive stance", imageUrl: "https://roughcountry.com/images/lift-kit.jpg", affiliateUrl: "https://roughcountry.com/products/lift-kit" },
-  { id: "bilstein-5100-shocks", name: "Bilstein 5100 Series Shocks", category: "lift_kit", brand: "Bilstein", priceUsd: "620.00", laborHoursEst: "2.0", fitmentDifficulty: "Direct Bolt-On", aiPromptSnippet: "visible yellow-bodied performance shock absorbers at each corner", imageUrl: "https://bilstein.com/images/5100-series.jpg", affiliateUrl: "https://bilstein.com/products/5100-series" },
-  { id: "arb-air-locker", name: "ARB Air Locker (Front)", category: "lift_kit", brand: "ARB", priceUsd: "890.00", laborHoursEst: "4.0", fitmentDifficulty: "Custom Fabrication", aiPromptSnippet: "no visible exterior change (drivetrain upgrade)", imageUrl: "https://arb4x4.com/images/air-locker.jpg", affiliateUrl: "https://arb4x4.com/products/air-locker" },
-  { id: "old-man-emu-heavy-springs", name: "OME Heavy Constant Load Front Springs", category: "lift_kit", brand: "Old Man Emu", priceUsd: "480.00", laborHoursEst: "2.0", fitmentDifficulty: "Direct Bolt-On", aiPromptSnippet: "restored factory ride height at the front of the vehicle", imageUrl: "https://oldmanemu4x4.com/images/heavy-springs.jpg", affiliateUrl: "https://oldmanemu4x4.com/products/heavy-springs" },
-  { id: "smittybilt-recovery-kit", name: "Smittybilt Tow & Recovery Kit", category: "lighting", brand: "Smittybilt", priceUsd: "95.00", laborHoursEst: "0.2", fitmentDifficulty: "Direct Bolt-On", aiPromptSnippet: "a visible recovery strap and shackles hanging from the front recovery points", imageUrl: "https://smittybilt.com/images/recovery-kit.jpg", affiliateUrl: "https://smittybilt.com/products/recovery-kit" },
-] as const;
+export const seedParts = catalog.map((p) => ({
+  ...p,
+  imageUrl: "",
+  vehicleIds: ALL,
+  affiliateUrls: {},
+}));
