@@ -67,7 +67,7 @@ Pure helpers are spot-checked with `npx tsx -e '…'` one-liners. `./scripts/gat
 **Files:**
 - Modify: `packages/storage/src/index.ts`
 
-- [ ] **Step 1: Add the import and function**
+- [x] **Step 1: Add the import and function**
 
 Change the import block at the top of `packages/storage/src/index.ts` to:
 
@@ -88,7 +88,7 @@ export async function deleteObject(bucket: string, key: string): Promise<void> {
 }
 ```
 
-- [ ] **Step 2: Build and verify**
+- [x] **Step 2: Build and verify**
 
 ```bash
 npm run build --workspace=@smartekai/storage
@@ -97,7 +97,7 @@ npx turbo run type-check lint --filter=@smartekai/storage
 
 Expected: both succeed; `packages/storage/dist/index.d.ts` now declares `deleteObject`.
 
-- [ ] **Step 3: Commit** (this repo commits package `dist/`)
+- [x] **Step 3: Commit** (this repo commits package `dist/`)
 
 ```bash
 git add packages/storage/src/index.ts packages/storage/dist
@@ -3027,5 +3027,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ---
 
 ## Execution log
+
+**2026-10-10 — Task 1 DONE** (`7898415 feat(storage): add deleteObject`). Added `DeleteObjectCommand` + `deleteObject(bucket, key)` to `packages/storage/src/index.ts`; rebuilt committed `dist/`. Verified: storage build + type-check/lint green; `dist/index.d.ts` declares the export. Spec-compliance review: ✅. Code-quality review: ✅ (ready to merge; no issues beyond optional JSDoc). No consumers yet — first use is Task 7 (cleanup paths in `checkPhoto`). Infra note from review: `cars-uploads` access key must permit `DeleteObject`, else those cleanup paths throw — confirm when first consumer lands.
 
 (Append dated results here as tasks complete.)
