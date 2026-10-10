@@ -114,7 +114,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - Create: `packages/db/src/cars/schema.ts`, `packages/db/src/cars/client.ts`, `packages/db/src/cars/index.ts`, `packages/db/drizzle.cars.config.ts`
 - Modify: `packages/db/package.json`, `apps/cars-4by4-builder/vite.config.ts`
 
-- [ ] **Step 1: Create `packages/db/src/cars/schema.ts`**
+- [x] **Step 1: Create `packages/db/src/cars/schema.ts`**
 
 ```ts
 import {
@@ -274,7 +274,7 @@ export type Preset = typeof presets.$inferSelect;
 export type Build = typeof builds.$inferSelect;
 ```
 
-- [ ] **Step 2: Create `packages/db/src/cars/client.ts`**
+- [x] **Step 2: Create `packages/db/src/cars/client.ts`**
 
 ```ts
 import { neon } from "@neondatabase/serverless";
@@ -300,14 +300,14 @@ export function getDbCars() {
 export type CarsDatabase = ReturnType<typeof getDbCars>;
 ```
 
-- [ ] **Step 3: Create `packages/db/src/cars/index.ts`**
+- [x] **Step 3: Create `packages/db/src/cars/index.ts`**
 
 ```ts
 export * from "./schema";
 export { getDbCars, type CarsDatabase } from "./client";
 ```
 
-- [ ] **Step 4: Add the export and push script to `packages/db/package.json`**
+- [x] **Step 4: Add the export and push script to `packages/db/package.json`**
 
 Replace the `exports` block with (order matters — `./cars` before `./*`):
 
@@ -328,7 +328,7 @@ Add to `scripts`:
     "db:push:cars": "drizzle-kit push --config=drizzle.cars.config.ts",
 ```
 
-- [ ] **Step 5: Create `packages/db/drizzle.cars.config.ts`**
+- [x] **Step 5: Create `packages/db/drizzle.cars.config.ts`**
 
 ```ts
 import { defineConfig } from "drizzle-kit";
@@ -364,7 +364,7 @@ export default defineConfig({
 });
 ```
 
-- [ ] **Step 6: Add the subpath to the app's SSR externals**
+- [x] **Step 6: Add the subpath to the app's SSR externals**
 
 In `apps/cars-4by4-builder/vite.config.ts`, change the `external` array to:
 
@@ -378,7 +378,7 @@ In `apps/cars-4by4-builder/vite.config.ts`, change the `external` array to:
       ],
 ```
 
-- [ ] **Step 7: Build and verify**
+- [x] **Step 7: Build and verify**
 
 ```bash
 npm run build --workspace=@smartekai/db
@@ -388,7 +388,7 @@ npx turbo run type-check lint build --filter=cars-4by4-builder...
 
 Expected: all green (nothing imports the new entry yet; this proves it compiles and the export map is valid).
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add packages/db/src/cars packages/db/dist packages/db/package.json packages/db/drizzle.cars.config.ts apps/cars-4by4-builder/vite.config.ts
@@ -3027,6 +3027,8 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ---
 
 ## Execution log
+
+**2026-10-10 — Task 2 DONE** (`d404e1f feat(db): add @smartekai/db/cars entry…`). Created `packages/db/src/cars/{schema,client,index}.ts` + `drizzle.cars.config.ts`; added `./cars` export + `db:push:cars` script; added `@smartekai/db/cars` to Vite SSR externals. Verified: `dist/cars` 6 files, db build clean, turbo type-check/lint/build 13/13. Spec-compliance review: ✅ (byte-for-byte; additive constraint held — shared schema/client/index untouched). Code-quality review: ✅ ready to merge (no critical/important). Verified findings: `tablesFilter` genuinely protects non-cars tables (drizzle-kit introspection filters before diff); `require("@smartekai/db/cars")` import-safe with env unset, only `getDbCars()` throws; committed dist is drift-free. Notes carried forward: Task 3 must drop old-shape `parts` BEFORE pushing (filter includes `parts`, reordering would diff old→new shape); Task 14 must also kill the eager `dbCars` in the *shared* `client.ts` (`requireEnv` at module load). Minor: no EOF newlines on new files (cosmetic); pre-existing committed `.js`/`.d.ts` siblings under `packages/db/src/` (untouched).
 
 **2026-10-10 — Task 1 DONE** (`7898415 feat(storage): add deleteObject`). Added `DeleteObjectCommand` + `deleteObject(bucket, key)` to `packages/storage/src/index.ts`; rebuilt committed `dist/`. Verified: storage build + type-check/lint green; `dist/index.d.ts` declares the export. Spec-compliance review: ✅. Code-quality review: ✅ (ready to merge; no issues beyond optional JSDoc). No consumers yet — first use is Task 7 (cleanup paths in `checkPhoto`). Infra note from review: `cars-uploads` access key must permit `DeleteObject`, else those cleanup paths throw — confirm when first consumer lands.
 
