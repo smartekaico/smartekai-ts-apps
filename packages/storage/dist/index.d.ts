@@ -1,4 +1,5 @@
 export declare function uploadObject(bucket: string, key: string, body: Buffer, contentType: string): Promise<void>;
+export declare function deleteObject(bucket: string, key: string): Promise<void>;
 /**
  * For the private cars-uploads bucket — Gemini/Fal.ai fetch the photo via
  * this short-lived URL instead of the object ever being made public.

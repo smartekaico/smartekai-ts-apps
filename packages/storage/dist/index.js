@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BUCKETS = void 0;
 exports.uploadObject = uploadObject;
+exports.deleteObject = deleteObject;
 exports.getPresignedReadUrl = getPresignedReadUrl;
 exports.getPublicUrl = getPublicUrl;
 const client_s3_1 = require("@aws-sdk/client-s3");
@@ -24,6 +25,9 @@ const client = new client_s3_1.S3Client({
 });
 async function uploadObject(bucket, key, body, contentType) {
     await client.send(new client_s3_1.PutObjectCommand({ Bucket: bucket, Key: key, Body: body, ContentType: contentType }));
+}
+async function deleteObject(bucket, key) {
+    await client.send(new client_s3_1.DeleteObjectCommand({ Bucket: bucket, Key: key }));
 }
 /**
  * For the private cars-uploads bucket — Gemini/Fal.ai fetch the photo via
