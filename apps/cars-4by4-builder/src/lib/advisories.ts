@@ -3,10 +3,11 @@ type Part = { category: string; fitmentDifficulty: string; name: string };
 export type Advisory = { type: "warning" | "info"; message: string };
 
 const CATEGORY_ADVISORIES: Record<string, string> = {
-  front_bumper: "Adding front-mounted armor shifts weight forward — a heavy-duty front spring upgrade is commonly paired with this to restore ride height.",
-  wheels_tires: "Larger tires may require a lift kit or wheel spacers to clear the fenders/cab mounts at full steering lock.",
-  roof_tent: "Roof-mounted gear raises the center of gravity — drive conservatively at highway speed and in crosswinds.",
-  lift_kit: "Suspension changes can affect factory alignment and headlight aim — a post-install alignment is recommended.",
+  armor: "Front armor adds weight over the front axle — a heavier-rate front spring is commonly paired with it to keep ride height.",
+  wheels_tires: "Larger tires may need a lift or trimming to clear at full steering lock.",
+  overland: "Roof-mounted gear raises the center of gravity — drive conservatively at highway speed and in crosswinds.",
+  suspension: "Suspension changes affect alignment and headlight aim — book an alignment after install.",
+  lighting: "Auxiliary lights may need to be covered or switched off on public roads — check your local rules.",
 };
 
 export function getAdvisories(parts: Part[]): Advisory[] {
