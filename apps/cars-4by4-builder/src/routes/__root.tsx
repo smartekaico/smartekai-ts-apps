@@ -1,21 +1,24 @@
-import { HeadContent, Scripts, createRootRoute } from "@tanstack/react-router";
+import { HeadContent, Link, Outlet, Scripts, createRootRoute } from "@tanstack/react-router";
 import "@fontsource-variable/inter";
 import appCss from "../styles.css?url";
+import { getRegion } from "@/lib/builds";
+import { SiteFooter } from "@/components/SiteFooter";
+import { SiteHeader } from "@/components/SiteHeader";
 
 export const Route = createRootRoute({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "AI 4x4 Customizer" },
-      {
-        name: "description",
-        content: "Upload a photo of your 4x4 and see it transformed with real upgrades.",
-      },
+      { title: "4x4 Builder" },
+      { name: "description", content: "See real off-road upgrades on your own truck before you buy." },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
   }),
+  loader: () => getRegion(),
   shellComponent: RootDocument,
+  component: RootLayout,
+  notFoundComponent: NotFound,
 });
 
 function RootDocument({ children }: { children: React.ReactNode }) {
@@ -29,5 +32,30 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <Scripts />
       </body>
     </html>
+  );
+}
+
+function RootLayout() {
+  const region = Route.useLoaderData();
+  return (
+    <div className="flex min-h-screen flex-col">
+      <SiteHeader region={region} />
+      <div className="flex-1">
+        <Outlet />
+      </div>
+      <SiteFooter />
+    </div>
+  );
+}
+
+function NotFound() {
+  return (
+    <main className="mx-auto flex max-w-xl flex-col items-center gap-4 px-4 py-24 text-center">
+      <h1 className="text-3xl">Build not found</h1>
+      <p className="text-muted-foreground">It may have expired or the link is wrong.</p>
+      <Link to="/" className="font-semibold text-primary">
+        Browse the gallery
+      </Link>
+    </main>
   );
 }
