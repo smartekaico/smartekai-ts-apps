@@ -2750,7 +2750,7 @@ All three live in `scripts/` (CommonJS scope, see `scripts/package.json`) and on
 - Create: `apps/cars-4by4-builder/scripts/upload-stock.ts`, `scripts/render-gallery.ts`, `scripts/cleanup.ts`
 - Modify: `apps/cars-4by4-builder/package.json`
 
-- [ ] **Step 1: Create `scripts/upload-stock.ts`**
+- [x] **Step 1: Create `scripts/upload-stock.ts`**
 
 ```ts
 import { readFileSync } from "node:fs";
@@ -2790,7 +2790,7 @@ main().catch((err) => {
 });
 ```
 
-- [ ] **Step 2: Create `scripts/render-gallery.ts`**
+- [x] **Step 2: Create `scripts/render-gallery.ts`**
 
 ```ts
 import { eq } from "drizzle-orm";
@@ -2856,7 +2856,7 @@ main().catch((err) => {
 });
 ```
 
-- [ ] **Step 3: Create `scripts/cleanup.ts`**
+- [x] **Step 3: Create `scripts/cleanup.ts`**
 
 ```ts
 import { and, eq, lt } from "drizzle-orm";
@@ -2894,7 +2894,7 @@ main().catch((err) => {
 });
 ```
 
-- [ ] **Step 4: Add npm scripts** to `apps/cars-4by4-builder/package.json` `scripts`:
+- [x] **Step 4: Add npm scripts** to `apps/cars-4by4-builder/package.json` `scripts`:
 
 ```json
     "stock:upload": "tsx --env-file=../../.env.local scripts/upload-stock.ts",
@@ -2902,7 +2902,7 @@ main().catch((err) => {
     "cleanup": "tsx --env-file=../../.env.local scripts/cleanup.ts",
 ```
 
-- [ ] **Step 5: Verify and commit**
+- [x] **Step 5: Verify and commit**
 
 ```bash
 npx turbo run type-check lint --filter=cars-4by4-builder...
@@ -3027,6 +3027,8 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ---
 
 ## Execution log
+
+**2026-10-11 — Task 13 Steps 1–5 DONE; Step 6 BLOCKED** (`21adcac feat(cars-4by4-builder): add stock upload, gallery render and retention cleanup scripts`; 4 files, +133/−1). Created `scripts/upload-stock.ts` (validates vehicle, content-type whitelist, uploads to `BUCKETS.renders` under `stock/<id><ext>`, sets `vehicles.stockImageKey`), `scripts/render-gallery.ts` (one curated build per preset from the stock photo; idempotent — skips `completed` unless `--force`; pre-inserts a `processing` row before the paid render; marks `failed` on error), `scripts/cleanup.ts` (retention spec §2: drafts >24h + non-curated >90d; preserves `stock/` originals and clicks; deletes original/render objects). Added `stock:upload`/`gallery:render`/`cleanup` npm scripts via `tsx --env-file=../../.env.local`. Verified: turbo type-check+lint **8/8 successful (6 cached)** — both `cars-4by4-builder` tasks executed and passed; `npm run cleanup` → `cleanup: removed 0 builds` (safe; no stale rows). Spec-compliance review: ✅ all 3 scripts byte-for-byte (incl. `…`/`→` in render-gallery, `§2`/`—` in cleanup, and the inline comments); `package.json` diff = +3 scripts, no deps/lockfile change. Code-quality (inline): ✅ `INIT_CWD`-based path resolution, idempotent render, `Map`-dedup cleanup. **No new deps.** No route added → no `routeTree.gen.ts` change. **Step 6 NOT run: blocked pending user-supplied stock images for `lc300`/`patrol-y62`/`wrangler-jl` (3 photos), then `npm run gallery:render` (9 × Gemini renders).** Old-MVP operational scripts were already replaced by these during earlier tasks; nothing else to remove here.
 
 **2026-10-11 — Task 12 DONE** (`8100adb feat(cars-4by4-builder): rugged dark theme, site header with region switch, disclosure footer`; 5 files, +126/−26). Replaced `src/styles.css` (dark charcoal/amber palette, `color-scheme: dark`, `antialiased`, `h1/h2/h3` extrabold, `bg-texture` retained) and `src/routes/__root.tsx` (added `loader: () => getRegion()`, `component: RootLayout` wrapping `<SiteHeader>`+`<Outlet>`+`<SiteFooter>` in a flex column, `notFoundComponent: NotFound`); created `src/components/{RegionSwitch,SiteHeader,SiteFooter}.tsx`. Verified: Step 6 turbo type-check/lint/build **13/13 green** (10 cached). Dev smoke (automatable): `/` and `/build` → 200; SSR includes header brand (`Builder</span>`), `aria-label="Region"` group, and all three footer disclosure lines; served CSS contains `24 8% 10%` + `28 85% 52%` (dark theme); vehicle filter chips (All/Toyota/Nissan/Jeep) render. **Region plumbing proven server-side:** default request → `US aria-pressed="true"`/`GCC false`; `Cookie: region=gcc` → `US false`/`GCC true`, confirming `requestRegion()` → `getRegion()` on the root loader. Spec-compliance review: ✅ byte-for-byte (all 5 files exact incl. `—` in footer; `shellComponent`+`component` split intact; `React.ReactNode` used without a React import, matching the pre-existing compiling pattern). Code-quality review (inline): ✅ ready to merge — semantic `<header>/<footer>`, RegionSwitch `role="group"`+`aria-pressed`+`type="button"` and cookie `max-age=31536000; samesite=lax` (matches Task 4's `getRegion` parse); disclosure present on every page. `@fontsource-variable/inter` was already a dep. No new deps; `routeTree.gen.ts` untouched (no route files changed). Interactive-only item deferred: GCC switch flipping an on-screen `AED …` price needs a build with parts (no curated builds until Task 13) → covered in Task 15's browser click-through. No blockers.
 
