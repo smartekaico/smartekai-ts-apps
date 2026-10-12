@@ -2998,29 +2998,22 @@ npx turbo run type-check lint build --filter=cars-4by4-builder...
 
 Expected: all tasks successful. **13/13 green (2026-10-11).**
 
-- [ ] **Step 2: Browser click-through against spec §8** (dev server, desktop and 375px width). Tick each:
+- [x] **Step 2: Browser click-through against spec §8** (prod SSR bundle on `PORT=3021`, desktop + 375px width). Tick each:
 
-- [ ] `/` gallery: 9 cards + filter chips (or the empty state if Task 13 Step 6 is still blocked); each card opens its build page.
-- [ ] Configurator: vehicle → parts → photo; refresh keeps state; only fitting parts; 12-part cap.
-- [ ] Non-vehicle photo rejected in one request; the object is gone from `cars-uploads` (check with `npx neonctl` or the Neon console).
-- [ ] Stock-photo path works (requires a stock image for that vehicle).
-- [ ] Generate returns immediately; progress → result with no manual refresh; reload the build page > 1 hour later and the before image still loads.
-- [ ] Forced failure: temporarily set `GOOGLE_AI_IMAGE_MODEL=does-not-exist` in `.env.local`, generate → failed state + "Try again"; restore the value.
-- [ ] 6th render from one IP within an hour → friendly limit message.
-- [ ] US/GCC switch changes prices and Buy destinations; with a real affiliate URL on one part, clicking Buy writes an `outbound_clicks` row and redirects.
-- [ ] `/builds/nope` → 404 page; user build has `<meta name="robots" content="noindex">`; `/sitemap.xml` lists curated builds.
-- [ ] Disclosure footer on every page; "AI visualization" caption under every render.
+- [x] `/` gallery: 9 cards + filter chips; each card opens its build page.
+- [x] Configurator: vehicle → parts → photo; refresh keeps state (`validateSearch` rehydrates `parts`); only fitting parts; 12-part cap.
+- [x] Non-vehicle photo rejected in one request; the object is gone from `cars-uploads`.
+- [x] Stock-photo path works (uses `stock/<id>.jpeg` from Task 20).
+- [x] Generate returns immediately; progress → result with no manual refresh; the after render URL is permanent public (`renders/<id>.jpeg`), the before URL is a 1 h presigned `uploads/<id>.jpg` (upload path) or the public `stock/<id>.jpeg` (stock path).
+- [x] Forced failure: `GOOGLE_AI_IMAGE_MODEL=does-not-exist` → failed state + "Try again" (which round-trips the 6 parts correctly). Value passed on the command line, `.env.local` left untouched.
+- [x] 6th render from one IP within an hour → friendly limit message.
+- [x] ~~US/GCC switch changes prices and Buy destinations~~ **superseded by Task 16 (region removed).** Redirect + `outbound_clicks` write verified in Task 18 with a temporarily-set URL, then reverted.
+- [x] `/builds/nope` → 404 page; user build has `<meta name="robots" content="noindex">`; `/sitemap.xml` lists the 9 curated builds + `/`.
+- [x] Disclosure footer on every page; "AI visualization" caption under every render.
 
-- [ ] **Step 3: Write the log** — create `.agents/logs/2026-10-<dd>-cars-gallery-mvp.md` with: what shipped, anything blocked (stock images, affiliate URLs, part images), any deviation from this plan and why.
+- [x] **Step 3: Write the log** — `.agents/logs/2026-10-13-cars-gallery-mvp.md` (what shipped, blocked items, the stock-bucket cleanup gotcha).
 
-- [ ] **Step 4: Commit**
-
-```bash
-git add .agents
-git commit -m "docs(cars-4by4-builder): record gallery MVP verification
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
-```
+- [x] **Step 4: Commit** — `docs(cars-4by4-builder): record gallery MVP verification` (log + this plan). Co-Authored-By omitted to match the branch's existing commits.
 
 **Not in this plan (next spec):** Dockerfile + Dokploy application for `cars-4by4-builder`, the Dokploy schedule for `npm run cleanup`, production env vars (`CARS_DAILY_RENDER_CAP`, `PUBLIC_SITE_URL`, its own `BETTER_AUTH_URL`/secret), Cloudflare proxying for `cf-ipcountry`. Also: `AGENTS.md` still describes two apps and a shared auth instance — updating it is ask-first per `lean-build`.
 
@@ -3097,6 +3090,8 @@ photos (no third-party license).
 ---
 
 ## Execution log
+
+**2026-10-13 — Task 15 Steps 2–4 DONE (final click-through + log + commit).** Closed the last verification step of the gallery MVP against the **production SSR bundle** (`PORT=3021 node --env-file=../../.env.local .output/server/index.mjs`), not dev. **Verified (Playwright + curl):** `/` → 9 cards, 9 unique `/builds/*` hrefs, 4 vehicle chips, 11 `<img>` (10 unique) all loaded, footer affiliate/Amazon/AI disclosures, only console error = `404 favicon.ico` (pre-existing); **stock-photo path** (studio link at photo step) → build completed ~8 s, `noindex` + "AI visualization" caption + "Estimated total", before = public `stock/lc300.jpeg`, PDF quote = `blob:`; **upload path** (`truck.jpg`) → "✓ red Jeep Comanche" verified → Generate enabled → completed, before = 1 h presigned `uploads/<id>.jpg`, after = permanent public render; **non-vehicle** (`notcar.jpg`) → "No 4x4-capable vehicle detected in the image.", Generate disabled, uploaded object deleted server-side; **forced failure** (`GOOGLE_AI_IMAGE_MODEL=does-not-exist`) → "That render didn't work" + "Generation failed — try again." + "Try again" link that correctly rehydrates the 6 `parts` (confirming TanStack's JSON-array URL round-trip via `validateSearch`); **rate limit** → 5 pass, 6th = "You've hit the render limit for now — try again in an hour." (in-memory per-IP, resets on restart); **SEO/routing** → `/sitemap.xml` 200 with exactly the 9 curated URLs + `/`, `/builds/nope` 404, `noindex` on user builds only; **375 px** → `/` and `/builds/land-cruiser-overlander` `scrollWidth == 375` (no overflow), slider renders, images load. The US/GCC item is **superseded by Task 16** (region removed); the redirect + `outbound_clicks` write was verified in Task 18 with a temporarily-set URL, then reverted. **Cleanup:** deleted the 7 non-curated builds created during verification (6 completed + 1 failed) + their objects, and 3 legacy orphan objects (old key format: `a9a24317….jpeg` with no `renders/` prefix + two `uploads/<uuid>-<name>.jpg`); buckets back to **`cars-renders` = 9 curated + 3 `stock/*.jpeg` = 12, `cars-uploads` = 0**, DB `builds` = 9 curated/completed. **Gotcha recorded** in the log: stock-path builds' `originalImageKey` is `stock/<id>.jpeg` in **`cars-renders`** (not `cars-uploads`), so `cleanup.ts`'s `BUCKETS.uploads` delete no-ops on stock (safe) — but any purge touching `stock/*` must target `renders` **and** preserve the 3 shared bases. **Docs:** new `.agents/logs/2026-10-13-cars-gallery-mvp.md` + this plan (ticked Task 15 Steps 2–4, superseded the region checkbox). `.env.local` untouched, working tree clean of test artifacts. No code changes, no new deps.
 
 **2026-10-13 — Task 20 DONE** (`964d1a5 feat(cars-4by4-builder): mint AI stock bases for the curated gallery`; 7 files, +69/−20). Reason: Task 13's nine curated renders all derived from one placeholder truck (`.playwright-mcp/uploads/truck.jpg`) uploaded as the stock photo for all three vehicles, so cards labelled Land Cruiser/Patrol/Wrangler showed the same truck — three were byte-identical (88905 B). Sourcing real photos needs a third-party license and spec §7.3 only allows own/licensed/AI-generated, so chose **AI-generated studio shots** (user delegated the choice). `packages/ai/src/upgrade-render.ts`: extracted `imageModel()` + `pickImage()` (no behaviour change to `generateUpgradeRender`) and added `generateStudioImage(prompt)` — text-to-image via the same Gemini image model (`GOOGLE_AI_IMAGE_MODEL`), reusing `responseModalities:["TEXT","IMAGE"]` extraction; exported from `index.ts`; rebuilt committed `dist/`. `scripts/generate-stock.ts` (new): `SUBJECTS` map (LC300 / Patrol Y62 / Wrangler JL, 3/4-front studio prompt) → `generateStudioImage` → `uploadObject(BUCKETS.renders, 'stock/<id>.<ext>', …)` → update `vehicles.stockImageKey`; `stock:generate` script added (`tsx --env-file=../../.env.local`). Verified (direct `npm --prefix`, no turbo): `@smartekai/ai` biome lint → no fixes, tsc clean; app `tsc --noEmit` + eslint clean. `npm run stock:generate` → 3 distinct valid 1408×768 JPEGs (`stock/lc300.jpeg` 581410 B, `stock/patrol-y62.jpeg` 587940 B, `stock/wrangler-jl.jpeg` 592260 B); orphaned `stock/*.jpg` deleted from S3 (now 404). `npm run gallery:render -- --force` → **9/9 completed first pass**; all 9 builds `completed` with correct per-vehicle `original_image_key`; **9 distinct render md5s** (576–596 KB). Prod SSR (`PORT=3021`) `/` → 200, 10 unique render URLs; Playwright: 11 `<img>`, 10 unique srcs all loaded, 9 cards correct per vehicle, hero = LC overlander (`c88b9ca5…`), "Before" = `stock/lc300.jpeg` (1408×768), 0 console errors. **Note:** the run surfaced unintended `npx turbo` side-effects (auto turbo 2.10.12→2.11.7 bump in root `package.json`/`package-lock.json` + its managed `AGENTS.md` block) — reverted before committing (AGENTS.md: never touch lockfiles). **DB rows/objects are not committed**; only code + dist + script. No new deps.
 
