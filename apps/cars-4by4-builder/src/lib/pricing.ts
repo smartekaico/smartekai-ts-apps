@@ -1,5 +1,9 @@
 export const LABOR_RATE_USD = 100;
 
+export function formatPrice(usd: number): string {
+  return `$${Math.round(usd).toLocaleString("en-US")}`;
+}
+
 type PricedPart = { priceUsd: string; laborHoursEst: string };
 
 export function summarize(parts: PricedPart[]) {

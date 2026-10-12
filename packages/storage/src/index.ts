@@ -58,6 +58,23 @@ export function getPublicUrl(bucket: string, key: string): string {
   return `${requireEnv("AWS_ENDPOINT_URL_S3")}/${bucket}/${key}`;
 }
 
+/**
+ * Reads an object's bytes server-side. Used by same-origin image proxies so
+ * browsers never have to fetch Neon Object Storage cross-origin (whose CDN
+ * mishandles `Vary: Origin` and can serve a no-CORS cached variant).
+ */
+export async function getObjectBytes(
+  bucket: string,
+  key: string,
+): Promise<{ bytes: ArrayBuffer; contentType: string }> {
+  const res = await client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+  if (!res.Body) throw new Error(`Object not found: ${bucket}/${key}`);
+  const body = res.Body as { transformToByteArray(): Promise<Uint8Array> };
+  const view = await body.transformToByteArray();
+  const bytes = view.buffer.slice(view.byteOffset, view.byteOffset + view.byteLength) as ArrayBuffer;
+  return { bytes, contentType: res.ContentType ?? "application/octet-stream" };
+}
+
 export const BUCKETS = {
   uploads: "cars-uploads",
   renders: "cars-renders",

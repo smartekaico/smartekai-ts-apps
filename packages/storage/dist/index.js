@@ -5,6 +5,7 @@ exports.uploadObject = uploadObject;
 exports.deleteObject = deleteObject;
 exports.getPresignedReadUrl = getPresignedReadUrl;
 exports.getPublicUrl = getPublicUrl;
+exports.getObjectBytes = getObjectBytes;
 const client_s3_1 = require("@aws-sdk/client-s3");
 const s3_request_presigner_1 = require("@aws-sdk/s3-request-presigner");
 function requireEnv(name) {
@@ -41,6 +42,20 @@ async function getPresignedReadUrl(bucket, key, expiresInSeconds = 300) {
 /** Public URL for an object in a public_read bucket — no signing needed. */
 function getPublicUrl(bucket, key) {
     return `${requireEnv("AWS_ENDPOINT_URL_S3")}/${bucket}/${key}`;
+}
+/**
+ * Reads an object's bytes server-side. Used by same-origin image proxies so
+ * browsers never have to fetch Neon Object Storage cross-origin (whose CDN
+ * mishandles `Vary: Origin` and can serve a no-CORS cached variant).
+ */
+async function getObjectBytes(bucket, key) {
+    const res = await client.send(new client_s3_1.GetObjectCommand({ Bucket: bucket, Key: key }));
+    if (!res.Body)
+        throw new Error(`Object not found: ${bucket}/${key}`);
+    const body = res.Body;
+    const view = await body.transformToByteArray();
+    const bytes = view.buffer.slice(view.byteOffset, view.byteOffset + view.byteLength);
+    return { bytes, contentType: res.ContentType ?? "application/octet-stream" };
 }
 exports.BUCKETS = {
     uploads: "cars-uploads",

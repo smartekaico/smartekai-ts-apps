@@ -1,7 +1,3 @@
-export type AffiliateUrls = {
-    us?: string;
-    gcc?: string;
-};
 export type DetectedVehicle = {
     make: string | null;
     model: string | null;
@@ -872,25 +868,23 @@ export declare const parts: import("drizzle-orm/pg-core").PgTableWithColumns<{
             }, {}, {}, import("drizzle-orm").ColumnBuilderExtraConfig>;
             size: undefined;
         }>;
-        affiliateUrls: import("drizzle-orm/pg-core").PgColumn<{
-            name: "affiliate_urls";
+        affiliateUrl: import("drizzle-orm/pg-core").PgColumn<{
+            name: "affiliate_url";
             tableName: "parts";
-            dataType: "json";
-            columnType: "PgJsonb";
-            data: AffiliateUrls;
-            driverParam: unknown;
-            notNull: true;
-            hasDefault: true;
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
             isPrimaryKey: false;
             isAutoincrement: false;
             hasRuntimeDefault: false;
-            enumValues: undefined;
+            enumValues: [string, ...string[]];
             baseColumn: never;
             identity: undefined;
             generated: undefined;
-        }, {}, {
-            $type: AffiliateUrls;
-        }>;
+        }, {}, {}>;
     };
     dialect: "pg";
 }>;
@@ -1333,23 +1327,6 @@ export declare const outboundClicks: import("drizzle-orm/pg-core").PgTableWithCo
             data: string;
             driverParam: string;
             notNull: false;
-            hasDefault: false;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: [string, ...string[]];
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
-        region: import("drizzle-orm/pg-core").PgColumn<{
-            name: "region";
-            tableName: "outbound_clicks";
-            dataType: "string";
-            columnType: "PgText";
-            data: string;
-            driverParam: string;
-            notNull: true;
             hasDefault: false;
             isPrimaryKey: false;
             isAutoincrement: false;

@@ -7,11 +7,10 @@ import { detectVehicle } from "@smartekai/ai";
 import { BUCKETS, deleteObject, getPresignedReadUrl, uploadObject } from "@smartekai/storage";
 import { MAX_PARTS } from "@/lib/catalog";
 import { summarize } from "@/lib/pricing";
-import type { Region } from "@/lib/region";
 import { STALE_PROCESSING_MS, runGeneration } from "@/server/generate";
 import { originalImageUrl, publicImageUrl } from "@/server/images";
 import { photoRules, renderRules, tryConsume } from "@/server/rate-limit";
-import { requestIp, requestRegion } from "@/server/request";
+import { requestIp } from "@/server/request";
 
 const ACCEPTED_TYPES: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
@@ -32,7 +31,7 @@ export type PublicPart = {
   buyable: boolean;
 };
 
-function toPublicPart(p: Part, region: Region): PublicPart {
+function toPublicPart(p: Part): PublicPart {
   return {
     id: p.id,
     name: p.name,
@@ -42,29 +41,25 @@ function toPublicPart(p: Part, region: Region): PublicPart {
     laborHoursEst: p.laborHoursEst,
     fitmentDifficulty: p.fitmentDifficulty,
     imageUrl: p.imageUrl,
-    buyable: Boolean(p.affiliateUrls[region]),
+    buyable: Boolean(p.affiliateUrl),
   };
 }
 
-export const getRegion = createServerFn({ method: "GET" }).handler(async () => requestRegion());
-
 export const getConfigurator = createServerFn({ method: "GET" }).handler(async () => {
   const db = getDbCars();
-  const region = requestRegion();
   const [allVehicles, allParts, allPresets] = await Promise.all([
     db.select().from(vehicles).orderBy(asc(vehicles.sortOrder)),
     db.select().from(parts).orderBy(asc(parts.category), asc(parts.name)),
     db.select().from(presets).orderBy(asc(presets.sortOrder)),
   ]);
   return {
-    region,
     vehicles: allVehicles.map((v) => ({
       id: v.id,
       name: v.name,
       yearRange: v.yearRange,
       stockImageUrl: v.stockImageKey ? publicImageUrl(v.stockImageKey) : null,
     })),
-    parts: allParts.map((p) => ({ ...toPublicPart(p, region), vehicleIds: p.vehicleIds })),
+    parts: allParts.map((p) => ({ ...toPublicPart(p), vehicleIds: p.vehicleIds })),
     presets: allPresets.map((p) => ({ id: p.id, slug: p.slug, vehicleId: p.vehicleId, name: p.name, partIds: p.partIds })),
   };
 });
@@ -190,7 +185,6 @@ export const getBuild = createServerFn({ method: "GET" })
   })
   .handler(async ({ data: slugOrId }) => {
     const db = getDbCars();
-    const region = requestRegion();
     const build = (await db.select().from(builds).where(or(eq(builds.slug, slugOrId), eq(builds.id, slugOrId)))).at(0);
     if (!build || build.status === "draft") throw notFound();
 
@@ -217,20 +211,19 @@ export const getBuild = createServerFn({ method: "GET" })
       isCurated: build.isCurated,
       status,
       errorMessage,
-      region,
       vehicle: { id: vehicle.id, name: vehicle.name },
       presetName: preset?.name ?? null,
       presetSlug: preset?.slug ?? null,
       selectedPartIds: build.selectedPartIds,
       beforeUrl: await originalImageUrl(build.originalImageKey),
       afterUrl: build.renderKey ? publicImageUrl(build.renderKey) : null,
-      parts: buildParts.map((p) => toPublicPart(p, region)),
+      renderKey: build.renderKey,
+      parts: buildParts.map((p) => toPublicPart(p)),
     };
   });
 
 export const getGallery = createServerFn({ method: "GET" }).handler(async () => {
   const db = getDbCars();
-  const region = requestRegion();
   const [curated, allParts, allVehicles, allPresets] = await Promise.all([
     db.select().from(builds).where(and(eq(builds.isCurated, true), eq(builds.status, "completed"))),
     db.select({ id: parts.id, priceUsd: parts.priceUsd, laborHoursEst: parts.laborHoursEst }).from(parts),
@@ -274,7 +267,6 @@ export const getGallery = createServerFn({ method: "GET" }).handler(async () => 
   );
 
   return {
-    region,
     vehicles: allVehicles.map((v) => ({ id: v.id, name: v.name })),
     builds: gallery,
   };

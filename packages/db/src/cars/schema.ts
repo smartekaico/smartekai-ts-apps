@@ -12,7 +12,6 @@ import {
 // Cars 4x4 customizer — dedicated database (DATABASE_NEONDB_SMARTEKAI).
 // Pushed with drizzle.cars.config.ts, never with the shared legal/medical config.
 
-export type AffiliateUrls = { us?: string; gcc?: string };
 export type DetectedVehicle = {
   make: string | null;
   model: string | null;
@@ -101,7 +100,7 @@ export const parts = pgTable("parts", {
   aiPromptSnippet: text("ai_prompt_snippet").notNull(),
   imageUrl: text("image_url").notNull().default(""), // "" = no licensed image yet
   vehicleIds: text("vehicle_ids").array().notNull(),
-  affiliateUrls: jsonb("affiliate_urls").$type<AffiliateUrls>().notNull().default({}),
+  affiliateUrl: text("affiliate_url"), // null = no partner link yet (Buy stays hidden)
 });
 
 export const presets = pgTable("presets", {
@@ -145,7 +144,6 @@ export const outboundClicks = pgTable("outbound_clicks", {
   id: text("id").primaryKey(),
   partId: text("part_id").notNull(),
   buildId: text("build_id"), // no FK: clicks outlive cleaned-up builds
-  region: text("region").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

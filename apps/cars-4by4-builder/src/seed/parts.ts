@@ -1,6 +1,6 @@
-// PLACEHOLDER CATALOG: imageUrl "" and affiliateUrls {} until real, permitted
+// PLACEHOLDER CATALOG: imageUrl "" and affiliateUrl null until real, permitted
 // values are supplied (spec §7). Buy buttons stay hidden for parts without a
-// URL in the visitor's region. vehicleIds = all three until real fitment data.
+// URL. vehicleIds = all three until real fitment data.
 const ALL = ["lc300", "patrol-y62", "wrangler-jl"];
 
 type SeedPart = {
@@ -47,5 +47,5 @@ export const seedParts = catalog.map((p) => ({
   ...p,
   imageUrl: "",
   vehicleIds: ALL,
-  affiliateUrls: {},
+  affiliateUrl: null,
 }));

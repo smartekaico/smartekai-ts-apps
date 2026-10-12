@@ -95,7 +95,6 @@ function Configurator() {
                 <PartCard
                   key={part.id}
                   part={part}
-                  region={data.region}
                   selected={selected.includes(part.id)}
                   disabled={selected.length >= MAX_PARTS}
                   onToggle={() => toggle(part.id)}
@@ -124,7 +123,6 @@ function Configurator() {
         <BuildFooter
           count={selectedParts.length}
           totalUsd={totalUsd}
-          region={data.region}
           nextLabel={step === "parts" ? "Next: add your truck" : undefined}
           onNext={step === "parts" ? () => update({ step: "photo" }) : undefined}
         />

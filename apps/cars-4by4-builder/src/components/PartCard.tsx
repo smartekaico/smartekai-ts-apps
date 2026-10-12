@@ -1,19 +1,16 @@
 import type { PublicPart } from "@/lib/builds";
-import { formatPrice } from "@/lib/region";
-import type { Region } from "@/lib/region";
+import { formatPrice } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 import { FitmentBadge } from "@/components/FitmentBadge";
 import { PartImage } from "@/components/PartImage";
 
 export function PartCard({
   part,
-  region,
   selected,
   disabled,
   onToggle,
 }: {
   part: PublicPart;
-  region: Region;
   selected: boolean;
   disabled: boolean;
   onToggle: () => void;
@@ -35,7 +32,7 @@ export function PartCard({
         <p className="text-sm font-semibold leading-tight">{part.name}</p>
         <p className="text-xs text-muted-foreground">{part.brand}</p>
         <div className="mt-auto flex items-center justify-between gap-2 pt-2">
-          <span className="text-sm font-bold">{formatPrice(Number(part.priceUsd), region)}</span>
+          <span className="text-sm font-bold">{formatPrice(Number(part.priceUsd))}</span>
           <FitmentBadge difficulty={part.fitmentDifficulty} />
         </div>
       </div>

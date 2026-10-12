@@ -17,7 +17,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
-  const { builds, vehicles, region } = Route.useLoaderData();
+  const { builds, vehicles } = Route.useLoaderData();
   const [filter, setFilter] = useState("all");
   const featured = builds.at(0);
   const visible = filter === "all" ? builds : builds.filter((b) => b.vehicleId === filter);
@@ -68,7 +68,7 @@ function Home() {
         {visible.length > 0 ? (
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {visible.map((b) => (
-              <BuildCard key={b.slug} {...b} region={region} />
+              <BuildCard key={b.slug} {...b} />
             ))}
           </div>
         ) : (

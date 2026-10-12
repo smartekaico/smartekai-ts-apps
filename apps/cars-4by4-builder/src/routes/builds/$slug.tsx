@@ -1,14 +1,12 @@
 import { useEffect } from "react";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import { PDFDownloadLink } from "@react-pdf/renderer";
 import { AlertTriangle, Info } from "lucide-react";
 import { getBuild } from "@/lib/builds";
 import { getAdvisories } from "@/lib/advisories";
-import { summarize } from "@/lib/pricing";
-import { formatPrice } from "@/lib/region";
+import { formatPrice, summarize } from "@/lib/pricing";
 import { BeforeAfterSlider } from "@/components/BeforeAfterSlider";
 import { BuildProgress } from "@/components/BuildProgress";
-import { BuildReportPdf } from "@/components/BuildReportPdf";
+import { BuildQuotePdfLink } from "@/components/BuildQuotePdfLink";
 import { ShareButton } from "@/components/ShareButton";
 import { ShopList } from "@/components/ShopList";
 
@@ -69,6 +67,7 @@ function BuildPage() {
   const advisories = getAdvisories(build.parts);
   const totals = summarize(build.parts);
   const title = build.presetName ? `${build.vehicle.name} — ${build.presetName}` : `Your ${build.vehicle.name} build`;
+  const pdfRenderUrl = build.renderKey ? `/api/render?key=${encodeURIComponent(build.renderKey)}` : build.afterUrl;
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-8">
@@ -92,20 +91,20 @@ function BuildPage() {
       <section className="mt-10">
         <h2 className="text-2xl">Shop this build</h2>
         <div className="mt-4">
-          <ShopList parts={build.parts} region={build.region} buildId={build.id} />
+          <ShopList parts={build.parts} buildId={build.id} />
         </div>
         <dl className="mt-4 ml-auto flex max-w-xs flex-col gap-1 text-sm">
           <div className="flex justify-between">
             <dt className="text-muted-foreground">Parts</dt>
-            <dd>{formatPrice(totals.partsUsd, build.region)}</dd>
+            <dd>{formatPrice(totals.partsUsd)}</dd>
           </div>
           <div className="flex justify-between">
             <dt className="text-muted-foreground">Est. labor ({totals.laborHours} hrs)</dt>
-            <dd>{formatPrice(totals.laborUsd, build.region)}</dd>
+            <dd>{formatPrice(totals.laborUsd)}</dd>
           </div>
           <div className="flex justify-between border-t border-border pt-1 text-base font-bold">
             <dt>Estimated total</dt>
-            <dd>{formatPrice(totals.totalUsd, build.region)}</dd>
+            <dd>{formatPrice(totals.totalUsd)}</dd>
           </div>
         </dl>
       </section>
@@ -138,21 +137,7 @@ function BuildPage() {
         >
           Full-size image ↗
         </a>
-        <PDFDownloadLink
-          document={
-            <BuildReportPdf
-              title={title}
-              renderUrl={build.afterUrl}
-              parts={build.parts}
-              advisories={advisories}
-              region={build.region}
-            />
-          }
-          fileName="4x4-build-quote.pdf"
-          className="rounded-md border border-border px-4 py-2 text-sm font-semibold hover:border-primary"
-        >
-          {({ loading }) => (loading ? "Preparing PDF…" : "PDF quote")}
-        </PDFDownloadLink>
+        <BuildQuotePdfLink title={title} renderUrl={pdfRenderUrl} parts={build.parts} advisories={advisories} />
       </div>
     </main>
   );

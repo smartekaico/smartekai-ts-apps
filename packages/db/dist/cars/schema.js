@@ -70,7 +70,7 @@ exports.parts = (0, pg_core_1.pgTable)("parts", {
     aiPromptSnippet: (0, pg_core_1.text)("ai_prompt_snippet").notNull(),
     imageUrl: (0, pg_core_1.text)("image_url").notNull().default(""), // "" = no licensed image yet
     vehicleIds: (0, pg_core_1.text)("vehicle_ids").array().notNull(),
-    affiliateUrls: (0, pg_core_1.jsonb)("affiliate_urls").$type().notNull().default({}),
+    affiliateUrl: (0, pg_core_1.text)("affiliate_url"), // null = no partner link yet (Buy stays hidden)
 });
 exports.presets = (0, pg_core_1.pgTable)("presets", {
     id: (0, pg_core_1.text)("id").primaryKey(),
@@ -107,6 +107,5 @@ exports.outboundClicks = (0, pg_core_1.pgTable)("outbound_clicks", {
     id: (0, pg_core_1.text)("id").primaryKey(),
     partId: (0, pg_core_1.text)("part_id").notNull(),
     buildId: (0, pg_core_1.text)("build_id"), // no FK: clicks outlive cleaned-up builds
-    region: (0, pg_core_1.text)("region").notNull(),
     createdAt: (0, pg_core_1.timestamp)("created_at").defaultNow().notNull(),
 });

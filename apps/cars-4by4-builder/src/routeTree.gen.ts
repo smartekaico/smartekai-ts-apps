@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BuildRouteImport } from './routes/build'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as ApiRenderRouteImport } from './routes/api/render'
 import { Route as BuildsSlugRouteImport } from './routes/builds/$slug'
 import { Route as GoPartIdRouteImport } from './routes/go/$partId'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -29,6 +30,11 @@ const BuildRoute = BuildRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRenderRoute = ApiRenderRouteImport.update({
+  id: '/api/render',
+  path: '/api/render',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BuildsSlugRoute = BuildsSlugRouteImport.update({
@@ -51,6 +57,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/build': typeof BuildRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/render': typeof ApiRenderRoute
   '/builds/$slug': typeof BuildsSlugRoute
   '/go/$partId': typeof GoPartIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -59,6 +66,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/build': typeof BuildRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/render': typeof ApiRenderRoute
   '/builds/$slug': typeof BuildsSlugRoute
   '/go/$partId': typeof GoPartIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -68,6 +76,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/build': typeof BuildRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/render': typeof ApiRenderRoute
   '/builds/$slug': typeof BuildsSlugRoute
   '/go/$partId': typeof GoPartIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -78,6 +87,7 @@ export interface FileRouteTypes {
     | '/'
     | '/build'
     | '/sitemap.xml'
+    | '/api/render'
     | '/builds/$slug'
     | '/go/$partId'
     | '/api/auth/$'
@@ -86,6 +96,7 @@ export interface FileRouteTypes {
     | '/'
     | '/build'
     | '/sitemap.xml'
+    | '/api/render'
     | '/builds/$slug'
     | '/go/$partId'
     | '/api/auth/$'
@@ -94,6 +105,7 @@ export interface FileRouteTypes {
     | '/'
     | '/build'
     | '/sitemap.xml'
+    | '/api/render'
     | '/builds/$slug'
     | '/go/$partId'
     | '/api/auth/$'
@@ -103,6 +115,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BuildRoute: typeof BuildRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  ApiRenderRoute: typeof ApiRenderRoute
   BuildsSlugRoute: typeof BuildsSlugRoute
   GoPartIdRoute: typeof GoPartIdRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -129,6 +142,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/render': {
+      id: '/api/render'
+      path: '/api/render'
+      fullPath: '/api/render'
+      preLoaderRoute: typeof ApiRenderRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/builds/$slug': {
@@ -159,6 +179,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BuildRoute: BuildRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  ApiRenderRoute: ApiRenderRoute,
   BuildsSlugRoute: BuildsSlugRoute,
   GoPartIdRoute: GoPartIdRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,

@@ -1,7 +1,6 @@
 import { HeadContent, Link, Outlet, Scripts, createRootRoute } from "@tanstack/react-router";
 import "@fontsource-variable/inter";
 import appCss from "../styles.css?url";
-import { getRegion } from "@/lib/builds";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 
@@ -15,7 +14,6 @@ export const Route = createRootRoute({
     ],
     links: [{ rel: "stylesheet", href: appCss }],
   }),
-  loader: () => getRegion(),
   shellComponent: RootDocument,
   component: RootLayout,
   notFoundComponent: NotFound,
@@ -36,10 +34,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 }
 
 function RootLayout() {
-  const region = Route.useLoaderData();
   return (
     <div className="flex min-h-screen flex-col">
-      <SiteHeader region={region} />
+      <SiteHeader />
       <div className="flex-1">
         <Outlet />
       </div>

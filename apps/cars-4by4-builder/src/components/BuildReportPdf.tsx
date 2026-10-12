@@ -1,7 +1,5 @@
 import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
-import { summarize } from "@/lib/pricing";
-import { formatPrice } from "@/lib/region";
-import type { Region } from "@/lib/region";
+import { formatPrice, summarize } from "@/lib/pricing";
 
 const styles = StyleSheet.create({
   page: { padding: 32, fontSize: 11 },
@@ -20,13 +18,11 @@ export function BuildReportPdf({
   renderUrl,
   parts,
   advisories,
-  region,
 }: {
   title: string;
   renderUrl: string;
   parts: Part[];
   advisories: { message: string }[];
-  region: Region;
 }) {
   const totals = summarize(parts);
   return (
@@ -41,21 +37,21 @@ export function BuildReportPdf({
           <View key={part.id} style={styles.row}>
             <Text>{part.name}</Text>
             <Text>
-              {formatPrice(Number(part.priceUsd), region)} · {part.laborHoursEst} hrs
+              {formatPrice(Number(part.priceUsd))} · {part.laborHoursEst} hrs
             </Text>
           </View>
         ))}
         <View style={styles.total}>
           <Text>Parts</Text>
-          <Text>{formatPrice(totals.partsUsd, region)}</Text>
+          <Text>{formatPrice(totals.partsUsd)}</Text>
         </View>
         <View style={styles.total}>
           <Text>Est. labor ({totals.laborHours} hrs)</Text>
-          <Text>{formatPrice(totals.laborUsd, region)}</Text>
+          <Text>{formatPrice(totals.laborUsd)}</Text>
         </View>
         <View style={styles.total}>
           <Text>Estimated total</Text>
-          <Text>{formatPrice(totals.totalUsd, region)}</Text>
+          <Text>{formatPrice(totals.totalUsd)}</Text>
         </View>
 
         <Text style={styles.sectionTitle}>Fitment notes</Text>

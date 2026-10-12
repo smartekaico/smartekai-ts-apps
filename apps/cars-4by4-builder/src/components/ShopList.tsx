@@ -1,10 +1,9 @@
 import type { PublicPart } from "@/lib/builds";
-import { formatPrice } from "@/lib/region";
-import type { Region } from "@/lib/region";
+import { formatPrice } from "@/lib/pricing";
 import { FitmentBadge } from "@/components/FitmentBadge";
 import { PartImage } from "@/components/PartImage";
 
-export function ShopList({ parts, region, buildId }: { parts: PublicPart[]; region: Region; buildId: string }) {
+export function ShopList({ parts, buildId }: { parts: PublicPart[]; buildId: string }) {
   return (
     <ul className="divide-y divide-border rounded-lg border border-border bg-card">
       {parts.map((p) => (
@@ -22,7 +21,7 @@ export function ShopList({ parts, region, buildId }: { parts: PublicPart[]; regi
             </div>
           </div>
           <div className="shrink-0 text-right">
-            <p className="font-bold">{formatPrice(Number(p.priceUsd), region)}</p>
+            <p className="font-bold">{formatPrice(Number(p.priceUsd))}</p>
             {p.buyable ? (
               <a
                 href={`/go/${p.id}?build=${buildId}`}

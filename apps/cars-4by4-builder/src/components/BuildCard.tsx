@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { formatPrice } from "@/lib/region";
-import type { Region } from "@/lib/region";
+import { formatPrice } from "@/lib/pricing";
 
 export function BuildCard({
   slug,
@@ -8,14 +7,12 @@ export function BuildCard({
   vehicleName,
   presetName,
   totalUsd,
-  region,
 }: {
   slug: string;
   afterUrl: string;
   vehicleName: string;
   presetName: string;
   totalUsd: number;
-  region: Region;
 }) {
   return (
     <Link
@@ -29,7 +26,7 @@ export function BuildCard({
           <p className="font-extrabold tracking-tight">{presetName}</p>
           <p className="text-xs text-muted-foreground">{vehicleName}</p>
         </div>
-        <span className="text-sm font-bold text-primary">{formatPrice(totalUsd, region)}</span>
+        <span className="text-sm font-bold text-primary">{formatPrice(totalUsd)}</span>
       </div>
     </Link>
   );
