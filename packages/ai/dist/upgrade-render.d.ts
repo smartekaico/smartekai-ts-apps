@@ -12,3 +12,9 @@ export type GeneratedImage = {
  * needed, unlike Fal.ai's response-then-download shape).
  */
 export declare function generateUpgradeRender(originalImageUrl: string, prompt: string): Promise<GeneratedImage>;
+/**
+ * Text-to-image "studio shot" via the same Gemini image model. Mints a
+ * rights-clean base photo for the curated gallery when no licensed photo of a
+ * vehicle exists yet (spec §7.3 allows AI-generated studio shots).
+ */
+export declare function generateStudioImage(prompt: string): Promise<GeneratedImage>;

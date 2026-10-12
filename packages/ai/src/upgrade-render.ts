@@ -7,6 +7,20 @@ const google = createGoogleGenerativeAI({
 
 const IMAGE_MODEL_NAME = process.env.GOOGLE_AI_IMAGE_MODEL || "gemini-3.1-flash-image";
 
+function imageModel() {
+  return google(
+    IMAGE_MODEL_NAME.startsWith("models/") ? IMAGE_MODEL_NAME : `models/${IMAGE_MODEL_NAME}`,
+  );
+}
+
+function pickImage(result: {
+  files: { mediaType: string; uint8Array: Uint8Array }[];
+}): GeneratedImage {
+  const image = result.files.find((file) => file.mediaType.startsWith("image/"));
+  if (!image) throw new Error("Gemini did not return an image in the response");
+  return { data: image.uint8Array, mediaType: image.mediaType };
+}
+
 export type GeneratedImage = {
   data: Uint8Array;
   mediaType: string;
@@ -25,12 +39,8 @@ export async function generateUpgradeRender(
   originalImageUrl: string,
   prompt: string,
 ): Promise<GeneratedImage> {
-  const model = google(
-    IMAGE_MODEL_NAME.startsWith("models/") ? IMAGE_MODEL_NAME : `models/${IMAGE_MODEL_NAME}`,
-  );
-
   const result = await generateText({
-    model,
+    model: imageModel(),
     providerOptions: {
       google: { responseModalities: ["TEXT", "IMAGE"] },
     },
@@ -48,10 +58,21 @@ export async function generateUpgradeRender(
     ],
   });
 
-  const image = result.files.find((f) => f.mediaType.startsWith("image/"));
-  if (!image) {
-    throw new Error("Gemini did not return an image in the response");
-  }
+  return pickImage(result);
+}
 
-  return { data: image.uint8Array, mediaType: image.mediaType };
+/**
+ * Text-to-image "studio shot" via the same Gemini image model. Mints a
+ * rights-clean base photo for the curated gallery when no licensed photo of a
+ * vehicle exists yet (spec §7.3 allows AI-generated studio shots).
+ */
+export async function generateStudioImage(prompt: string): Promise<GeneratedImage> {
+  const result = await generateText({
+    model: imageModel(),
+    providerOptions: {
+      google: { responseModalities: ["TEXT", "IMAGE"] },
+    },
+    prompt,
+  });
+  return pickImage(result);
 }
