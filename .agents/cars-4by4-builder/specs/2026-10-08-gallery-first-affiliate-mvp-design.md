@@ -207,3 +207,39 @@ Login / "my garage" (Better Auth wiring stays, unused); Arabic or any i18n; a
 single-checkout "order all"; live price syncing; admin/CMS for the catalog; more
 than 3 vehicles; queue infrastructure; Dockerfile/Dokploy deployment (next spec);
 analytics beyond `outbound_clicks`.
+
+## 10. Revision — 2026-10-12: universal market; SSR & CORS defect fixes
+
+Approved after Task 15's manual verification. This section supersedes the
+region-specific parts of §0, §1, §2, §4, §7 and §8.
+
+**Market is universal — no regions.** The US/GCC concept, the header region
+switch, the `region` cookie / `cf-ipcountry` lookup, AED price display and the
+per-region affiliate URLs are all removed. Everything is USD.
+
+- §0 "Market" / "Currency" rows superseded: one global market, USD only.
+- §1 header: no region switch; part cards show one USD price.
+- §2 `parts.affiliateUrls jsonb` → **`parts.affiliate_url text`** (nullable);
+  `outbound_clicks.region` removed; labor stays $100/hr USD.
+- §4 region resolution deleted: `/go/$partId` looks up the single
+  `parts.affiliate_url`, logs the click and `302`s; `404` when null.
+- §7 affiliate accounts are no longer "per region" — one program suffices.
+- §8 acceptance: the "US/GCC switch changes prices (USD/AED)" bullet is dropped.
+
+**Defect fixes (found in Task 15, both fixed):**
+
+1. **Build page rendered empty under SSR.** `PDFDownloadLink` from
+   `@react-pdf/renderer` throws during server render; with no error boundary the
+   whole `BuildPage` subtree was dropped (HTML 16 KB → 5.5 KB). Fix: load the PDF
+   link client-only (`src/components/BuildQuotePdfLink.tsx`) — `@react-pdf/renderer`
+   and `BuildReportPdf` are dynamically imported in an effect, with a plain "PDF
+   quote" placeholder until ready.
+2. **PDF image fetch failed (CORS).** Neon Object Storage's CDN emits
+   `access-control-allow-origin: *` only when the request carries an `Origin`, yet
+   caches one variant per URL while sending `Vary: Origin`; the page's own no-CORS
+   `<img>` warms the cache with a no-CORS response, so react-pdf's later
+   cross-origin fetch of the same URL is served that variant and blocked. Fix: a
+   same-origin proxy route `GET /api/render?key=<key>`
+   (`src/routes/api/render.ts`) streams the render bytes from our own origin and
+   the PDF points at it. The visible `<img>` and "Full-size image" link keep the
+   public URL.

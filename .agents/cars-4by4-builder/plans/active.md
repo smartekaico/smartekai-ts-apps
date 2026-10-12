@@ -2990,13 +2990,13 @@ Note for whoever next runs a shared-schema `drizzle-kit push` against the legal 
 
 ### Task 15: Final verification and log
 
-- [ ] **Step 1: Scoped gate**
+- [x] **Step 1: Scoped gate**
 
 ```bash
 npx turbo run type-check lint build --filter=cars-4by4-builder...
 ```
 
-Expected: all tasks successful.
+Expected: all tasks successful. **13/13 green (2026-10-11).**
 
 - [ ] **Step 2: Browser click-through against spec §8** (dev server, desktop and 375px width). Tick each:
 
@@ -3026,7 +3026,54 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 ---
 
+### Task 16: Make the market universal (drop US/GCC regions)
+
+Approved after Task 15 verification (spec §10). Currency is USD `$` everywhere.
+
+- [x] **Step 1: Pricing helper** — replace the region-aware renderer with a
+  single region-free `formatPrice(usd)` in `src/lib/pricing.ts`.
+- [x] **Step 2: Delete region plumbing** — remove `src/lib/region.ts` and
+  `src/components/RegionSwitch.tsx`; drop `requestRegion` from
+  `src/server/request.ts`.
+- [x] **Step 3: Thread removal** — drop every `region` prop/field/import from
+  `builds.ts`, `SiteHeader`, `BuildCard`, `PartCard`, `BuildFooter`, `ShopList`,
+  `BuildReportPdf`, and routes `__root`, `index`, `build`, `builds/$slug`,
+  `go/$partId`. `/go/$partId` targets the single `parts.affiliateUrl`.
+- [x] **Step 4: Verify** — grep `src/` + `packages/db/src` for no remaining
+  `region` / `affiliateUrls` / `RegionSwitch` / `cf-ipcountry`.
+
+### Task 17: Schema — single affiliate URL, no click region
+
+- [x] **Step 1:** `packages/db/src/cars/schema.ts` — remove `AffiliateUrls`
+  and `outbound_clicks.region`; `affiliateUrl: text("affiliate_url")` nullable.
+- [x] **Step 2:** build `@smartekai/db`; drop the old columns via raw SQL
+  (`parts.affiliate_urls`, `outbound_clicks.region`) then
+  `npm run db:push:cars` to add `parts.affiliate_url`.
+- [x] **Step 3:** confirm in `information_schema` (new column present, old gone).
+
+### Task 18: Fix defect 1 (build page SSR) and defect 2 (render CORS)
+
+- [x] **Step 1 (defect 1):** client-only `BuildQuotePdfLink` replacing the
+  SSR-fatal `PDFDownloadLink`; dynamic import in an effect.
+- [x] **Step 2 (defect 2):** `getObjectBytes` in `packages/storage`; same-origin
+  proxy route `src/routes/api/render.ts`; PDF `<Image>` points at
+  `/api/render?key=<renderKey>`; `getBuild` returns `renderKey`.
+- [x] **Step 3: Verify** — scoped gate green; SSR build-page HTML back to
+  ~16 KB with title + "PDF quote"/"Estimated total"; Playwright load of
+  `/builds/land-cruiser-overlander` → **0 console errors**, `/api/render` → 200,
+  PDF link is a working `blob:` URL; other routes 200/404 as before.
+
+### Task 19: Docs and final verification
+
+- [x] **Step 1:** spec §10 revision (done).
+- [x] **Step 2:** this plan's Tasks 16–18 + log entry (done).
+- [ ] **Step 3: Commit** (pending user go-ahead).
+
+---
+
 ## Execution log
+
+**2026-10-12 — Tasks 16–18 DONE (region removal + defect 1 & 2 fixes); Task 19 Steps 1–2 DONE, Step 3 (commit) pending.** User directive: fix defects 1 & 2 and make the market universal (no US/GCC locals). Approved plan defaults: USD `$` everywhere; drop `outbound_clicks.region` + swap `parts.affiliate_urls jsonb` → `parts.affiliate_url text`; **defect 2 is real (not verify-only)** and must be fixed. **Task 16 (region removal, ~15 files):** added region-free `formatPrice(usd)` to `src/lib/pricing.ts`; deleted `src/lib/region.ts` + `src/components/RegionSwitch.tsx`; `src/server/request.ts` now exports only `requestIp`; removed `region` from `builds.ts` (`getConfigurator`/`getBuild`/`getGallery`, deleted `getRegion`) and from `SiteHeader`/`BuildCard`/`PartCard`/`BuildFooter`/`ShopList`/`BuildReportPdf`/`__root`/`index`/`build`/`builds/$slug`; `go/$partId` targets `parts.affiliateUrl`. Grep of `src/` + `packages/db/src` → no `region`/`affiliateUrls`/`RegionSwitch`/`cf-ipcountry`. **Task 17 (schema/push):** schema edited (removed `AffiliateUrls` + `region`; added `affiliate_url text`); `@smartekai/db` rebuilt. Push flow: the interactive `promptColumnsConflicts` TTY prompt was bypassed by dropping the two old columns first with raw SQL on `DATABASE_NEONDB_SMARTEKAI` (`ALTER TABLE parts DROP COLUMN IF EXISTS affiliate_urls`; `ALTER TABLE outbound_clicks DROP COLUMN IF EXISTS region`) via `npx tsx -e …neon(process.env.DATABASE_NEONDB_SMARTEKAI)…` from `packages/db`. `npm run db:push:cars` then **applied** `parts.affiliate_url` (confirmed in `information_schema`: new column present, old gone). Re-run → identical stray-sequence error only, no new diffs. **Known tolerated blocker (carried from Task 3):** `db:push:cars` still exits non-zero on `cannot drop sequence cases_id_seq because other objects depend on it` (`2BP01`) — the cars DB also holds a full legal/medical schema left over from the shared era (`cases`, `clients`, `kb_*`, `medical_*`, `session*`, … + stray `*_id_seq`); `tablesFilter` protects tables but not sequences. `cases` has 0 rows; our cars changes already applied, so this is hygiene-only — a clean push needs those non-cars tables/sequences dropped (destructive; ask first). **Task 18 Step 1 (defect 1):** build page was blank under SSR (16 KB → 5.5 KB) because `PDFDownloadLink` (`@react-pdf/renderer`) throws server-side with no error boundary; new client-only `src/components/BuildQuotePdfLink.tsx` dynamically imports `@react-pdf/renderer` + `BuildReportPdf` in an effect (mounted-state + props ref), placeholder "PDF quote" until ready. **Task 18 Step 2 (defect 2):** root cause — Neon Object Storage's CDN returns `access-control-allow-origin: *` only on requests carrying `Origin`, but caches one variant per URL while emitting `Vary: Origin`; the page's own no-CORS `<img>` warms the cache with a no-CORS response, so react-pdf's later CORS fetch of the same URL is served that variant and blocked (Playwright in-page fetch: plain URL → `TypeError: Failed to fetch`; cache-busted URL → 200). Fix: added `getObjectBytes(bucket, key)` to `packages/storage` (returns `ArrayBuffer` + content-type) and a same-origin proxy route `src/routes/api/render.ts` (`GET /api/render?key=<renders/<uuid>.<ext>>`, key validated, immutable cache); `getBuild` now returns `renderKey`; `builds/$slug.tsx` passes `/api/render?key=…` as the PDF `renderUrl` (visible `<img>`/"Full-size image" keep the public URL). **Verification:** `turbo run type-check lint build --filter=cars-4by4-builder...` → **13/13 green**; `--filter=medical-os...` type-check clean; prod SSR (`PORT=3021`) `/builds/land-cruiser-overlander` → **16010 B**, title `Toyota Land Cruiser Overlander build | 4x4 Builder`, "Shop this build"/"PDF quote"/"Estimated total"/"Full-size image" ×1, 0 USD/AED/GCC; `/` 200 (9 curated links), `/build` 200, `/builds/nope` 404, `/go/arb-summit-bullbar` 404, `/api/render?key=bad` 404; `/api/render?key=renders/c88b9ca5-…jpeg` → 200 `image/jpeg` (valid JPEG via `file`). Playwright: page **0 console errors** (was 3) — only the pre-existing harmless `Buffer is not defined` warnings; network shows `GET /api/render?key=…` → 200; "PDF quote" link is a working `blob:` URL. **Files:** ~17 source files + `packages/db/dist` + `packages/storage/dist` + spec §10 + this plan. **Not yet done:** Task 15 Step 2 manual click-through (photo upload/generate via real Gemini, rate-limit 6th render, forced failure, 375px width, real affiliate URL → `outbound_clicks`+redirect) — deferred; Task 19 Step 3 commit pending user go-ahead.
 
 **2026-10-11 — Task 14 DONE** (`bce9a30 refactor(db): move cars tables fully into @smartekai/db/cars; drop dbCars from the shared client`; 10 files, +8/−1117 — the 4 source files + 6 rebuilt `packages/db/dist` artifacts). Removed the entire CARS block (banner → end of `upgradeSessions`: `cars_user`/`cars_session`/`cars_account`/`cars_verification`/`parts`/`upgrade_sessions`) from the shared `packages/db/src/schema.ts` and dropped the now-unused `numeric` import (`jsonb`/`index`/`serial` still used elsewhere → kept). `client.ts`: deleted `carsSql` + `export const dbCars`. `index.ts`: now `export { db, dbLegal, dbMedical }`. `apps/cars-4by4-builder/src/lib/auth.ts`: imports `{ getDbCars, carsUsers, carsSessions, carsAccounts, carsVerifications }` from `@smartekai/db/cars` and uses `drizzleAdapter(getDbCars(), { … })` (no longer pulls the eager shared client). Verified: Step 1 grep confined to exactly the 4 expected files; post-edit re-grep leaves only `auth.ts`'s *new* `@smartekai/db/cars` import (correct); `npm run build --workspace=@smartekai/db` clean; turbo type-check/lint/build `--filter=cars-4by4-builder... --filter=medical-os...` → **18/18 successful (7 cached)**. Runtime smoke: `@smartekai/db/cars` exposes `getDbCars`(function) + the 4 tables (objects); built shared `dist` no longer references `dbCars`/`carsUsers`/`upgradeSessions` (isolation proven). `auth.ts` diff byte-exact vs spec. No deviation. **Carry-forward to Task 15 / future shared pushes:** the legal/medical databases may still hold empty `parts`/`upgrade_sessions`/`cars_*` tables; a shared-schema `drizzle-kit push` will now offer to drop them — safe only after confirming they're empty (ask first). Also `AGENTS.md` still describes a single shared auth instance covering two apps (fine to leave per plan's "not in this plan").
 
