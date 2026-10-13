@@ -64,6 +64,7 @@ exports.invitations = (0, pg_core_1.pgTable)("invitation", {
     role: (0, pg_core_1.text)("role").notNull(),
     status: (0, pg_core_1.text)("status").notNull(),
     expiresAt: (0, pg_core_1.timestamp)("expires_at").notNull(),
+    createdAt: (0, pg_core_1.timestamp)("created_at").defaultNow().notNull(),
     inviterId: (0, pg_core_1.text)("inviter_id").references(() => exports.users.id),
 });
 exports.sessions = (0, pg_core_1.pgTable)("session", {
@@ -76,6 +77,7 @@ exports.sessions = (0, pg_core_1.pgTable)("session", {
     ipAddress: (0, pg_core_1.text)("ip_address"),
     userAgent: (0, pg_core_1.text)("user_agent"),
     activeOrganizationId: (0, pg_core_1.text)("active_organization_id"),
+    industryRole: (0, pg_core_1.text)("industry_role"),
     createdAt: (0, pg_core_1.timestamp)("created_at").notNull(),
     updatedAt: (0, pg_core_1.timestamp)("updated_at").notNull(),
 }, (table) => ({
@@ -91,6 +93,11 @@ exports.accounts = (0, pg_core_1.pgTable)("account", {
     providerId: (0, pg_core_1.text)("provider_id").notNull(),
     accessToken: (0, pg_core_1.text)("access_token"),
     refreshToken: (0, pg_core_1.text)("refresh_token"),
+    idToken: (0, pg_core_1.text)("id_token"),
+    accessTokenExpiresAt: (0, pg_core_1.timestamp)("access_token_expires_at"),
+    refreshTokenExpiresAt: (0, pg_core_1.timestamp)("refresh_token_expires_at"),
+    scope: (0, pg_core_1.text)("scope"),
+    // Pre-1.x column, superseded by accessTokenExpiresAt; kept until data is checked.
     expiresAt: (0, pg_core_1.timestamp)("expires_at"),
     password: (0, pg_core_1.text)("password"),
     createdAt: (0, pg_core_1.timestamp)("created_at").notNull(),

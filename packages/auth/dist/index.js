@@ -51,7 +51,7 @@ exports.auth = (0, better_auth_1.betterAuth)({
     user: {
         additionalFields: {
             activeOrganizationId: { type: "string" },
-            industryRole: { type: "string" },
+            industryRole: { type: "string", required: false },
             creditBalance: { type: "number" },
         },
     },
@@ -63,7 +63,7 @@ exports.auth = (0, better_auth_1.betterAuth)({
         },
         additionalFields: {
             activeOrganizationId: { type: "string" },
-            industryRole: { type: "string" },
+            industryRole: { type: "string", required: false },
         },
     },
     emailAndPassword: {

@@ -60,7 +60,7 @@ export const auth = betterAuth({
   user: {
     additionalFields: {
       activeOrganizationId: { type: "string" },
-      industryRole: { type: "string" },
+      industryRole: { type: "string", required: false },
       creditBalance: { type: "number" },
     },
   },
@@ -72,7 +72,7 @@ export const auth = betterAuth({
     },
     additionalFields: {
       activeOrganizationId: { type: "string" },
-      industryRole: { type: "string" },
+      industryRole: { type: "string", required: false },
     },
   },
   emailAndPassword: {
