@@ -9,7 +9,7 @@ export function ShopList({ parts, buildId }: { parts: PublicPart[]; buildId: str
       {parts.map((p) => (
         <li key={p.id} className="flex items-center gap-3 p-3">
           <div className="w-20 shrink-0 overflow-hidden rounded-md">
-            <PartImage src={p.imageUrl} alt={p.name} />
+            <PartImage src={p.imageUrl} alt={p.name} category={p.category} />
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate font-semibold">{p.name}</p>

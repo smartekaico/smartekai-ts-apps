@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { generateStudioImage } from "@smartekai/ai";
 import { getDbCars, vehicles } from "@smartekai/db/cars";
-import { BUCKETS, uploadObject } from "@smartekai/storage";
+import { BUCKETS, MUTABLE_PUBLIC_CACHE, uploadObject } from "@smartekai/storage";
 
 const SUBJECTS: Record<string, string> = {
   lc300: "Toyota Land Cruiser 300 (LC300) SUV",
@@ -31,7 +31,7 @@ async function main() {
     const image = await generateStudioImage(prompt);
     const extension = image.mediaType.split("/")[1] || "png";
     const key = `stock/${vehicle.id}.${extension}`;
-    await uploadObject(BUCKETS.renders, key, Buffer.from(image.data), image.mediaType);
+    await uploadObject(BUCKETS.renders, key, Buffer.from(image.data), image.mediaType, MUTABLE_PUBLIC_CACHE);
     await db.update(vehicles).set({ stockImageKey: key }).where(eq(vehicles.id, vehicle.id));
     console.log(`  → ${key}`);
   }

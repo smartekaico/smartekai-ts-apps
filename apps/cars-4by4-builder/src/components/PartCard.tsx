@@ -27,7 +27,7 @@ export function PartCard({
         disabled && !selected && "opacity-50",
       )}
     >
-      <PartImage src={part.imageUrl} alt={part.name} />
+      <PartImage src={part.imageUrl} alt={part.name} category={part.category} />
       <div className="flex flex-1 flex-col gap-1 p-3">
         <p className="text-sm font-semibold leading-tight">{part.name}</p>
         <p className="text-xs text-muted-foreground">{part.brand}</p>

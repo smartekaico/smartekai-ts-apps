@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { extname, resolve } from "node:path";
 import { eq } from "drizzle-orm";
 import { getDbCars, vehicles } from "@smartekai/db/cars";
-import { BUCKETS, uploadObject } from "@smartekai/storage";
+import { BUCKETS, MUTABLE_PUBLIC_CACHE, uploadObject } from "@smartekai/storage";
 
 const TYPES: Record<string, string> = {
   ".jpg": "image/jpeg",
@@ -24,7 +24,7 @@ async function main() {
 
   const key = `stock/${vehicleId}${extension}`;
   const body = readFileSync(resolve(process.env.INIT_CWD ?? process.cwd(), file));
-  await uploadObject(BUCKETS.renders, key, body, contentType);
+  await uploadObject(BUCKETS.renders, key, body, contentType, MUTABLE_PUBLIC_CACHE);
   await db.update(vehicles).set({ stockImageKey: key }).where(eq(vehicles.id, vehicleId));
   console.log(`Uploaded ${key} and set it on ${vehicleId}.`);
 }

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { BUCKETS, getObjectBytes } from "@smartekai/storage";
+import { BUCKETS, MUTABLE_PUBLIC_CACHE, getObjectBytes } from "@smartekai/storage";
 
 // Only generated renders are proxied; keys are `renders/<uuid>.<ext>`.
 const RENDER_KEY = /^renders\/[A-Za-z0-9._-]+$/;
@@ -19,7 +19,7 @@ export const Route = createFileRoute("/api/render")({
         try {
           const { bytes, contentType } = await getObjectBytes(BUCKETS.renders, key);
           return new Response(bytes, {
-            headers: { "content-type": contentType, "cache-control": "public, max-age=31536000, immutable" },
+            headers: { "content-type": contentType, "cache-control": MUTABLE_PUBLIC_CACHE },
           });
         } catch {
           return new Response("Not found", { status: 404 });

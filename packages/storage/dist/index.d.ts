@@ -1,4 +1,4 @@
-export declare function uploadObject(bucket: string, key: string, body: Buffer, contentType: string): Promise<void>;
+export declare function uploadObject(bucket: string, key: string, body: Buffer, contentType: string, cacheControl?: string): Promise<void>;
 export declare function deleteObject(bucket: string, key: string): Promise<void>;
 /**
  * For the private cars-uploads bucket — Gemini/Fal.ai fetch the photo via
@@ -20,3 +20,10 @@ export declare const BUCKETS: {
     readonly uploads: "cars-uploads";
     readonly renders: "cars-renders";
 };
+/**
+ * For public objects stored under a stable key and overwritten in place
+ * (stock photos, `renders/<buildId>.<ext>`). Without an explicit directive the
+ * browser applies heuristic freshness and keeps serving the old bytes after a
+ * re-render; `no-cache` forces an ETag revalidation instead.
+ */
+export declare const MUTABLE_PUBLIC_CACHE = "no-cache";

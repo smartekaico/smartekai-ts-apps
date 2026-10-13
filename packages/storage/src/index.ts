@@ -29,9 +29,16 @@ export async function uploadObject(
   key: string,
   body: Buffer,
   contentType: string,
+  cacheControl?: string,
 ): Promise<void> {
   await client.send(
-    new PutObjectCommand({ Bucket: bucket, Key: key, Body: body, ContentType: contentType }),
+    new PutObjectCommand({
+      Bucket: bucket,
+      Key: key,
+      Body: body,
+      ContentType: contentType,
+      ...(cacheControl ? { CacheControl: cacheControl } : {}),
+    }),
   );
 }
 
@@ -79,3 +86,11 @@ export const BUCKETS = {
   uploads: "cars-uploads",
   renders: "cars-renders",
 } as const;
+
+/**
+ * For public objects stored under a stable key and overwritten in place
+ * (stock photos, `renders/<buildId>.<ext>`). Without an explicit directive the
+ * browser applies heuristic freshness and keeps serving the old bytes after a
+ * re-render; `no-cache` forces an ETag revalidation instead.
+ */
+export const MUTABLE_PUBLIC_CACHE = "no-cache";

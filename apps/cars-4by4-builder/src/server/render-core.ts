@@ -1,5 +1,5 @@
 import { generateUpgradeRender } from "@smartekai/ai";
-import { BUCKETS, uploadObject } from "@smartekai/storage";
+import { BUCKETS, MUTABLE_PUBLIC_CACHE, uploadObject } from "@smartekai/storage";
 import { buildRenderPrompt } from "../lib/prompt";
 import { originalImageUrl } from "./images";
 
@@ -14,6 +14,12 @@ export async function renderUpgrade(input: {
   const generated = await generateUpgradeRender(await originalImageUrl(input.originalImageKey), prompt);
   const extension = generated.mediaType.split("/")[1] || "png";
   const renderKey = `renders/${input.buildId}.${extension}`;
-  await uploadObject(BUCKETS.renders, renderKey, Buffer.from(generated.data), generated.mediaType);
+  await uploadObject(
+    BUCKETS.renders,
+    renderKey,
+    Buffer.from(generated.data),
+    generated.mediaType,
+    MUTABLE_PUBLIC_CACHE,
+  );
   return renderKey;
 }

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BUCKETS = void 0;
+exports.MUTABLE_PUBLIC_CACHE = exports.BUCKETS = void 0;
 exports.uploadObject = uploadObject;
 exports.deleteObject = deleteObject;
 exports.getPresignedReadUrl = getPresignedReadUrl;
@@ -24,8 +24,14 @@ const client = new client_s3_1.S3Client({
     },
     forcePathStyle: true, // required for a custom (non-AWS) S3 endpoint
 });
-async function uploadObject(bucket, key, body, contentType) {
-    await client.send(new client_s3_1.PutObjectCommand({ Bucket: bucket, Key: key, Body: body, ContentType: contentType }));
+async function uploadObject(bucket, key, body, contentType, cacheControl) {
+    await client.send(new client_s3_1.PutObjectCommand({
+        Bucket: bucket,
+        Key: key,
+        Body: body,
+        ContentType: contentType,
+        ...(cacheControl ? { CacheControl: cacheControl } : {}),
+    }));
 }
 async function deleteObject(bucket, key) {
     await client.send(new client_s3_1.DeleteObjectCommand({ Bucket: bucket, Key: key }));
@@ -61,3 +67,10 @@ exports.BUCKETS = {
     uploads: "cars-uploads",
     renders: "cars-renders",
 };
+/**
+ * For public objects stored under a stable key and overwritten in place
+ * (stock photos, `renders/<buildId>.<ext>`). Without an explicit directive the
+ * browser applies heuristic freshness and keeps serving the old bytes after a
+ * re-render; `no-cache` forces an ETag revalidation instead.
+ */
+exports.MUTABLE_PUBLIC_CACHE = "no-cache";
