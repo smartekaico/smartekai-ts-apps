@@ -28,7 +28,7 @@ export declare function MarketingHeader({ logoText, navItems, ctaLabel, ctaHref,
     ctaHref?: string;
     loginHref?: string;
     loginLabel?: string;
-}): import("react/jsx-runtime").JSX.Element;
+}): React.JSX.Element;
 export declare function MarketingHero({ badge, title, highlight, description, primaryCta, secondaryCta, }: {
     badge?: string;
     title: string;
@@ -36,28 +36,28 @@ export declare function MarketingHero({ badge, title, highlight, description, pr
     description: string;
     primaryCta?: MarketingNavItem;
     secondaryCta?: MarketingNavItem;
-}): import("react/jsx-runtime").JSX.Element;
+}): React.JSX.Element;
 export declare function PlatformValueSection({ id, title, description, cards, }: {
     id?: string;
     title?: string;
     description?: string;
     cards?: MarketingCard[];
-}): import("react/jsx-runtime").JSX.Element;
+}): React.JSX.Element;
 export declare function ProductShowcase({ products, initialProduct, }: {
     products?: MarketingProduct[];
     initialProduct?: ProductKey;
-}): import("react/jsx-runtime").JSX.Element;
+}): React.JSX.Element;
 export declare function SecuritySection({ id, eyebrow, title, description, cards, }: {
     id?: string;
     eyebrow?: string;
     title?: string;
     description?: string;
     cards?: MarketingCard[];
-}): import("react/jsx-runtime").JSX.Element;
+}): React.JSX.Element;
 export declare function MarketingFooter({ logoText, tagline, productLinks, companyLinks, }: {
     logoText?: string;
     tagline?: string;
     productLinks?: MarketingNavItem[];
     companyLinks?: MarketingNavItem[];
-}): import("react/jsx-runtime").JSX.Element;
+}): React.JSX.Element;
 export {};

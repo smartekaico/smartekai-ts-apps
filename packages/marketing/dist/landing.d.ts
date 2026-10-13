@@ -1,3 +1,4 @@
+import * as React from "react";
 import type { MarketingCard, MarketingNavItem, MarketingProduct, ProductKey } from "./index";
 export interface MarketingSiteConfig {
     logoText: string;
@@ -41,4 +42,4 @@ export interface MarketingSiteConfig {
 }
 export declare function MarketingLandingPage({ config }: {
     config: MarketingSiteConfig;
-}): import("react/jsx-runtime").JSX.Element;
+}): React.JSX.Element;

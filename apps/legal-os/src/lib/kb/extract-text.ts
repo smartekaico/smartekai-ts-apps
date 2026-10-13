@@ -4,7 +4,6 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { LiteParse } from "@llamaindex/liteparse";
-// @ts-ignore
 import WordExtractor from "word-extractor";
 
 /**
@@ -72,7 +71,7 @@ export async function extractTextFromFile(
 			try {
 				const parser = new LiteParse({
 					ocrEnabled: true,
-					ocrLanguage: ["ara", "eng"],
+					ocrLanguage: "ara+eng",
 					dpi: 300, // Boost from default 150 for Arabic precision
 				});
 				const result = await parser.parse(tempPath);
@@ -127,7 +126,7 @@ export async function extractTextFromFile(
 			try {
 				const parser = new LiteParse({
 					ocrEnabled: true,
-					ocrLanguage: ["ara", "eng"],
+					ocrLanguage: "ara+eng",
 					dpi: 300,
 				});
 				const result = await parser.parse(tempPath);

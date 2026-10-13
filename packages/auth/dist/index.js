@@ -138,7 +138,7 @@ exports.auth = (0, better_auth_1.betterAuth)({
                 exports.pendingMagicLinkUrls.set(emailKey, data.url);
                 if (!exports.pendingMagicLinkUrls.get(`__suppress_${emailKey}`)) {
                     const publicUrl = getPublicUrl();
-                    const finalUrl = data.url.replace(/^(https?:\/\/[^\/]+)/, publicUrl);
+                    const finalUrl = data.url.replace(/^(https?:\/\/[^/]+)/, publicUrl);
                     await mail_1.resend.emails.send({
                         from: "Smartek AI Hub <team@smartekai.com>",
                         to: [data.email],

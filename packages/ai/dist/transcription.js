@@ -9,7 +9,7 @@ function getDeepgramClient() {
         if (!apiKey) {
             throw new Error("DEEPGRAM_API_KEY is not set");
         }
-        deepgram = (0, sdk_1.createClient)(apiKey);
+        deepgram = new sdk_1.DeepgramClient({ apiKey });
     }
     return deepgram;
 }
@@ -19,19 +19,17 @@ function getDeepgramClient() {
  */
 async function transcribeMedicalAudio(audioBuffer, contentType = "audio/webm") {
     try {
-        const { result, error } = await getDeepgramClient().listen.prerecorded.transcribeFile(Buffer.from(new Uint8Array(audioBuffer)), {
+        // v5 throws DeepgramError on failure (caught below) instead of returning { error }.
+        const response = await getDeepgramClient().listen.v1.media.transcribeFile({ data: Buffer.from(new Uint8Array(audioBuffer)), contentType }, {
             model: "nova-3-medical",
             smart_format: true,
             punctuate: true,
-            mimetype: contentType,
             keyterm: ["Blood pressure:2", "BP:2", "Temperature:2", "Pulse:2"],
         });
-        if (error) {
-            console.error("Deepgram transcription error:", error);
-            throw new Error(`Deepgram transcription failed: ${error.message}`);
-        }
-        const transcript = result?.results?.channels[0]?.alternatives[0]?.transcript || "";
-        const confidence = result?.results?.channels[0]?.alternatives[0]?.confidence;
+        // Only callback requests get the "accepted" shape; we never set one.
+        const result = "results" in response ? response : undefined;
+        const transcript = result?.results?.channels[0]?.alternatives?.[0]?.transcript || "";
+        const confidence = result?.results?.channels[0]?.alternatives?.[0]?.confidence;
         return {
             success: true,
             transcription: transcript,

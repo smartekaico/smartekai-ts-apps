@@ -544,7 +544,7 @@ export function AddEventModal({
 													mode="single"
 													selected={date}
 													onSelect={setDate}
-													initialFocus
+													autoFocus
 													locale={ar}
 													className="font-sans"
 												/>

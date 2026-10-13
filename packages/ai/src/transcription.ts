@@ -1,6 +1,6 @@
-import { createClient } from "@deepgram/sdk";
+import { DeepgramClient } from "@deepgram/sdk";
 
-let deepgram: ReturnType<typeof createClient> | null = null;
+let deepgram: DeepgramClient | null = null;
 
 function getDeepgramClient() {
   if (!deepgram) {
@@ -8,7 +8,7 @@ function getDeepgramClient() {
     if (!apiKey) {
       throw new Error("DEEPGRAM_API_KEY is not set");
     }
-    deepgram = createClient(apiKey);
+    deepgram = new DeepgramClient({ apiKey });
   }
   return deepgram;
 }
@@ -30,28 +30,24 @@ export async function transcribeMedicalAudio(
   contentType = "audio/webm",
 ): Promise<TranscriptionResult> {
   try {
-    const { result, error } =
-      await getDeepgramClient().listen.prerecorded.transcribeFile(
-        Buffer.from(new Uint8Array(audioBuffer)),
-        {
-          model: "nova-3-medical",
-          smart_format: true,
-          punctuate: true,
-          mimetype: contentType,
-          keyterm: ["Blood pressure:2", "BP:2", "Temperature:2", "Pulse:2"],
-        },
-      );
-
-    if (error) {
-      console.error("Deepgram transcription error:", error);
-      throw new Error(`Deepgram transcription failed: ${error.message}`);
-    }
+    // v5 throws DeepgramError on failure (caught below) instead of returning { error }.
+    const response = await getDeepgramClient().listen.v1.media.transcribeFile(
+      { data: Buffer.from(new Uint8Array(audioBuffer)), contentType },
+      {
+        model: "nova-3-medical",
+        smart_format: true,
+        punctuate: true,
+        keyterm: ["Blood pressure:2", "BP:2", "Temperature:2", "Pulse:2"],
+      },
+    );
+    // Only callback requests get the "accepted" shape; we never set one.
+    const result = "results" in response ? response : undefined;
 
     const transcript =
-      result?.results?.channels[0]?.alternatives[0]?.transcript || "";
+      result?.results?.channels[0]?.alternatives?.[0]?.transcript || "";
 
     const confidence =
-      result?.results?.channels[0]?.alternatives[0]?.confidence;
+      result?.results?.channels[0]?.alternatives?.[0]?.confidence;
 
     return {
       success: true,

@@ -1,6 +1,6 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
-  "files": {
-    "ignore": ["src/*.js", "src/*.d.ts"]
-  }
+	"$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
+	"files": {
+		"includes": ["**", "!**/src/**/*.js", "!**/src/**/*.d.ts"]
+	}
 }

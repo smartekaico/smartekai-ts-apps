@@ -147,7 +147,7 @@ export const auth = betterAuth({
 				if (!pendingMagicLinkUrls.get(`__suppress_${emailKey}`)) {
 					// Ensure the URL uses the public domain, especially if Better Auth generates a localhost one
 					const publicUrl = getPublicUrl();
-					const finalUrl = data.url.replace(/^(https?:\/\/[^\/]+)/, publicUrl);
+					const finalUrl = data.url.replace(/^(https?:\/\/[^/]+)/, publicUrl);
 
 					await resend.emails.send({
 						from: "Smartek AI Hub <team@smartekai.com>",
