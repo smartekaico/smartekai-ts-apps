@@ -53,15 +53,17 @@ Beyond the skill's defaults:
 
 ## This repo
 
-- **Apps:** `apps/legal-os` and `apps/medical-os` — Next.js 16 / React 19,
-  Turborepo + npm workspaces.
+- **Apps** (Turborepo + npm workspaces, React 19): `apps/medical-os` and
+  `apps/cars-4by4-builder` run on TanStack Start (Vite + Nitro);
+  `apps/legal-os` is still Next.js 16 — migration to TanStack Start is
+  planned in `.agents/legal/specs/`.
 - **Shared packages** (`packages/*`): `db` (Neon Postgres + Drizzle, separate
-  legal/medical databases), `auth` (Better Auth, org plugin, multi-tenant),
+  legal/medical databases; cars has its own via `@smartekai/db/cars`), `auth` (Better Auth, org plugin, multi-tenant),
   `billing` (FIFO credit ledger), `ai` (Deepgram transcription + Gemini
   SOAP/RAG), `crw` (Firecrawl-compatible search/scrape client), `marketing`
   (shared landing sections, framework-neutral — plain `<a>` tags, not
   `next/link`), `ui` (shadcn/Radix primitives), `emails` (React Email
-  templates).
+  templates), `storage` (S3-compatible Neon Object Storage client).
 - **No test suite, no CI.** `scripts/gate.sh` runs typecheck/lint/build plus a
   secret scan and a forbidden-paths check; there's no test step to run yet and
   no CI wiring to call it automatically. Validation is otherwise manual: the
