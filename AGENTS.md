@@ -9,7 +9,7 @@ What's true about **this repo**. How to work a task is in the `lean-build` skill
 ```
 install:    npm install
 build:      npm run build            # turbo run build (all apps/packages)
-dev:        npm run dev              # turbo run dev — or dev:legal / dev:medical for one app
+dev:        npm run dev              # turbo run dev — or dev:cars / dev:legal / dev:medical for one app
 typecheck:  npm run type-check       # turbo run type-check
 lint:       npm run lint             # turbo run lint
 test:       none — no test suite exists in this repo yet
