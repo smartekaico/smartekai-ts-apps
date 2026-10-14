@@ -1,6 +1,9 @@
 # Legal OS: Shared-Package Consolidation + Next.js → TanStack Start Migration
 
-Status: design approved 2026-10-14. Planning only — no implementation has started.
+Status: **PAUSED 2026-10-15** by the user, mid-way through writing the
+implementation plan (no plan file written, no legal-os code changed).
+Design approved 2026-10-14. Read "Findings while planning" below before
+resuming — several of them change the steps in Part A.
 
 ## Context
 
@@ -171,3 +174,69 @@ Each phase ends with legal-os building and the phase's routes clicked through.
 - This spec.
 - Implementation plan: `.agents/legal/plans/active.md` (Part A then Part B,
   task by task), written with the `writing-plans` skill.
+
+## Findings while planning (2026-10-15)
+
+Recorded when the work was paused. Decisions marked **(user)** were made
+then and supersede the matching text above.
+
+1. **Schema merge is a non-issue.** A three-way column diff (legal-os
+   `src/db/schema.ts` vs `packages/db/src/schema.ts` vs live DB
+   `information_schema`) found every legal table identical in name, type and
+   nullability. Export names match too (the package is a superset: it adds
+   the medical tables and relations). A1 reduces to an import switch. The
+   earlier "tables only in legal-os" list was a grep artifact.
+2. **A2 scope (user): client + schema only.** Match cars/medical — legal-os
+   imports the DB client and tables from `@smartekai/db` and keeps writing
+   Drizzle queries in-app. The 66-file query move is dropped. By the same
+   rule, A6 moves provider construction (`createOpenAI` /
+   `createGoogleGenerativeAI`, the `providers` map in `lib/ai/model-utils.ts`,
+   embedding models) into `@smartekai/ai`; the `ai` core (`streamText`, `tool`,
+   `UIMessage`) stays usable in the app.
+3. **Legal DB (user): `neondb` via `DATABASE_URL`, unchanged.** Locally
+   `DATABASE_URL` and `DATABASE_NEONDB_SMARTEKAI` (cars) are the **same**
+   database (`ep-win…/neondb`), which is why it also holds `cars_*`,
+   `builds`, `parts`, `vehicles`. `DATABASE_LEGAL_URL` points to a different
+   DB (`ep-hol…/ai-law-copilot`) — so legal-os must **not** be switched to
+   `@smartekai/db`'s `dbLegal`, which reads `DATABASE_LEGAL_URL` first.
+   Production (Dokploy) env not checked.
+4. **`@smartekai/db` has no transaction-capable client.** It exports only
+   `neon-http` clients; legal-os deliberately uses `neon-serverless` (Pool)
+   for ACID credit accounting. Part A must add a pooled client on
+   `DATABASE_URL` and expose the Pool for the raw parameterized
+   `pool.query(text, params)` calls in `lib/kb/retrieve.ts`, `lib/kb/store.ts`,
+   `lib/audit.ts` and `src/scripts/*`.
+5. **Latent bug: `@smartekai/billing` would throw on first use.** Its
+   `addCreditsToOrg` / `consumeCredits` call `db.transaction()` on the
+   `neon-http` client ("No transactions support in neon-http driver").
+   Nothing consumes the package yet. Fix with finding 4.
+6. **Billing would double-log.** Billing's `consumeCredits` inserts its own
+   `CREDITS_CONSUMED` audit row; legal-os's `draft`, `kb/upload`, `chat` and
+   `contracts/generate` routes already log. When A4 lands, make the package
+   match legal-os (no built-in audit insert) — it has no other consumers.
+7. **Auth merge (A3) details.** Configs are near-identical. Differences to
+   reconcile: `trustedOrigins` (legal has `https://smartekai.com:3000`, package
+   has the `legal.`/`medical.` subdomains — take the union); user
+   `additionalFields` `firmName`, `subscriptionTier` exist only in legal-os;
+   legal-os's `getBaseUrl`/`getPublicUrl` (`lib/utils.ts`, honours
+   `PUBLIC_APP_URL`, production fallback `https://smartekai.com`) are more
+   complete than the package's and should replace them; package `mail.ts`
+   lacks legal-os's `"re_dummy_key"` fallback (resend 6 throws on a missing
+   key). `auth-utils.ts` (uses `next/headers`) and `auth-client.ts` stay in the
+   app. `better-auth/next-js` is only used in `app/api/auth/[...all]/route.ts`.
+8. **Emails (A5).** The 3 shared templates are byte-identical (whitespace
+   aside); 5 legal-only templates move. Templates have both named and default
+   exports; switch legal-os's default imports to named imports from
+   `@smartekai/emails`.
+9. **Env names differ between apps.** legal-os reads `GEMINI_API_KEY`
+   (fallback `GOOGLE_API_KEY`); `@smartekai/ai` reads `GOOGLE_AI_API_KEY`.
+   Moved provider code must keep legal-os's names (or both set) for parity.
+10. **Rate limit (A7).** legal-os uses one rule (`ratelimit_chat_${orgId}`,
+    5/min sliding) and returns `limit`/`remaining`/`reset` as
+    `X-RateLimit-*` headers, so the shared result must carry those fields,
+    not just a boolean. legal-os's `redis` client and `isEnterpriseActive()`
+    (used by `api/admin/debug/upstash`) stay app-local.
+11. **Better Auth columns** already fixed in all three schemas and both DBs
+    (`48e6439`); three auth instances exist (`packages/auth`, legal-os local,
+    cars). cars keeps its own.
+

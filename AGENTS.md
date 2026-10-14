@@ -55,8 +55,8 @@ Beyond the skill's defaults:
 
 - **Apps** (Turborepo + npm workspaces, React 19): `apps/medical-os` and
   `apps/cars-4by4-builder` run on TanStack Start (Vite + Nitro);
-  `apps/legal-os` is still Next.js 16 — migration to TanStack Start is
-  planned in `.agents/legal/specs/`.
+  `apps/legal-os` is still Next.js 16 — a migration to TanStack Start is
+  designed in `.agents/legal/specs/` but **paused**; don't start it unasked.
 - **Shared packages** (`packages/*`): `db` (Neon Postgres + Drizzle, separate
   legal/medical databases; cars has its own via `@smartekai/db/cars`), `auth` (Better Auth, org plugin, multi-tenant),
   `billing` (FIFO credit ledger), `ai` (Deepgram transcription + Gemini
