@@ -37,6 +37,11 @@ exports.carsAccounts = (0, pg_core_1.pgTable)("cars_account", {
     providerId: (0, pg_core_1.text)("provider_id").notNull(),
     accessToken: (0, pg_core_1.text)("access_token"),
     refreshToken: (0, pg_core_1.text)("refresh_token"),
+    idToken: (0, pg_core_1.text)("id_token"),
+    accessTokenExpiresAt: (0, pg_core_1.timestamp)("access_token_expires_at"),
+    refreshTokenExpiresAt: (0, pg_core_1.timestamp)("refresh_token_expires_at"),
+    scope: (0, pg_core_1.text)("scope"),
+    // Pre-1.x column, superseded by accessTokenExpiresAt; kept until data is checked.
     expiresAt: (0, pg_core_1.timestamp)("expires_at"),
     password: (0, pg_core_1.text)("password"),
     createdAt: (0, pg_core_1.timestamp)("created_at").notNull(),

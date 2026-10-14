@@ -42,7 +42,7 @@ export const auth = betterAuth({
 			firmName: { type: "string" },
 			subscriptionTier: { type: "string" },
 			creditBalance: { type: "number" },
-			industryRole: { type: "string" },
+			industryRole: { type: "string", defaultValue: "LEGAL" }, // matches DB default
 		},
 	},
 	session: {
@@ -53,7 +53,7 @@ export const auth = betterAuth({
 		},
 		additionalFields: {
 			activeOrganizationId: { type: "string" },
-			industryRole: { type: "string" },
+			industryRole: { type: "string", required: false },
 		},
 	},
 	emailAndPassword: {

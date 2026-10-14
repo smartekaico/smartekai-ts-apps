@@ -60,7 +60,7 @@ export const auth = betterAuth({
   user: {
     additionalFields: {
       activeOrganizationId: { type: "string" },
-      industryRole: { type: "string", required: false },
+      industryRole: { type: "string", defaultValue: "LEGAL" }, // matches DB default
       creditBalance: { type: "number" },
     },
   },

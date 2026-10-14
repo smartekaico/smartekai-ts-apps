@@ -70,6 +70,7 @@ export const invitations = pgTable("invitation", {
 	role: text("role").notNull(),
 	status: text("status").notNull(),
 	expiresAt: timestamp("expires_at").notNull(),
+	createdAt: timestamp("created_at").defaultNow().notNull(),
 	inviterId: text("inviter_id")
 		.notNull()
 		.references(() => users.id),
@@ -85,6 +86,7 @@ export const sessions = pgTable("session", {
 	ipAddress: text("ip_address"),
 	userAgent: text("user_agent"),
 	activeOrganizationId: text("active_organization_id"),
+	industryRole: text("industry_role"),
 	createdAt: timestamp("created_at").notNull(),
 	updatedAt: timestamp("updated_at").notNull(),
 });
@@ -98,6 +100,11 @@ export const accounts = pgTable("account", {
 	providerId: text("provider_id").notNull(),
 	accessToken: text("access_token"),
 	refreshToken: text("refresh_token"),
+	idToken: text("id_token"),
+	accessTokenExpiresAt: timestamp("access_token_expires_at"),
+	refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
+	scope: text("scope"),
+	// Pre-1.x column, superseded by accessTokenExpiresAt; kept until data is checked.
 	expiresAt: timestamp("expires_at"),
 	password: text("password"),
 	createdAt: timestamp("created_at").notNull(),

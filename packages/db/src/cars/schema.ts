@@ -62,6 +62,11 @@ export const carsAccounts = pgTable(
     providerId: text("provider_id").notNull(),
     accessToken: text("access_token"),
     refreshToken: text("refresh_token"),
+    idToken: text("id_token"),
+    accessTokenExpiresAt: timestamp("access_token_expires_at"),
+    refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
+    scope: text("scope"),
+    // Pre-1.x column, superseded by accessTokenExpiresAt; kept until data is checked.
     expiresAt: timestamp("expires_at"),
     password: text("password"),
     createdAt: timestamp("created_at").notNull(),
