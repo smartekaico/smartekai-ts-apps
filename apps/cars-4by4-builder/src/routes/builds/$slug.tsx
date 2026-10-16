@@ -1,12 +1,9 @@
 import { useEffect } from "react";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
-import { AlertTriangle, Info } from "lucide-react";
 import { getBuild } from "@/lib/builds";
-import { getAdvisories } from "@/lib/advisories";
-import { formatPrice, summarize } from "@/lib/pricing";
+import { formatPrice } from "@/lib/pricing";
 import { BeforeAfterSlider } from "@/components/BeforeAfterSlider";
 import { BuildProgress } from "@/components/BuildProgress";
-import { BuildQuotePdfLink } from "@/components/BuildQuotePdfLink";
 import { ShareButton } from "@/components/ShareButton";
 import { ShopList } from "@/components/ShopList";
 
@@ -64,10 +61,8 @@ function BuildPage() {
     );
   }
 
-  const advisories = getAdvisories(build.parts);
-  const totals = summarize(build.parts);
   const title = build.presetName ? `${build.vehicle.name} — ${build.presetName}` : `Your ${build.vehicle.name} build`;
-  const pdfRenderUrl = build.renderKey ? `/api/render?key=${encodeURIComponent(build.renderKey)}` : build.afterUrl;
+  const slug = build.slug ?? build.id;
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-8">
@@ -93,39 +88,26 @@ function BuildPage() {
         <div className="mt-4">
           <ShopList parts={build.parts} buildId={build.id} />
         </div>
-        <dl className="mt-4 ml-auto flex max-w-xs flex-col gap-1 text-sm">
-          <div className="flex justify-between">
-            <dt className="text-muted-foreground">Parts</dt>
-            <dd>{formatPrice(totals.partsUsd)}</dd>
-          </div>
-          <div className="flex justify-between">
-            <dt className="text-muted-foreground">Est. labor ({totals.laborHours} hrs)</dt>
-            <dd>{formatPrice(totals.laborUsd)}</dd>
-          </div>
-          <div className="flex justify-between border-t border-border pt-1 text-base font-bold">
-            <dt>Estimated total</dt>
-            <dd>{formatPrice(totals.totalUsd)}</dd>
-          </div>
-        </dl>
+        <div className="ml-auto mt-4 flex max-w-xs justify-between border-t border-border pt-1 text-base font-bold">
+          <span>Estimated total</span>
+          <span>{formatPrice(build.estimatedTotalUsd)}</span>
+        </div>
       </section>
 
-      {advisories.length > 0 && (
-        <section className="mt-10">
-          <h2 className="text-2xl">Fitment notes</h2>
-          <ul className="mt-4 flex flex-col gap-2">
-            {advisories.map((a) => (
-              <li key={a.message} className="flex gap-3 rounded-lg border border-border bg-card p-3 text-sm">
-                {a.type === "warning" ? (
-                  <AlertTriangle aria-label="Warning" className="h-5 w-5 shrink-0 text-primary" />
-                ) : (
-                  <Info aria-label="Note" className="h-5 w-5 shrink-0 text-muted-foreground" />
-                )}
-                <span>{a.message}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      <section className="mt-10 rounded-lg border border-primary/40 bg-card p-5">
+        <h2 className="text-xl">Full build report</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Per-part prices, install hours, the parts-and-labor breakdown and fitment notes — printable. Free with an
+          account.
+        </p>
+        <Link
+          to="/builds/$slug/report"
+          params={{ slug }}
+          className="mt-4 inline-flex rounded-md bg-primary px-5 py-2.5 font-bold text-primary-foreground"
+        >
+          Unlock full report
+        </Link>
+      </section>
 
       <div className="mt-10 flex flex-wrap gap-3">
         <ShareButton />
@@ -137,7 +119,6 @@ function BuildPage() {
         >
           Full-size image ↗
         </a>
-        <BuildQuotePdfLink title={title} renderUrl={pdfRenderUrl} parts={build.parts} advisories={advisories} />
       </div>
     </main>
   );

@@ -199,34 +199,38 @@ export const startBuild = createServerFn({ method: "POST" })
     return { ok: true, id };
   });
 
-export const getBuild = createServerFn({ method: "GET" })
-  .validator((slugOrId: string) => {
-    if (typeof slugOrId !== "string" || slugOrId.length > 100) throw new Error("invalid build id");
-    return slugOrId;
-  })
-  .handler(async ({ data: slugOrId }) => {
-    const db = getDbCars();
-    const build = (await db.select().from(builds).where(or(eq(builds.slug, slugOrId), eq(builds.id, slugOrId)))).at(0);
-    if (!build || build.status === "draft") throw notFound();
+function validateSlugOrId(slugOrId: string): string {
+  if (typeof slugOrId !== "string" || slugOrId.length > 100) throw new Error("invalid build id");
+  return slugOrId;
+}
 
-    let status = build.status;
-    let errorMessage = build.errorMessage;
-    if (status === "processing" && Date.now() - build.updatedAt.getTime() > STALE_PROCESSING_MS) {
-      status = "failed";
-      errorMessage = "Generation timed out — try again.";
-      await db.update(builds).set({ status, errorMessage, updatedAt: new Date() }).where(eq(builds.id, build.id));
-    }
+/** Shared by the public page and the report. Throws notFound for missing/draft builds. */
+async function loadBuild(slugOrId: string) {
+  const db = getDbCars();
+  const build = (await db.select().from(builds).where(or(eq(builds.slug, slugOrId), eq(builds.id, slugOrId)))).at(0);
+  if (!build || build.status === "draft") throw notFound();
 
-    const vehicle = (await db.select().from(vehicles).where(eq(vehicles.id, build.vehicleId))).at(0);
-    if (!vehicle) throw notFound();
-    const preset = build.presetId
-      ? (await db.select().from(presets).where(eq(presets.id, build.presetId))).at(0)
-      : undefined;
-    const buildParts = build.selectedPartIds.length
-      ? await db.select().from(parts).where(inArray(parts.id, build.selectedPartIds))
-      : [];
+  let status = build.status;
+  let errorMessage = build.errorMessage;
+  if (status === "processing" && Date.now() - build.updatedAt.getTime() > STALE_PROCESSING_MS) {
+    status = "failed";
+    errorMessage = "Generation timed out — try again.";
+    await db.update(builds).set({ status, errorMessage, updatedAt: new Date() }).where(eq(builds.id, build.id));
+  }
 
-    return {
+  const vehicle = (await db.select().from(vehicles).where(eq(vehicles.id, build.vehicleId))).at(0);
+  if (!vehicle) throw notFound();
+  const preset = build.presetId
+    ? (await db.select().from(presets).where(eq(presets.id, build.presetId))).at(0)
+    : undefined;
+  const buildParts = build.selectedPartIds.length
+    ? await db.select().from(parts).where(inArray(parts.id, build.selectedPartIds))
+    : [];
+
+  return {
+    build,
+    parts: buildParts,
+    view: {
       id: build.id,
       slug: build.slug,
       isCurated: build.isCurated,
@@ -238,8 +242,19 @@ export const getBuild = createServerFn({ method: "GET" })
       selectedPartIds: build.selectedPartIds,
       beforeUrl: await originalImageUrl(build.originalImageKey),
       afterUrl: build.renderKey ? publicImageUrl(build.renderKey) : null,
-      renderKey: build.renderKey,
-      parts: buildParts.map((p) => toPublicPart(p)),
+    },
+  };
+}
+
+/** Public build page: gated fields (per-part price, labor, fitment) are never sent. */
+export const getBuild = createServerFn({ method: "GET" })
+  .validator(validateSlugOrId)
+  .handler(async ({ data: slugOrId }) => {
+    const { view, parts: buildParts } = await loadBuild(slugOrId);
+    return {
+      ...view,
+      parts: buildParts.map(toTeaserPart),
+      estimatedTotalUsd: summarize(buildParts).totalUsd,
     };
   });
 
