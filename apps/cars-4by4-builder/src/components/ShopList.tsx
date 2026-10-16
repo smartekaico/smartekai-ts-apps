@@ -10,9 +10,9 @@ type ShopPart = TeaserPart & Partial<Pick<PublicPart, "priceUsd" | "laborHoursEs
 export function ShopList({ parts, buildId }: { parts: ShopPart[]; buildId: string }) {
   return (
     <div>
-      <p className="mb-2 text-xs text-muted-foreground">
-        We earn a commission if you buy through these links.
-      </p>
+      {parts.some((p) => p.store) && (
+        <p className="mb-2 text-xs text-muted-foreground">We earn a commission if you buy through these links.</p>
+      )}
       <ul className="divide-y divide-border rounded-lg border border-border bg-card">
         {parts.map((p) => (
           <li key={p.id} className="flex items-center gap-3 p-3">
@@ -45,7 +45,8 @@ export function ShopList({ parts, buildId }: { parts: ShopPart[]; buildId: strin
                   rel="sponsored nofollow noopener noreferrer"
                   className="mt-1 inline-block rounded-md bg-primary px-3 py-1.5 text-sm font-bold text-primary-foreground hover:opacity-90 print:hidden"
                 >
-                  {BUY_LABEL[p.store]} ↗
+                  {BUY_LABEL[p.store]} <span aria-hidden="true">↗</span>
+                  <span className="sr-only"> (opens in a new tab)</span>
                 </a>
               ) : (
                 <span className="mt-1 inline-block text-xs text-muted-foreground">Link coming soon</span>
