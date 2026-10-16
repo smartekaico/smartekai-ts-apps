@@ -100,6 +100,7 @@ export const checkPhoto = createServerFn({ method: "POST" })
     const db = getDbCars();
     const vehicle = (await db.select({ id: vehicles.id }).from(vehicles).where(eq(vehicles.id, data.vehicleId))).at(0);
     if (!vehicle) return fail("Pick a vehicle first.");
+    const user = await currentUser(); // before the upload: ownership is optional and must not waste it
 
     const id = crypto.randomUUID();
     const key = `uploads/${id}.${extension}`; // never the user's filename
@@ -122,7 +123,6 @@ export const checkPhoto = createServerFn({ method: "POST" })
       model: detection.detectedModel,
       color: detection.detectedColor,
     };
-    const user = await currentUser();
     await db.insert(builds).values({
       id,
       userId: user?.id ?? null,
