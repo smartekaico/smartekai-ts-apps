@@ -11,6 +11,7 @@ import { STALE_PROCESSING_MS, runGeneration } from "@/server/generate";
 import { originalImageUrl, publicImageUrl } from "@/server/images";
 import { photoRules, renderRules, tryConsume } from "@/server/rate-limit";
 import { requestIp } from "@/server/request";
+import { currentUser } from "@/server/session";
 
 const ACCEPTED_TYPES: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
@@ -105,8 +106,10 @@ export const checkPhoto = createServerFn({ method: "POST" })
       model: detection.detectedModel,
       color: detection.detectedColor,
     };
+    const user = await currentUser();
     await db.insert(builds).values({
       id,
+      userId: user?.id ?? null,
       vehicleId: vehicle.id,
       originalImageKey: key,
       status: "draft",
@@ -165,8 +168,10 @@ export const startBuild = createServerFn({ method: "POST" })
     } else {
       if (!vehicle.stockImageKey) return fail("No studio photo for this vehicle yet — upload your own.");
       id = crypto.randomUUID();
+      const user = await currentUser();
       await db.insert(builds).values({
         id,
+        userId: user?.id ?? null,
         vehicleId: vehicle.id,
         originalImageKey: vehicle.stockImageKey,
         status: "processing",

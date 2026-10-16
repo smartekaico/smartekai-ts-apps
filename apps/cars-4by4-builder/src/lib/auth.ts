@@ -1,6 +1,7 @@
 import { createAuth } from "@smartekai/auth/factory";
+import { eq } from "drizzle-orm";
 import { anonymous } from "better-auth/plugins";
-import { carsAccounts, carsSessions, carsUsers, carsVerifications, getDbCars } from "@smartekai/db/cars";
+import { builds, carsAccounts, carsSessions, carsUsers, carsVerifications, getDbCars } from "@smartekai/db/cars";
 
 export const auth = createAuth({
   baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3002",
@@ -20,5 +21,17 @@ export const auth = createAuth({
     process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
       ? { google: { clientId: process.env.GOOGLE_CLIENT_ID, clientSecret: process.env.GOOGLE_CLIENT_SECRET } }
       : {},
-  plugins: [anonymous()],
+  plugins: [
+    anonymous({
+      // Fires on /sign-in*, /sign-up* and /callback* (OAuth) in better-auth
+      // 1.7.7, so sign-up, sign-in to an existing account and Google all move
+      // the guest's builds. The plugin deletes the guest user afterwards.
+      onLinkAccount: async ({ anonymousUser, newUser }) => {
+        await getDbCars()
+          .update(builds)
+          .set({ userId: newUser.user.id })
+          .where(eq(builds.userId, anonymousUser.user.id));
+      },
+    }),
+  ],
 });

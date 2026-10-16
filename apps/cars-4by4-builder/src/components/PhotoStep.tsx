@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@smartekai/ui";
+import { ensureGuestSession } from "@/lib/auth-client";
 import { checkPhoto, startBuild } from "@/lib/builds";
 import { PhotoDropzone } from "@/components/PhotoDropzone";
 import { Toast } from "@/components/Toast";
@@ -25,6 +26,7 @@ export function PhotoStep({
 
   async function handleFile(file: File) {
     setCheck({ state: "checking" });
+    await ensureGuestSession();
     const formData = new FormData();
     formData.append("photo", file);
     formData.append("vehicleId", vehicle.id);
@@ -45,6 +47,7 @@ export function PhotoStep({
 
   async function start(buildId?: string) {
     setStarting(true);
+    await ensureGuestSession();
     try {
       const result = await startBuild({ data: { buildId, vehicleId: vehicle.id, partIds } });
       if (!result.ok) {
