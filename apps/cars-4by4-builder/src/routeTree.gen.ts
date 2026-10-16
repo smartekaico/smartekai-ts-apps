@@ -16,6 +16,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as BuildsSlugRouteImport } from './routes/builds/$slug'
 import { Route as GoPartIdRouteImport } from './routes/go/$partId'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as BuildsSlugReportRouteImport } from './routes/builds/$slug_.report'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -52,6 +53,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BuildsSlugReportRoute = BuildsSlugReportRouteImport.update({
+  id: '/builds/$slug_/report',
+  path: '/builds/$slug/report',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -61,6 +67,7 @@ export interface FileRoutesByFullPath {
   '/builds/$slug': typeof BuildsSlugRoute
   '/go/$partId': typeof GoPartIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/builds/$slug/report': typeof BuildsSlugReportRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -70,6 +77,7 @@ export interface FileRoutesByTo {
   '/builds/$slug': typeof BuildsSlugRoute
   '/go/$partId': typeof GoPartIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/builds/$slug/report': typeof BuildsSlugReportRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -80,6 +88,7 @@ export interface FileRoutesById {
   '/builds/$slug': typeof BuildsSlugRoute
   '/go/$partId': typeof GoPartIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/builds/$slug_/report': typeof BuildsSlugReportRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,6 +100,7 @@ export interface FileRouteTypes {
     | '/builds/$slug'
     | '/go/$partId'
     | '/api/auth/$'
+    | '/builds/$slug/report'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -100,6 +110,7 @@ export interface FileRouteTypes {
     | '/builds/$slug'
     | '/go/$partId'
     | '/api/auth/$'
+    | '/builds/$slug/report'
   id:
     | '__root__'
     | '/'
@@ -109,6 +120,7 @@ export interface FileRouteTypes {
     | '/builds/$slug'
     | '/go/$partId'
     | '/api/auth/$'
+    | '/builds/$slug_/report'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -119,6 +131,7 @@ export interface RootRouteChildren {
   BuildsSlugRoute: typeof BuildsSlugRoute
   GoPartIdRoute: typeof GoPartIdRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  BuildsSlugReportRoute: typeof BuildsSlugReportRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -172,6 +185,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/builds/$slug_/report': {
+      id: '/builds/$slug_/report'
+      path: '/builds/$slug/report'
+      fullPath: '/builds/$slug/report'
+      preLoaderRoute: typeof BuildsSlugReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -183,6 +203,7 @@ const rootRouteChildren: RootRouteChildren = {
   BuildsSlugRoute: BuildsSlugRoute,
   GoPartIdRoute: GoPartIdRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  BuildsSlugReportRoute: BuildsSlugReportRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

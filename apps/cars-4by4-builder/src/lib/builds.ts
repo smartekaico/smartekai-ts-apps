@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { notFound } from "@tanstack/react-router";
+import { notFound, redirect } from "@tanstack/react-router";
 import { and, asc, count, eq, gte, inArray, ne, or } from "drizzle-orm";
 import { builds, getDbCars, parts, presets, vehicles } from "@smartekai/db/cars";
 import type { DetectedVehicle, Part } from "@smartekai/db/cars";
@@ -13,7 +13,7 @@ import { STALE_PROCESSING_MS, runGeneration } from "@/server/generate";
 import { originalImageUrl, publicImageUrl } from "@/server/images";
 import { photoRules, renderRules, tryConsume } from "@/server/rate-limit";
 import { requestIp } from "@/server/request";
-import { currentUser } from "@/server/session";
+import { accountUser, currentUser } from "@/server/session";
 
 const ACCEPTED_TYPES: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
@@ -258,7 +258,22 @@ export const getBuild = createServerFn({ method: "GET" })
     };
   });
 
-export const getGallery = createServerFn({ method: "GET" }).handler(async () => {
+/** Spec 2 §3.5: account users only; owner's builds, or any curated build. */
+export const getReport = createServerFn({ method: "GET" })
+  .validator(validateSlugOrId)
+  .handler(async ({ data: slugOrId }) => {
+    const user = await accountUser();
+    if (!user) throw redirect({ to: "/sign-in", search: { next: `/builds/${slugOrId}/report` } });
+
+    const { build, view, parts: buildParts } = await loadBuild(slugOrId);
+    if (!build.isCurated && build.userId !== user.id) throw notFound(); // don't reveal it exists
+    if (view.status === "processing") throw redirect({ to: "/builds/$slug", params: { slug: slugOrId } });
+    if (view.status !== "completed" || !view.afterUrl) throw notFound();
+
+    return { ...view, afterUrl: view.afterUrl, parts: buildParts.map(toPublicPart) };
+  });
+
+export const getGallery =createServerFn({ method: "GET" }).handler(async () => {
   const db = getDbCars();
   const [curated, allParts, allVehicles, allPresets] = await Promise.all([
     db.select().from(builds).where(and(eq(builds.isCurated, true), eq(builds.status, "completed"))),
