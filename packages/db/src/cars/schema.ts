@@ -128,6 +128,9 @@ export const builds = pgTable(
       .notNull()
       .references(() => vehicles.id),
     presetId: text("preset_id").references(() => presets.id),
+    // Owner: a guest (anonymous) or account user. null = curated, or a guest
+    // whose anonymous sign-in failed. Moved to the account by onLinkAccount.
+    userId: text("user_id").references(() => carsUsers.id, { onDelete: "set null" }),
     isCurated: boolean("is_curated").notNull().default(false),
     // Storage keys, never URLs — read URLs are generated at request time.
     // Keys under "stock/" live in cars-renders (public); others in cars-uploads (private).
@@ -142,6 +145,7 @@ export const builds = pgTable(
   },
   (table) => ({
     createdAtIdx: index("builds_created_at_idx").on(table.createdAt),
+    userIdx: index("builds_user_id_idx").on(table.userId),
   }),
 );
 

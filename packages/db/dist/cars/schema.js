@@ -94,6 +94,9 @@ exports.builds = (0, pg_core_1.pgTable)("builds", {
         .notNull()
         .references(() => exports.vehicles.id),
     presetId: (0, pg_core_1.text)("preset_id").references(() => exports.presets.id),
+    // Owner: a guest (anonymous) or account user. null = curated, or a guest
+    // whose anonymous sign-in failed. Moved to the account by onLinkAccount.
+    userId: (0, pg_core_1.text)("user_id").references(() => exports.carsUsers.id, { onDelete: "set null" }),
     isCurated: (0, pg_core_1.boolean)("is_curated").notNull().default(false),
     // Storage keys, never URLs — read URLs are generated at request time.
     // Keys under "stock/" live in cars-renders (public); others in cars-uploads (private).
@@ -107,6 +110,7 @@ exports.builds = (0, pg_core_1.pgTable)("builds", {
     updatedAt: (0, pg_core_1.timestamp)("updated_at").defaultNow().notNull(),
 }, (table) => ({
     createdAtIdx: (0, pg_core_1.index)("builds_created_at_idx").on(table.createdAt),
+    userIdx: (0, pg_core_1.index)("builds_user_id_idx").on(table.userId),
 }));
 exports.outboundClicks = (0, pg_core_1.pgTable)("outbound_clicks", {
     id: (0, pg_core_1.text)("id").primaryKey(),

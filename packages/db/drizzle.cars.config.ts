@@ -14,7 +14,9 @@ if (!url) throw new Error("DATABASE_NEONDB_SMARTEKAI is not set");
 export default defineConfig({
   dialect: "postgresql",
   schema: "./src/cars/schema.ts",
-  dbCredentials: { url },
+  // Migrations go over Neon's direct connection; the app keeps the pooled URL.
+  // DRIZZLE_CARS_URL overrides (e.g. a Neon test branch's direct URL).
+  dbCredentials: { url: process.env.DRIZZLE_CARS_URL ?? url.replace("-pooler.", ".") },
   // The cars DB also holds leftover empty legal/medical tables from the old
   // shared-schema pushes. Only manage cars tables — never drop the others here.
   tablesFilter: [
