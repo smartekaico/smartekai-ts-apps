@@ -273,7 +273,7 @@ export const getReport = createServerFn({ method: "GET" })
     return { ...view, afterUrl: view.afterUrl, parts: buildParts.map(toPublicPart) };
   });
 
-export const getGallery =createServerFn({ method: "GET" }).handler(async () => {
+export const getGallery = createServerFn({ method: "GET" }).handler(async () => {
   const db = getDbCars();
   const [curated, allParts, allVehicles, allPresets] = await Promise.all([
     db.select().from(builds).where(and(eq(builds.isCurated, true), eq(builds.status, "completed"))),
