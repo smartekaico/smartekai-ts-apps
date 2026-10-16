@@ -64,6 +64,11 @@ Beyond the skill's defaults:
   (shared landing sections, framework-neutral — plain `<a>` tags, not
   `next/link`), `ui` (shadcn/Radix primitives), `emails` (React Email
   templates), `storage` (S3-compatible Neon Object Storage client).
+- **Env files:** secrets live in the monorepo-root `.env.local` (gitignored).
+  `apps/cars-4by4-builder/.env.local` (also gitignored) holds cars-only
+  overrides and wins over the root file — locally it must set
+  `BETTER_AUTH_URL=http://localhost:3002`, since the root value points at
+  legal-os. Shell/Dokploy vars win over both.
 - **No test suite, no CI.** `scripts/gate.sh` runs typecheck/lint/build plus a
   secret scan and a forbidden-paths check; there's no test step to run yet and
   no CI wiring to call it automatically. Validation is otherwise manual: the

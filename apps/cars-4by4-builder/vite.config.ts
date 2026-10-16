@@ -7,15 +7,21 @@ import { nitro } from "nitro/vite";
 
 // SOURCE-OF-TRUTH: env loading for the server process — Vite does not load
 // .env.local into process.env, and @smartekai/ai reads process.env at call
-// time. The env file lives at the monorepo root, so load from there (no VITE_
-// prefix filter) into process.env without clobbering vars set in the shell.
-const monorepoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+// time. Load (no VITE_ prefix filter) into process.env, first value wins:
+//   1. vars set in the shell / Dokploy
+//   2. this app's own .env.local — cars-only overrides, e.g.
+//      BETTER_AUTH_URL=http://localhost:3002 (the shared root file points it
+//      at legal-os on :3000)
+//   3. the monorepo-root .env.local — shared secrets
+const appDir = dirname(fileURLToPath(import.meta.url));
+const monorepoRoot = resolve(appDir, "../..");
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, monorepoRoot, "");
-  for (const [key, value] of Object.entries(env)) {
-    if (process.env[key] === undefined) {
-      process.env[key] = value;
+  for (const dir of [appDir, monorepoRoot]) {
+    for (const [key, value] of Object.entries(loadEnv(mode, dir, ""))) {
+      if (process.env[key] === undefined) {
+        process.env[key] = value;
+      }
     }
   }
 
