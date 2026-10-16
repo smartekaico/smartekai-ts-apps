@@ -7,6 +7,8 @@ import { detectVehicle } from "@smartekai/ai";
 import { BUCKETS, deleteObject, getPresignedReadUrl, uploadObject } from "@smartekai/storage";
 import { MAX_PARTS } from "@/lib/catalog";
 import { summarize } from "@/lib/pricing";
+import { storeOf } from "@/lib/store";
+import type { Store } from "@/lib/store";
 import { STALE_PROCESSING_MS, runGeneration } from "@/server/generate";
 import { originalImageUrl, publicImageUrl } from "@/server/images";
 import { photoRules, renderRules, tryConsume } from "@/server/rate-limit";
@@ -29,8 +31,11 @@ export type PublicPart = {
   laborHoursEst: string;
   fitmentDifficulty: string;
   imageUrl: string;
-  buyable: boolean;
+  store: Store | null; // null = no partner link yet (Buy stays hidden)
 };
+
+/** What a guest sees on the public build page — no per-part price, labor or fitment. */
+export type TeaserPart = Pick<PublicPart, "id" | "name" | "brand" | "category" | "imageUrl" | "store">;
 
 function toPublicPart(p: Part): PublicPart {
   return {
@@ -42,7 +47,18 @@ function toPublicPart(p: Part): PublicPart {
     laborHoursEst: p.laborHoursEst,
     fitmentDifficulty: p.fitmentDifficulty,
     imageUrl: p.imageUrl,
-    buyable: Boolean(p.affiliateUrl),
+    store: storeOf(p.affiliateUrl),
+  };
+}
+
+function toTeaserPart(p: Part): TeaserPart {
+  return {
+    id: p.id,
+    name: p.name,
+    brand: p.brand,
+    category: p.category,
+    imageUrl: p.imageUrl,
+    store: storeOf(p.affiliateUrl),
   };
 }
 

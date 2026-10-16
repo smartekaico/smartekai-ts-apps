@@ -32,7 +32,10 @@ export function PartCard({
         <p className="text-sm font-semibold leading-tight">{part.name}</p>
         <p className="text-xs text-muted-foreground">{part.brand}</p>
         <div className="mt-auto flex items-center justify-between gap-2 pt-2">
-          <span className="text-sm font-bold">{formatPrice(Number(part.priceUsd))}</span>
+          <span className="text-sm font-bold">
+            <span className="text-xs font-normal text-muted-foreground">Est. </span>
+            {formatPrice(Number(part.priceUsd))}
+          </span>
           <FitmentBadge difficulty={part.fitmentDifficulty} />
         </div>
       </div>
