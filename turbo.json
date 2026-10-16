@@ -15,7 +15,9 @@
     "AWS_REGION",
     "GOOGLE_AI_IMAGE_MODEL",
     "CARS_DAILY_RENDER_CAP",
-    "PUBLIC_SITE_URL"
+    "PUBLIC_SITE_URL",
+    "GOOGLE_CLIENT_ID",
+    "GOOGLE_CLIENT_SECRET"
   ],
   "tasks": {
     "build": {

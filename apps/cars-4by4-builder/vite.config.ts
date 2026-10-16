@@ -29,6 +29,7 @@ export default defineConfig(({ mode }) => {
         "@smartekai/db/cars",
         "@smartekai/ai",
         "@smartekai/storage",
+        "@smartekai/auth/factory",
       ],
       // lucide-react is installed at different versions across workspace
       // packages; externalizing it in SSR resolves a single hoisted copy and
