@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { notFound, redirect } from "@tanstack/react-router";
-import { and, asc, count, eq, gte, inArray, ne, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, ne, or } from "drizzle-orm";
 import { builds, getDbCars, parts, presets, vehicles } from "@smartekai/db/cars";
 import type { DetectedVehicle, Part } from "@smartekai/db/cars";
 import { detectVehicle } from "@smartekai/ai";
@@ -321,4 +321,30 @@ export const getGallery =createServerFn({ method: "GET" }).handler(async () => {
     vehicles: allVehicles.map((v) => ({ id: v.id, name: v.name })),
     builds: gallery,
   };
+});
+
+export const getProjects = createServerFn({ method: "GET" }).handler(async () => {
+  const user = await accountUser();
+  if (!user) throw redirect({ to: "/sign-in", search: { next: "/projects" } });
+
+  const rows = await getDbCars()
+    .select({
+      id: builds.id,
+      status: builds.status,
+      renderKey: builds.renderKey,
+      createdAt: builds.createdAt,
+      vehicleName: vehicles.name,
+    })
+    .from(builds)
+    .innerJoin(vehicles, eq(vehicles.id, builds.vehicleId))
+    .where(and(eq(builds.userId, user.id), ne(builds.status, "draft")))
+    .orderBy(desc(builds.createdAt));
+
+  return rows.map((r) => ({
+    id: r.id,
+    status: r.status,
+    vehicleName: r.vehicleName,
+    createdAt: r.createdAt.toISOString(),
+    thumbUrl: r.renderKey ? publicImageUrl(r.renderKey) : null,
+  }));
 });
