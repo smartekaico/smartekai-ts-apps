@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+    "./factory": { "types": "./dist/factory.d.ts", "default": "./dist/factory.js" }
+  },
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
