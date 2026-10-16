@@ -1,10 +1,12 @@
-import { and, eq, lt } from "drizzle-orm";
-import { builds, getDbCars } from "@smartekai/db/cars";
+import { and, eq, lt, notExists } from "drizzle-orm";
+import { builds, carsUsers, getDbCars } from "@smartekai/db/cars";
 import { BUCKETS, deleteObject } from "@smartekai/storage";
 
 const DAY = 86_400_000;
 
-// Retention (spec §2): drafts > 24h; non-curated builds > 90 days. Curated never.
+// Retention (Spec 2 §5): drafts > 24h; non-curated builds > 90 days unless an
+// account (non-anonymous user) owns them. Curated never. Guests older than 30
+// days with no builds left are deleted (sessions cascade).
 // Clicks are kept — they have no FK to builds.
 async function main() {
   const db = getDbCars();
@@ -13,10 +15,15 @@ async function main() {
     .select()
     .from(builds)
     .where(and(eq(builds.status, "draft"), lt(builds.createdAt, new Date(now - DAY))));
-  const expired = await db
-    .select()
+  const old = await db
+    .select({ build: builds, userId: carsUsers.id, isAnonymous: carsUsers.isAnonymous })
     .from(builds)
+    .leftJoin(carsUsers, eq(carsUsers.id, builds.userId))
     .where(and(eq(builds.isCurated, false), lt(builds.createdAt, new Date(now - 90 * DAY))));
+  // Keep only builds owned by an existing user that is not a guest. No user row
+  // (userId null) = unowned, isAnonymous true = guest: both expire. A NULL
+  // is_anonymous on a real user is treated as an account (kept).
+  const expired = old.filter((r) => r.userId === null || r.isAnonymous === true).map((r) => r.build);
 
   const doomed = [...new Map([...staleDrafts, ...expired].map((b) => [b.id, b])).values()];
   for (const b of doomed) {
@@ -24,7 +31,19 @@ async function main() {
     if (b.renderKey) await deleteObject(BUCKETS.renders, b.renderKey);
     await db.delete(builds).where(eq(builds.id, b.id));
   }
-  console.log(`cleanup: removed ${doomed.length} builds`);
+
+  const guests = await db
+    .delete(carsUsers)
+    .where(
+      and(
+        eq(carsUsers.isAnonymous, true),
+        lt(carsUsers.createdAt, new Date(now - 30 * DAY)),
+        notExists(db.select({ id: builds.id }).from(builds).where(eq(builds.userId, carsUsers.id))),
+      ),
+    )
+    .returning({ id: carsUsers.id });
+
+  console.log(`cleanup: removed ${doomed.length} builds, ${guests.length} stale guests`);
 }
 
 main().catch((err) => {
