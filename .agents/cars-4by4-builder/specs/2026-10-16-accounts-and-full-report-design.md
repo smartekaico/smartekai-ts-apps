@@ -74,7 +74,8 @@ Becomes a `createAuth` call with:
    `authClient.signIn.anonymous()` when there is no session. `checkPhoto` and
    `startBuild` read the session server-side
    (`auth.api.getSession({ headers })`) and set `builds.user_id`. If anonymous
-   sign-in fails, the build proceeds unowned.
+   sign-in fails, the build proceeds unowned. (Spec 3 tightens this: rendering
+   then requires a session, since the free render is tracked per user.)
 2. **Public build page `/builds/$slug`.** Render, part names, Buy buttons,
    estimated total, and an **"Unlock full report"** button →
    `/sign-in?next=/builds/$slug/report` (or straight to the report if already
