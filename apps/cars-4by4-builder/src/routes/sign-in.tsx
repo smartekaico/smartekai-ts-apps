@@ -36,12 +36,18 @@ function SignInPage() {
     e.preventDefault();
     setError(null);
     setPending(true);
-    const { error: err } =
-      mode === "sign-up"
-        ? await authClient.signUp.email({ name, email, password })
-        : await authClient.signIn.email({ email, password });
-    if (err) {
-      setError(err.message ?? "That didn't work — check your details.");
+    try {
+      const { error: err } =
+        mode === "sign-up"
+          ? await authClient.signUp.email({ name, email, password })
+          : await authClient.signIn.email({ email, password });
+      if (err) {
+        setError(err.message ?? "That didn't work — check your details.");
+        setPending(false);
+        return;
+      }
+    } catch {
+      setError("Couldn't reach the server — check your connection and try again.");
       setPending(false);
       return;
     }
@@ -98,7 +104,11 @@ function SignInPage() {
           onChange={(e) => setPassword(e.target.value)}
           required
         />
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error && (
+          <p role="alert" className="text-sm text-destructive">
+            {error}
+          </p>
+        )}
         <button
           type="submit"
           disabled={pending}
