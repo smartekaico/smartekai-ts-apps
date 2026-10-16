@@ -2,12 +2,16 @@ import { Link } from "@tanstack/react-router";
 import { authClient } from "@/lib/auth-client";
 
 export function SiteHeader() {
-  const { data } = authClient.useSession();
+  const { data, isPending } = authClient.useSession();
   const account = data && !data.user.isAnonymous ? data.user : null; // guests render as signed out
 
   async function signOut() {
-    await authClient.signOut();
-    window.location.assign("/");
+    try {
+      await authClient.signOut();
+    } catch (err) {
+      console.error("sign out failed", err);
+    }
+    window.location.assign("/"); // reload either way; a failed sign-out shows the account links again
   }
 
   return (
@@ -16,11 +20,11 @@ export function SiteHeader() {
         <Link to="/" className="text-lg font-extrabold tracking-tight">
           4x4 <span className="text-primary">Builder</span>
         </Link>
-        <nav className="flex items-center gap-4 text-sm font-semibold">
+        <nav className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1 text-sm font-semibold">
           <Link to="/build" className="hover:text-primary">
             Build yours
           </Link>
-          {account ? (
+          {isPending ? null : account ? (
             <>
               <Link to="/projects" className="hover:text-primary">
                 My projects

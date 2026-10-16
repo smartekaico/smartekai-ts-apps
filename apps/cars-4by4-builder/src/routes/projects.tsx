@@ -7,7 +7,10 @@ export const Route = createFileRoute("/projects")({
   component: ProjectsPage,
 });
 
-const STATUS_LABEL: Record<string, string> = { processing: "Rendering…", failed: "Failed", completed: "" };
+// Fixed locale + time zone so the server render and hydration produce the same text.
+const DATE_FORMAT = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeZone: "UTC" });
+
+const STATUS_LABEL: Record<string, string> ={ processing: "Rendering…", failed: "Failed", completed: "" };
 
 function ProjectsPage() {
   const projects = Route.useLoaderData();
@@ -54,7 +57,7 @@ function ProjectCard({ project }: { project: { vehicleName: string; createdAt: s
       <div className="flex items-center justify-between gap-2 p-3 text-sm">
         <span className="font-semibold">{project.vehicleName}</span>
         <span className="text-muted-foreground">
-          {STATUS_LABEL[project.status] || new Date(project.createdAt).toLocaleDateString()}
+          {STATUS_LABEL[project.status] || DATE_FORMAT.format(new Date(project.createdAt))}
         </span>
       </div>
     </>
