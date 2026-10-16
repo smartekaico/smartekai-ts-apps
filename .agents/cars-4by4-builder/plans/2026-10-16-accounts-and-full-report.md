@@ -14,15 +14,18 @@
 
 ```bash
 # from the repo root
+npx turbo run build --filter=cars-4by4-builder^...     # build workspace deps' dist/ first
 npx turbo run type-check lint --filter=cars-4by4-builder...
 npx turbo run build --filter=cars-4by4-builder...      # where a task says so
 ```
+
+Why the first line: in `turbo.json`, `type-check` has no `dependsOn: ["^build"]`, but the app type-checks against `@smartekai/auth` / `@smartekai/db` **`dist/`** types. `cars-4by4-builder^...` = its dependencies only, not the app. Run it whenever a task changed a package (Tasks 1, 3). Changing the repo-wide `turbo.json` task graph is out of scope here.
 
 `./scripts/gate.sh` as a whole may still fail on pre-existing `apps/legal-os` lint; the scoped commands are the signal for this plan.
 
 **Branch:** `feat/cars-accounts`, created from `docs/cars-monetization` (so the specs are present). Never commit to `main`.
 
-**Ask-first checkpoint:** Task 3 Step 3 (`db:push:cars` against the cars database). Stop and get explicit user confirmation before running it.
+**Ask-first checkpoint:** Task 3 Step 5 (`db:push:cars` against the real cars database, after a Neon-branch rehearsal in Step 4). Stop and get explicit user confirmation before running it.
 
 **External setup the user does (not code):**
 - Google Cloud → OAuth client (Web). Redirect URIs: `https://cars.smartekai.com/api/auth/callback/google`, `http://localhost:3002/api/auth/callback/google`. Put `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` in the root `.env.local` and the cars Dokploy app's env.
@@ -272,21 +275,51 @@ npx turbo run type-check --filter=cars-4by4-builder...
 
 Expected: pass.
 
-- [ ] **Step 3: ASK FIRST, then push the schema**
+- [ ] **Step 3: Push migrations over the direct connection**
 
-Stop. Tell the user: "Ready to run `db:push:cars`: adds nullable `builds.user_id` (FK → `cars_user`, on delete set null) and index `builds_user_id_idx`. Additive only. OK to run?" Only on an explicit yes:
+`DATABASE_NEONDB_SMARTEKAI` is a **pooled** Neon URL (`-pooler` host). Neon: schema migrations must use the direct connection; the app keeps the pooled one. In `packages/db/drizzle.cars.config.ts`, replace
+
+```ts
+  dbCredentials: { url },
+```
+
+with
+
+```ts
+  // Migrations go over Neon's direct connection; the app keeps the pooled URL.
+  // DRIZZLE_CARS_URL overrides (e.g. a Neon test branch's direct URL).
+  dbCredentials: { url: process.env.DRIZZLE_CARS_URL ?? url.replace("-pooler.", ".") },
+```
+
+- [ ] **Step 4: Rehearse on a Neon branch**
+
+The user authenticates the Neon CLI once (interactive): `! npx neon@latest auth`. Then:
 
 ```bash
+npx neon@latest branches create --name cars-accounts-migration
+export DRIZZLE_CARS_URL="$(npx neon@latest connection-string cars-accounts-migration)"
 npm run db:push:cars -w @smartekai/db
 ```
 
-Expected: drizzle-kit lists one added column and one index, no drops. If it proposes dropping anything, abort and report.
+Expected: drizzle-kit lists one added column (`builds.user_id`) and one index (`builds_user_id_idx`), **no drops**. If it proposes dropping anything, abort and report. (`neon connection-string` returns the direct URL by default. If the CLI asks for a project, pick the one holding the cars DB, host `ep-winter-frost-…`.)
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 5: ASK FIRST, then push to the real database**
+
+Stop. Tell the user: "Rehearsal on branch `cars-accounts-migration` was additive only (column + index). OK to run `db:push:cars` against the cars database?" Only on an explicit yes:
 
 ```bash
-git add packages/db/src/cars/schema.ts
-git commit -m "feat(db): builds.user_id for cars build ownership"
+unset DRIZZLE_CARS_URL
+npm run db:push:cars -w @smartekai/db
+npx neon@latest branches delete cars-accounts-migration
+```
+
+Expected: the same additive diff; the test branch deleted.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add packages/db/src/cars/schema.ts packages/db/drizzle.cars.config.ts
+git commit -m "feat(db): builds.user_id for cars build ownership; migrate over direct URL"
 ```
 
 ---
