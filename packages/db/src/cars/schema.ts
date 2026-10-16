@@ -19,7 +19,7 @@ export type DetectedVehicle = {
 };
 export type BuildStatus = "draft" | "processing" | "completed" | "failed";
 
-// Better Auth tables — unchanged; unused by the MVP flow (no login).
+// Better Auth tables (guests via the anonymous plugin, accounts via email or Google).
 export const carsUsers = pgTable("cars_user", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),

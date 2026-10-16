@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.outboundClicks = exports.builds = exports.presets = exports.parts = exports.vehicles = exports.carsVerifications = exports.carsAccounts = exports.carsSessions = exports.carsUsers = void 0;
 const pg_core_1 = require("drizzle-orm/pg-core");
-// Better Auth tables — unchanged; unused by the MVP flow (no login).
+// Better Auth tables (guests via the anonymous plugin, accounts via email or Google).
 exports.carsUsers = (0, pg_core_1.pgTable)("cars_user", {
     id: (0, pg_core_1.text)("id").primaryKey(),
     name: (0, pg_core_1.text)("name").notNull(),

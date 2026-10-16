@@ -10,7 +10,7 @@ export const Route = createFileRoute("/projects")({
 // Fixed locale + time zone so the server render and hydration produce the same text.
 const DATE_FORMAT = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeZone: "UTC" });
 
-const STATUS_LABEL: Record<string, string> ={ processing: "Rendering…", failed: "Failed", completed: "" };
+const STATUS_LABEL: Record<string, string> = { processing: "Rendering…", failed: "Failed", completed: "" };
 
 function ProjectsPage() {
   const projects = Route.useLoaderData();

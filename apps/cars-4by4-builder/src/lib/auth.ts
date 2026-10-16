@@ -26,11 +26,17 @@ export const auth = createAuth({
       // Fires on /sign-in*, /sign-up* and /callback* (OAuth) in better-auth
       // 1.7.7, so sign-up, sign-in to an existing account and Google all move
       // the guest's builds. The plugin deletes the guest user afterwards.
+      // Best-effort like the rest of ownership: a failed move must not fail the
+      // sign-in (the builds then become unowned when the guest is deleted).
       onLinkAccount: async ({ anonymousUser, newUser }) => {
-        await getDbCars()
-          .update(builds)
-          .set({ userId: newUser.user.id })
-          .where(eq(builds.userId, anonymousUser.user.id));
+        try {
+          await getDbCars()
+            .update(builds)
+            .set({ userId: newUser.user.id })
+            .where(eq(builds.userId, anonymousUser.user.id));
+        } catch (err) {
+          console.error("onLinkAccount: moving guest builds failed", err);
+        }
       },
     }),
   ],

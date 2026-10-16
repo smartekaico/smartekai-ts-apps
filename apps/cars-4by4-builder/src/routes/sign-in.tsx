@@ -24,7 +24,11 @@ function SignInPage() {
   async function google() {
     setError(null);
     setPending(true);
-    const { error: err } = await authClient.signIn.social({ provider: "google", callbackURL: next });
+    const { error: err } = await authClient.signIn.social({
+      provider: "google",
+      callbackURL: next,
+      errorCallbackURL: `/sign-in?next=${encodeURIComponent(next)}`,
+    });
     if (err) {
       setError(err.message ?? "Google sign-in failed — try again.");
       setPending(false);

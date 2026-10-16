@@ -18,7 +18,7 @@ function ReportPage() {
   const title = report.presetName ? `${report.vehicle.name} — ${report.presetName}` : `${report.vehicle.name} build`;
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-8 print:max-w-none print:p-0">
+    <main className="mx-auto max-w-4xl px-4 py-8 print:max-w-none print:p-0 print:text-black">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Build report</p>
