@@ -9,7 +9,10 @@ identity and `onLinkAccount`.
 ## 0. Business model
 
 - Every visitor's **first render is free** — guests included.
-- Each further render costs **1 credit**.
+- Each further render costs **10 credits** (`RENDER_COST`). Credits are a
+  unit, not a render count, so cheaper or pricier actions (variations, HD
+  renders) can be priced later without repricing packs. The UI always shows
+  credits with approximate renders ("300 credits ≈ 30 renders").
 - Credits are bought as **one-time packs via PayPal** and require sign-in;
   guests never hold credits.
 - Credits never expire. A failed render gives back what it used.
@@ -24,7 +27,7 @@ identity and `onLinkAccount`.
 | New `credit_ledger` table | Audit trail of every balance change. |
 
 `credit_ledger` columns: `id text pk`, `user_id text not null` (FK
-`cars_user.id` `on delete cascade`), `delta integer not null` (+N / −1),
+`cars_user.id` `on delete cascade`), `delta integer not null` (+N / −`RENDER_COST`),
 `reason text not null` (`purchase | render | refund | grant`), `build_id
 text` (no FK — ledger outlives cleaned-up builds), `paypal_order_id text
 unique`, `amount_usd numeric(10,2)`, `created_at timestamp default now()`.
@@ -38,9 +41,9 @@ Added to `packages/db/src/cars/schema.ts`; applied with `db:push:cars`
 The cars db is `neon-http`: no interactive transactions. So:
 
 - **Spend:** one conditional statement —
-  `update cars_user set credit_balance = credit_balance - 1 where id = $u and credit_balance >= 1 returning credit_balance`.
-  No row returned = no credit. Two concurrent renders cannot both spend the
-  last credit.
+  `update cars_user set credit_balance = credit_balance - $cost where id = $u and credit_balance >= $cost returning credit_balance`
+  (`$cost = RENDER_COST`). No row returned = not enough credits. Two
+  concurrent renders cannot both spend the same credits.
 - **Free render claim:** same shape —
   `update cars_user set free_render_used = true where id = $u and free_render_used = false returning id`.
 - **Ledger rows** are written in the same `db.batch([...])` as the balance
@@ -53,16 +56,19 @@ The cars db is `neon-http`: no interactive transactions. So:
 Defined in code, `src/lib/credit-packs.ts`:
 
 ```ts
+export const RENDER_COST = 10;
+
 export const CREDIT_PACKS = [
-  { id: "pack-5", credits: 5, priceUsd: "4.99" },
-  { id: "pack-15", credits: 15, priceUsd: "11.99" },
-  { id: "pack-40", credits: 40, priceUsd: "24.99" },
+  { id: "starter", name: "Starter", credits: 100, priceUsd: "9.99" },   // ≈ 10 renders
+  { id: "builder", name: "Builder", credits: 300, priceUsd: "24.99" },  // ≈ 30 renders
+  { id: "pro", name: "Pro", credits: 1000, priceUsd: "69.99" },         // ≈ 100 renders
 ] as const;
 ```
 
-Prices and sizes are **provisional — the owner confirms them before switching
-PayPal to live.** The server always resolves price from `id`; a client-sent
-amount is never trusted.
+No pack under ~$10: PayPal's fixed per-transaction fee (≈ $0.49 + ~3.5% in
+the US) would take ~13% of a $4.99 sale. Render cost (`gemini-3.1-flash-image`,
+a few cents) is not the constraint. The server always resolves price from
+`id`; a client-sent amount is never trusted.
 
 ## 3. Render gating — `startBuild`
 
@@ -76,7 +82,8 @@ row flips to `processing`:
    "free"`.
 3. Anonymous user → fail: "Sign in to keep building." with a link to
    `/sign-in?next=/build…`.
-4. Spend 1 credit (atomic) → succeeded: ledger `render −1` with `build_id`,
+4. Spend `RENDER_COST` credits (atomic) → succeeded: ledger
+   `render −RENDER_COST` with `build_id`,
    render, `builds.charge = "credit"`.
 5. Otherwise fail: "You're out of credits." with a link to
    `/credits?next=/build…`.
@@ -85,7 +92,8 @@ New column `builds.charge text` (`"free" | "credit" | null`) records what the
 render used, so a failure can return the right thing.
 
 **Failure refund:** when `runGeneration` marks a build `failed`:
-`charge = "credit"` → `credit_balance + 1` and ledger `refund +1`;
+`charge = "credit"` → `credit_balance + RENDER_COST` and ledger
+`refund +RENDER_COST`;
 `charge = "free"` → `free_render_used = false`. Done once (guarded by
 clearing `charge` in the same conditional update).
 
@@ -146,9 +154,10 @@ hand), invoices/receipts beyond PayPal's own email, taxes.
 
 ## 6. UI
 
-- Header (signed in): credit balance chip → `/credits`.
-- Build footer, before Generate: "Free render" / "Uses 1 credit (N left)" /
-  "Sign in to keep building" / "Buy credits".
+- Header (signed in): credit balance chip ("230 credits") → `/credits`.
+- Build footer, before Generate: "Free render" / "Uses 10 credits (you have
+  230)" / "Sign in to keep building" / "Buy credits".
+- `/credits` pack cards: name, credits, "≈ N renders", price.
 
 ## 7. Env + setup
 
@@ -166,7 +175,8 @@ plus `--filter=@smartekai/paypal`. Click-through with PayPal sandbox:
 - [ ] After sign-up, the free render is still used (no second free one).
 - [ ] Buying a pack raises the balance by exactly the pack's credits; calling
       capture again for the same order does not credit twice.
-- [ ] A render spends exactly 1 credit (one ledger `render −1` row).
+- [ ] A render spends exactly 10 credits (one ledger `render −10` row);
+      a balance of 9 is refused.
 - [ ] A forced render failure refunds the credit (or the free render).
 - [ ] Zero balance → "out of credits" → `/credits` → buy → back to the build.
 - [ ] Third free render from one IP in a day is refused.
