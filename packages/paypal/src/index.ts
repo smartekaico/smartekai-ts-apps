@@ -29,13 +29,55 @@ export function paypalEnv(): PayPalEnv {
 }
 
 export class PayPalError extends Error {
+  /** PayPal's machine-readable reason, e.g. "ORDER_ALREADY_CAPTURED", "invalid_client", or "TIMEOUT". */
+  readonly issue?: string;
+  /** PayPal's debug_id, quote it when contacting PayPal support. */
+  readonly debugId?: string;
+
   constructor(
     readonly operation: string,
     readonly status: number,
     readonly body: string,
+    parsed?: { issue?: string; debugId?: string },
   ) {
-    super(`PayPal ${operation} failed: HTTP ${status} ${body.slice(0, 500)}`);
+    const fields = parsed ?? parseErrorBody(body);
+    const parts = [`PayPal ${operation} failed: HTTP ${status}`];
+    if (fields.issue) parts.push(`issue=${fields.issue}`);
+    if (fields.debugId) parts.push(`debug_id=${fields.debugId}`);
+    parts.push(body.slice(0, 500));
+    super(parts.join(" "));
     this.name = "PayPalError";
+    this.issue = fields.issue;
+    this.debugId = fields.debugId;
+  }
+}
+
+/** Best-effort parse of Orders API ({name, details[].issue, debug_id}) and OAuth ({error}) error bodies. Never throws. */
+function parseErrorBody(body: string): { issue?: string; debugId?: string } {
+  try {
+    const json: unknown = JSON.parse(body);
+    if (!json || typeof json !== "object") return {};
+    const j = json as { name?: unknown; error?: unknown; debug_id?: unknown; details?: unknown };
+    const detailIssue = Array.isArray(j.details) ? (j.details[0] as { issue?: unknown } | undefined)?.issue : undefined;
+    const issue = [detailIssue, j.name, j.error].find((v): v is string => typeof v === "string" && v.length > 0);
+    return { issue, debugId: typeof j.debug_id === "string" ? j.debug_id : undefined };
+  } catch {
+    return {};
+  }
+}
+
+const FETCH_TIMEOUT_MS = 15_000;
+
+/** fetch with a hard timeout; a timeout or network failure surfaces as a PayPalError with operation context. */
+async function timedFetch(operation: string, url: string, init: RequestInit): Promise<Response> {
+  try {
+    return await fetch(url, { ...init, signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+  } catch (err) {
+    const name = err instanceof Error ? err.name : "";
+    if (name === "TimeoutError" || name === "AbortError") {
+      throw new PayPalError(operation, 0, `request timed out after ${FETCH_TIMEOUT_MS}ms`, { issue: "TIMEOUT" });
+    }
+    throw err;
   }
 }
 
@@ -50,7 +92,7 @@ export async function getAccessToken(): Promise<string> {
   const basic = Buffer.from(`${requireEnv("PAYPAL_CLIENT_ID")}:${requireEnv("PAYPAL_CLIENT_SECRET")}`).toString(
     "base64",
   );
-  const res = await fetch(`${BASE_URL[env]}/v1/oauth2/token`, {
+  const res = await timedFetch("getAccessToken", `${BASE_URL[env]}/v1/oauth2/token`, {
     method: "POST",
     headers: { Authorization: `Basic ${basic}`, "Content-Type": "application/x-www-form-urlencoded" },
     body: "grant_type=client_credentials",
@@ -64,7 +106,7 @@ export async function getAccessToken(): Promise<string> {
 
 async function post<T>(operation: string, path: string, options: { body?: unknown; requestId?: string } = {}): Promise<T> {
   const token = await getAccessToken();
-  const res = await fetch(`${BASE_URL[paypalEnv()]}${path}`, {
+  const res = await timedFetch(operation, `${BASE_URL[paypalEnv()]}${path}`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -120,8 +162,10 @@ type CaptureResponse = {
 export type CaptureResult = {
   orderId: string;
   captureId: string | null;
-  /** The capture's own status ("COMPLETED" = money moved); the order's status if there is no capture. */
+  /** The capture's own status ("COMPLETED" = money moved), or "NO_CAPTURE" if the response held no capture. */
   status: string;
+  /** The order's status (informational only; never treat it as proof of payment). */
+  orderStatus: string;
   amountUsd: string | null;
   currency: string | null;
   customId: string | null;
@@ -137,7 +181,8 @@ export async function captureOrder(orderId: string): Promise<CaptureResult> {
   return {
     orderId: order.id,
     captureId: capture?.id ?? null,
-    status: capture?.status ?? order.status,
+    status: capture?.status ?? "NO_CAPTURE",
+    orderStatus: order.status,
     amountUsd: capture?.amount?.value ?? null,
     currency: capture?.amount?.currency_code ?? null,
     customId: capture?.custom_id ?? unit?.custom_id ?? null,

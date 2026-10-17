@@ -10,7 +10,14 @@ export declare class PayPalError extends Error {
     readonly operation: string;
     readonly status: number;
     readonly body: string;
-    constructor(operation: string, status: number, body: string);
+    /** PayPal's machine-readable reason, e.g. "ORDER_ALREADY_CAPTURED", "invalid_client", or "TIMEOUT". */
+    readonly issue?: string;
+    /** PayPal's debug_id, quote it when contacting PayPal support. */
+    readonly debugId?: string;
+    constructor(operation: string, status: number, body: string, parsed?: {
+        issue?: string;
+        debugId?: string;
+    });
 }
 /** OAuth2 client-credentials token, cached until a minute before it expires. */
 export declare function getAccessToken(): Promise<string>;
@@ -29,8 +36,10 @@ export declare function createOrder({ amountUsd, customId, description }: Create
 export type CaptureResult = {
     orderId: string;
     captureId: string | null;
-    /** The capture's own status ("COMPLETED" = money moved); the order's status if there is no capture. */
+    /** The capture's own status ("COMPLETED" = money moved), or "NO_CAPTURE" if the response held no capture. */
     status: string;
+    /** The order's status (informational only; never treat it as proof of payment). */
+    orderStatus: string;
     amountUsd: string | null;
     currency: string | null;
     customId: string | null;
