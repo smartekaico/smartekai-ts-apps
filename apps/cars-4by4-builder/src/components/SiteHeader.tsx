@@ -1,9 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { authClient } from "@/lib/auth-client";
+import { useCredits } from "@/lib/use-credits";
 
 export function SiteHeader() {
   const { data, isPending } = authClient.useSession();
   const account = data && !data.user.isAnonymous ? data.user : null; // guests render as signed out
+  const credits = useCredits(account !== null, account?.id);
 
   async function signOut() {
     try {
@@ -26,6 +28,14 @@ export function SiteHeader() {
           </Link>
           {isPending ? null : account ? (
             <>
+              {credits && (
+                <Link
+                  to="/credits"
+                  className="rounded-full border border-border px-2.5 py-0.5 text-xs hover:border-primary"
+                >
+                  {credits.balance} credits
+                </Link>
+              )}
               <Link to="/projects" className="hover:text-primary">
                 My projects
               </Link>

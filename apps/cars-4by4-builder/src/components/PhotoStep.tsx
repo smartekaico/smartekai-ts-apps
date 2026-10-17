@@ -3,6 +3,8 @@ import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@smartekai/ui";
 import { ensureGuestSession } from "@/lib/auth-client";
 import { checkPhoto, startBuild } from "@/lib/builds";
+import type { CreditBlock } from "@/lib/credit-packs";
+import { notifyCreditsChanged } from "@/lib/use-credits";
 import { PhotoDropzone } from "@/components/PhotoDropzone";
 import { Toast } from "@/components/Toast";
 
@@ -11,6 +13,17 @@ type Check =
   | { state: "checking" }
   | { state: "verified"; buildId: string; label: string }
   | { state: "rejected"; message: string };
+
+type Notice = { message: string; action?: { label: string; href: string } };
+
+/** A Sign in / Buy credits link that brings the user back to this exact step. */
+function blockAction(block: CreditBlock | undefined): Notice["action"] {
+  if (!block) return undefined;
+  const next = encodeURIComponent(window.location.pathname + window.location.search);
+  return block === "sign-in"
+    ? { label: "Sign in", href: `/sign-in?next=${next}` }
+    : { label: "Buy credits", href: `/credits?next=${next}` };
+}
 
 export function PhotoStep({
   vehicle,
@@ -22,7 +35,7 @@ export function PhotoStep({
   const navigate = useNavigate();
   const [check, setCheck] = useState<Check>({ state: "idle" });
   const [starting, setStarting] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<Notice | null>(null);
 
   async function handleFile(file: File) {
     setCheck({ state: "checking" });
@@ -41,7 +54,7 @@ export function PhotoStep({
       setCheck({ state: "verified", buildId: result.buildId, label });
     } catch {
       setCheck({ state: "idle" });
-      setToast("Upload failed — check your connection and try again.");
+      setToast({ message: "Upload failed — check your connection and try again." });
     }
   }
 
@@ -51,13 +64,14 @@ export function PhotoStep({
     try {
       const result = await startBuild({ data: { buildId, vehicleId: vehicle.id, partIds } });
       if (!result.ok) {
-        setToast(result.error);
+        setToast({ message: result.error, action: blockAction(result.action) });
+        notifyCreditsChanged(); // the footer's cost line may be stale
         setStarting(false);
         return;
       }
       await navigate({ to: "/builds/$slug", params: { slug: result.id } });
     } catch {
-      setToast("Something went wrong — try again.");
+      setToast({ message: "Something went wrong — try again." });
       setStarting(false);
     }
   }
@@ -94,7 +108,7 @@ export function PhotoStep({
         </Button>
       </div>
 
-      {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
+      {toast && <Toast message={toast.message} action={toast.action} onDismiss={() => setToast(null)} />}
     </div>
   );
 }
