@@ -21,6 +21,7 @@
     "@smartekai/ai": "*",
     "@smartekai/auth": "*",
     "@smartekai/db": "*",
+    "@smartekai/nowpayments": "*",
     "@smartekai/storage": "*",
     "@smartekai/ui": "*",
     "@tanstack/react-router": "^1.170.44",
