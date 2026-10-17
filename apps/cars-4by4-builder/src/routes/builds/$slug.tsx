@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import { getBuild } from "@/lib/builds";
+import { notifyCreditsChanged } from "@/lib/use-credits";
 import { formatPrice } from "@/lib/pricing";
 import { BeforeAfterSlider } from "@/components/BeforeAfterSlider";
 import { BuildProgress } from "@/components/BuildProgress";
@@ -36,6 +37,11 @@ function BuildPage() {
     const timer = setInterval(() => void router.invalidate(), 3000);
     return () => clearInterval(timer);
   }, [build.status, router]);
+
+  // A failed render was refunded server-side — refresh the header chip (effects run client-only).
+  useEffect(() => {
+    if (build.status === "failed") notifyCreditsChanged();
+  }, [build.status]);
 
   if (build.status === "processing") {
     return (

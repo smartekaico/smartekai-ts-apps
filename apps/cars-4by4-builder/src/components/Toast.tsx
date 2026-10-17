@@ -2,8 +2,11 @@ type ToastProps = {
   message: string;
   onDismiss: () => void;
   tone?: "error" | "success";
-  action?: { label: string; href: string };
+  /** A link (`href`) or, for an in-place retry, a button (`onClick`). */
+  action?: ToastAction;
 };
+
+export type ToastAction = { label: string; href: string } | { label: string; onClick: () => void };
 
 export function Toast({ message, onDismiss, tone = "error", action }: ToastProps) {
   return (
@@ -14,11 +17,20 @@ export function Toast({ message, onDismiss, tone = "error", action }: ToastProps
       }`}
     >
       <span>{message}</span>
-      {action && (
-        <a href={action.href} className="shrink-0 font-bold text-primary underline-offset-4 hover:underline">
-          {action.label}
-        </a>
-      )}
+      {action &&
+        ("href" in action ? (
+          <a href={action.href} className="shrink-0 font-bold text-primary underline-offset-4 hover:underline">
+            {action.label}
+          </a>
+        ) : (
+          <button
+            type="button"
+            onClick={action.onClick}
+            className="shrink-0 font-bold text-primary underline-offset-4 hover:underline"
+          >
+            {action.label}
+          </button>
+        ))}
       <button type="button" onClick={onDismiss} className="shrink-0 font-semibold text-primary">
         Dismiss
       </button>

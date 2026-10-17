@@ -138,13 +138,18 @@ export const checkPhoto = createServerFn({ method: "POST" })
   });
 
 export const startBuild = createServerFn({ method: "POST" })
-  .validator((input: { buildId?: string; vehicleId: string; partIds: string[] }) => {
+  .validator((input: { buildId?: string; vehicleId: string; partIds: string[]; allowCredits?: boolean }) => {
     if (typeof input.vehicleId !== "string") throw new Error("vehicleId is required");
     if (input.buildId !== undefined && typeof input.buildId !== "string") throw new Error("invalid buildId");
     if (!Array.isArray(input.partIds) || !input.partIds.every((p) => typeof p === "string")) {
       throw new Error("partIds must be an array of strings");
     }
-    return { buildId: input.buildId, vehicleId: input.vehicleId, partIds: [...new Set(input.partIds)] };
+    return {
+      buildId: input.buildId,
+      vehicleId: input.vehicleId,
+      partIds: [...new Set(input.partIds)],
+      allowCredits: input.allowCredits === true,
+    };
   })
   .handler(async ({ data }): Promise<{ ok: true; id: string } | Fail> => {
     if (data.partIds.length === 0 || data.partIds.length > MAX_PARTS) {
@@ -199,7 +204,7 @@ export const startBuild = createServerFn({ method: "POST" })
       target = { kind: "stock", id: crypto.randomUUID(), imageKey: vehicle.stockImageKey };
     }
 
-    const gate = await chargeRender(user, target.id, ip);
+    const gate = await chargeRender(user, target.id, ip, { allowCredits: data.allowCredits });
     if (!gate.ok) return fail(gate.error, gate.action);
 
     try {

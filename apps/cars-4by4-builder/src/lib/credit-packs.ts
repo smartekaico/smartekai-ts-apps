@@ -23,8 +23,11 @@ export function rendersFor(credits: number): number {
   return Math.floor(credits / RENDER_COST);
 }
 
-/** Why a render was refused — the client turns it into a Sign in / Buy credits link. */
-export type CreditBlock = "sign-in" | "buy-credits";
+/**
+ * Why a render was refused — the client turns it into a Sign in / Buy credits
+ * link, or (confirm-credits) a button that retries the render paying credits.
+ */
+export type CreditBlock = "sign-in" | "buy-credits" | "confirm-credits";
 
 /** `account` = a real account (guests never hold credits). */
 export type CreditState = { account: boolean; balance: number; freeRenderUsed: boolean };

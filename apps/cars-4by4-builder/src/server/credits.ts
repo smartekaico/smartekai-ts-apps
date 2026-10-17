@@ -47,18 +47,36 @@ export async function spendCredits(userId: string, buildId: string): Promise<boo
     await db.insert(creditLedger).values({ id: crypto.randomUUID(), userId, delta: -RENDER_COST, reason: "render", buildId });
   } catch (err) {
     // The balance is authoritative; a missing audit row must not fail a paid render.
-    console.error(`[credits] ledger insert failed after spend (user ${userId}, build ${buildId})`, err);
+    console.error(`[credits] MANUAL REVIEW: ledger insert failed after spend (user ${userId}, build ${buildId})`, err);
   }
   return true;
 }
 
 export type RenderCharge = { ok: true; charge: BuildCharge } | { ok: false; error: string; action: CreditBlock };
 
-/** Spec 3 §3 steps 2–5: free render, else (accounts only) RENDER_COST credits, else refuse. */
-export async function chargeRender(user: SessionUser, buildId: string, ip: string): Promise<RenderCharge> {
+/**
+ * Spec 3 §3 steps 2–5: free render, else (accounts only) RENDER_COST credits, else refuse.
+ * When the user's free render is available but this network's free renders are
+ * used up, the UI had promised a free render — so an account is only charged
+ * credits if it confirmed (`allowCredits`); otherwise it gets "confirm-credits".
+ */
+export async function chargeRender(
+  user: SessionUser,
+  buildId: string,
+  ip: string,
+  options: { allowCredits?: boolean } = {},
+): Promise<RenderCharge> {
   if (await claimFreeRender(user.id)) {
     if (tryConsume(freeRenderRules(ip))) return { ok: true, charge: "free" };
-    await releaseFreeRender(user.id); // this network's free renders are used up today — fall through
+    await releaseFreeRender(user.id); // this network's free renders are used up today
+    if (user.isAnonymous) return { ok: false, error: "Sign in to keep building.", action: "sign-in" };
+    if (!options.allowCredits) {
+      return {
+        ok: false,
+        error: `Free renders from this network are used up today. Generate again to use ${RENDER_COST} credits.`,
+        action: "confirm-credits",
+      };
+    }
   }
   if (user.isAnonymous) return { ok: false, error: "Sign in to keep building.", action: "sign-in" };
   if (await spendCredits(user.id, buildId)) return { ok: true, charge: "credit" };

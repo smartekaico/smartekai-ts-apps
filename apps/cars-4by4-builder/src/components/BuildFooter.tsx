@@ -47,8 +47,9 @@ function RenderCost({ credits }: { credits: CreditState | null | undefined }) {
   const note = "text-xs text-muted-foreground";
   const link = "text-xs font-semibold text-primary hover:underline";
 
-  if (credits === undefined) return null;
-  if (!credits || !credits.freeRenderUsed) return <p className={note}>Free render</p>;
+  // undefined = loading; null = no session yet (PhotoStep starts a guest one) — promise nothing.
+  if (!credits) return null;
+  if (!credits.freeRenderUsed) return <p className={note}>Free render</p>;
   if (!credits.account) {
     return (
       <Link to="/sign-in" search={{ next: here }} className={link}>

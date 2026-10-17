@@ -3,10 +3,12 @@ import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@smartekai/ui";
 import { ensureGuestSession } from "@/lib/auth-client";
 import { checkPhoto, startBuild } from "@/lib/builds";
+import { RENDER_COST } from "@/lib/credit-packs";
 import type { CreditBlock } from "@/lib/credit-packs";
 import { notifyCreditsChanged } from "@/lib/use-credits";
 import { PhotoDropzone } from "@/components/PhotoDropzone";
 import { Toast } from "@/components/Toast";
+import type { ToastAction } from "@/components/Toast";
 
 type Check =
   | { state: "idle" }
@@ -14,11 +16,16 @@ type Check =
   | { state: "verified"; buildId: string; label: string }
   | { state: "rejected"; message: string };
 
-type Notice = { message: string; action?: { label: string; href: string } };
+type Notice = { message: string; action?: ToastAction };
 
-/** A Sign in / Buy credits link that brings the user back to this exact step. */
-function blockAction(block: CreditBlock | undefined): Notice["action"] {
+/**
+ * A Sign in / Buy credits link that brings the user back to this exact step,
+ * or — when the free render fell through to credits — a button that retries
+ * the same start, this time agreeing to pay credits.
+ */
+function blockAction(block: CreditBlock | undefined, retryWithCredits: () => void): ToastAction | undefined {
   if (!block) return undefined;
+  if (block === "confirm-credits") return { label: `Use ${RENDER_COST} credits`, onClick: retryWithCredits };
   const next = encodeURIComponent(window.location.pathname + window.location.search);
   return block === "sign-in"
     ? { label: "Sign in", href: `/sign-in?next=${next}` }
@@ -58,17 +65,19 @@ export function PhotoStep({
     }
   }
 
-  async function start(buildId?: string) {
+  async function start(buildId?: string, allowCredits = false) {
     setStarting(true);
+    setToast(null);
     await ensureGuestSession();
     try {
-      const result = await startBuild({ data: { buildId, vehicleId: vehicle.id, partIds } });
+      const result = await startBuild({ data: { buildId, vehicleId: vehicle.id, partIds, allowCredits } });
       if (!result.ok) {
-        setToast({ message: result.error, action: blockAction(result.action) });
+        setToast({ message: result.error, action: blockAction(result.action, () => void start(buildId, true)) });
         notifyCreditsChanged(); // the footer's cost line may be stale
         setStarting(false);
         return;
       }
+      notifyCreditsChanged(); // the header chip: a free render or credits were just used
       await navigate({ to: "/builds/$slug", params: { slug: result.id } });
     } catch {
       setToast({ message: "Something went wrong — try again." });
