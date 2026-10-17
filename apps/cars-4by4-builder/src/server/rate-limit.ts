@@ -29,3 +29,6 @@ export const renderRules = (ip: string): Rule[] => [
 ];
 
 export const photoRules = (ip: string): Rule[] => [{ key: `photo:h:${ip}`, limit: 20, windowMs: HOUR }];
+
+/** Spec 3 §3: clearing cookies yields a new guest, so cap free renders per network. Free-render path only. */
+export const freeRenderRules = (ip: string): Rule[] => [{ key: `free:d:${ip}`, limit: 2, windowMs: 24 * HOUR }];
