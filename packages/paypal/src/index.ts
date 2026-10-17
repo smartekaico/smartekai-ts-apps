@@ -1,0 +1,145 @@
+/**
+ * Thin PayPal REST client (OAuth2 + Orders v2) — plain fetch, no SDK.
+ * Server-side only: it holds the client secret. PAYPAL_ENV picks the API host
+ * ("sandbox" by default, "live" for real money). Apps never call PayPal's REST
+ * API directly (AGENTS.md: providers stay behind a package).
+ */
+
+export type PayPalEnv = "sandbox" | "live";
+
+const BASE_URL: Record<PayPalEnv, string> = {
+  sandbox: "https://api-m.sandbox.paypal.com",
+  live: "https://api-m.paypal.com",
+};
+
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`${name} is not set — packages/paypal needs it to reach PayPal`);
+  }
+  return value;
+}
+
+export function paypalEnv(): PayPalEnv {
+  const value = process.env.PAYPAL_ENV ?? "sandbox";
+  if (value !== "sandbox" && value !== "live") {
+    throw new Error(`PAYPAL_ENV must be "sandbox" or "live", got "${value}"`);
+  }
+  return value;
+}
+
+export class PayPalError extends Error {
+  constructor(
+    readonly operation: string,
+    readonly status: number,
+    readonly body: string,
+  ) {
+    super(`PayPal ${operation} failed: HTTP ${status} ${body.slice(0, 500)}`);
+    this.name = "PayPalError";
+  }
+}
+
+let cachedToken: { env: PayPalEnv; token: string; expiresAt: number } | undefined;
+
+/** OAuth2 client-credentials token, cached until a minute before it expires. */
+export async function getAccessToken(): Promise<string> {
+  const env = paypalEnv();
+  if (cachedToken && cachedToken.env === env && cachedToken.expiresAt > Date.now()) {
+    return cachedToken.token;
+  }
+  const basic = Buffer.from(`${requireEnv("PAYPAL_CLIENT_ID")}:${requireEnv("PAYPAL_CLIENT_SECRET")}`).toString(
+    "base64",
+  );
+  const res = await fetch(`${BASE_URL[env]}/v1/oauth2/token`, {
+    method: "POST",
+    headers: { Authorization: `Basic ${basic}`, "Content-Type": "application/x-www-form-urlencoded" },
+    body: "grant_type=client_credentials",
+  });
+  const text = await res.text();
+  if (!res.ok) throw new PayPalError("getAccessToken", res.status, text);
+  const json = JSON.parse(text) as { access_token: string; expires_in: number };
+  cachedToken = { env, token: json.access_token, expiresAt: Date.now() + (json.expires_in - 60) * 1000 };
+  return json.access_token;
+}
+
+async function post<T>(operation: string, path: string, options: { body?: unknown; requestId?: string } = {}): Promise<T> {
+  const token = await getAccessToken();
+  const res = await fetch(`${BASE_URL[paypalEnv()]}${path}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      Prefer: "return=representation",
+      // Idempotency: PayPal replays the original response for a repeated request id.
+      ...(options.requestId ? { "PayPal-Request-Id": options.requestId } : {}),
+    },
+    body: options.body === undefined ? undefined : JSON.stringify(options.body),
+  });
+  const text = await res.text();
+  if (!res.ok) throw new PayPalError(operation, res.status, text);
+  return JSON.parse(text) as T;
+}
+
+export type CreateOrderInput = {
+  /** Decimal string, e.g. "9.99". */
+  amountUsd: string;
+  /** Echoed back on capture (max 127 chars). */
+  customId: string;
+  /** Shown to the buyer (max 127 chars). */
+  description: string;
+};
+
+/** Orders v2, intent CAPTURE, USD. Digital goods: no shipping address is collected. */
+export async function createOrder({ amountUsd, customId, description }: CreateOrderInput): Promise<{ id: string }> {
+  const order = await post<{ id: string }>("createOrder", "/v2/checkout/orders", {
+    body: {
+      intent: "CAPTURE",
+      purchase_units: [{ amount: { currency_code: "USD", value: amountUsd }, custom_id: customId, description }],
+      application_context: { shipping_preference: "NO_SHIPPING" },
+    },
+  });
+  return { id: order.id };
+}
+
+type CaptureResponse = {
+  id: string;
+  status: string;
+  purchase_units?: Array<{
+    custom_id?: string;
+    payments?: {
+      captures?: Array<{
+        id: string;
+        status: string;
+        custom_id?: string;
+        amount?: { currency_code: string; value: string };
+      }>;
+    };
+  }>;
+};
+
+export type CaptureResult = {
+  orderId: string;
+  captureId: string | null;
+  /** The capture's own status ("COMPLETED" = money moved); the order's status if there is no capture. */
+  status: string;
+  amountUsd: string | null;
+  currency: string | null;
+  customId: string | null;
+};
+
+/** Captures an approved order. Repeating it for the same order replays PayPal's original response. */
+export async function captureOrder(orderId: string): Promise<CaptureResult> {
+  const order = await post<CaptureResponse>("captureOrder", `/v2/checkout/orders/${encodeURIComponent(orderId)}/capture`, {
+    requestId: `capture-${orderId}`,
+  });
+  const unit = order.purchase_units?.[0];
+  const capture = unit?.payments?.captures?.[0];
+  return {
+    orderId: order.id,
+    captureId: capture?.id ?? null,
+    status: capture?.status ?? order.status,
+    amountUsd: capture?.amount?.value ?? null,
+    currency: capture?.amount?.currency_code ?? null,
+    customId: capture?.custom_id ?? unit?.custom_id ?? null,
+  };
+}
