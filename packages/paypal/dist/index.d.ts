@@ -33,6 +33,24 @@ export type CreateOrderInput = {
 export declare function createOrder({ amountUsd, customId, description }: CreateOrderInput): Promise<{
     id: string;
 }>;
+export type OrderResponse = {
+    id: string;
+    status: string;
+    purchase_units?: Array<{
+        custom_id?: string;
+        payments?: {
+            captures?: Array<{
+                id: string;
+                status: string;
+                custom_id?: string;
+                amount?: {
+                    currency_code: string;
+                    value: string;
+                };
+            }>;
+        };
+    }>;
+};
 export type CaptureResult = {
     orderId: string;
     captureId: string | null;
@@ -44,5 +62,12 @@ export type CaptureResult = {
     currency: string | null;
     customId: string | null;
 };
+/**
+ * Reads the capture out of an Orders v2 order (capture or GET response). The
+ * capture's own status is what proves money moved; no capture → "NO_CAPTURE".
+ */
+export declare function parseOrder(order: OrderResponse): CaptureResult;
 /** Captures an approved order. Repeating it for the same order replays PayPal's original response. */
 export declare function captureOrder(orderId: string): Promise<CaptureResult>;
+/** Reads an order's current state — used to settle a capture whose outcome is unknown (timeout, 5xx). */
+export declare function getOrder(orderId: string): Promise<CaptureResult>;

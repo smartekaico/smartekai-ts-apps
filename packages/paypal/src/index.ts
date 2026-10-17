@@ -104,6 +104,17 @@ export async function getAccessToken(): Promise<string> {
   return json.access_token;
 }
 
+async function get<T>(operation: string, path: string): Promise<T> {
+  const token = await getAccessToken();
+  const res = await timedFetch(operation, `${BASE_URL[paypalEnv()]}${path}`, {
+    method: "GET",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+  });
+  const text = await res.text();
+  if (!res.ok) throw new PayPalError(operation, res.status, text);
+  return JSON.parse(text) as T;
+}
+
 async function post<T>(operation: string, path: string, options: { body?: unknown; requestId?: string } = {}): Promise<T> {
   const token = await getAccessToken();
   const res = await timedFetch(operation, `${BASE_URL[paypalEnv()]}${path}`, {
@@ -143,7 +154,7 @@ export async function createOrder({ amountUsd, customId, description }: CreateOr
   return { id: order.id };
 }
 
-type CaptureResponse = {
+export type OrderResponse = {
   id: string;
   status: string;
   purchase_units?: Array<{
@@ -171,11 +182,11 @@ export type CaptureResult = {
   customId: string | null;
 };
 
-/** Captures an approved order. Repeating it for the same order replays PayPal's original response. */
-export async function captureOrder(orderId: string): Promise<CaptureResult> {
-  const order = await post<CaptureResponse>("captureOrder", `/v2/checkout/orders/${encodeURIComponent(orderId)}/capture`, {
-    requestId: `capture-${orderId}`,
-  });
+/**
+ * Reads the capture out of an Orders v2 order (capture or GET response). The
+ * capture's own status is what proves money moved; no capture → "NO_CAPTURE".
+ */
+export function parseOrder(order: OrderResponse): CaptureResult {
   const unit = order.purchase_units?.[0];
   const capture = unit?.payments?.captures?.[0];
   return {
@@ -187,4 +198,17 @@ export async function captureOrder(orderId: string): Promise<CaptureResult> {
     currency: capture?.amount?.currency_code ?? null,
     customId: capture?.custom_id ?? unit?.custom_id ?? null,
   };
+}
+
+/** Captures an approved order. Repeating it for the same order replays PayPal's original response. */
+export async function captureOrder(orderId: string): Promise<CaptureResult> {
+  const order = await post<OrderResponse>("captureOrder", `/v2/checkout/orders/${encodeURIComponent(orderId)}/capture`, {
+    requestId: `capture-${orderId}`,
+  });
+  return parseOrder(order);
+}
+
+/** Reads an order's current state — used to settle a capture whose outcome is unknown (timeout, 5xx). */
+export async function getOrder(orderId: string): Promise<CaptureResult> {
+  return parseOrder(await get<OrderResponse>("getOrder", `/v2/checkout/orders/${encodeURIComponent(orderId)}`));
 }

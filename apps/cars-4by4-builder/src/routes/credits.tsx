@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { PayPalButtons, PayPalScriptProvider } from "@paypal/react-paypal-js";
 import { CREDIT_PACKS, RENDER_COST, rendersFor } from "@/lib/credit-packs";
@@ -80,6 +80,16 @@ function PackCard({
   onPurchased: (credited: number) => Promise<void>;
   onError: (message: string) => void;
 }) {
+  // The last order id PayPal handed us, so an error message can quote it.
+  const orderIdRef = useRef<string | null>(null);
+
+  function checkoutUnfinished(orderId: string | null) {
+    notifyCreditsChanged(); // a capture may have landed — refresh the header chip
+    onError(
+      `Checkout didn't finish. If you were charged, contact us with your PayPal order id${orderId ? ` ${orderId}` : ""}.`,
+    );
+  }
+
   return (
     <li className="flex flex-col gap-2 rounded-lg border border-border bg-card p-5">
       <h2 className="text-xl">{pack.name}</h2>
@@ -92,13 +102,24 @@ function PackCard({
         <PayPalButtons
           style={{ layout: "vertical", label: "pay" }}
           createOrder={async () => {
+            orderIdRef.current = null;
             const result = await createPayPalOrder({ data: { packId: pack.id } });
             if (!result.ok) throw new Error(result.error);
+            orderIdRef.current = result.orderId;
             return result.orderId;
           }}
           onApprove={async (data) => {
-            const result = await capturePayPalOrder({ data: { orderId: data.orderID } });
+            orderIdRef.current = data.orderID;
+            let result: Awaited<ReturnType<typeof capturePayPalOrder>>;
+            try {
+              result = await capturePayPalOrder({ data: { orderId: data.orderID, packId: pack.id } });
+            } catch (err) {
+              console.error("PayPal capture request failed", err);
+              checkoutUnfinished(data.orderID);
+              return;
+            }
             if (!result.ok) {
+              notifyCreditsChanged();
               onError(result.error);
               return;
             }
@@ -106,7 +127,7 @@ function PackCard({
           }}
           onError={(err) => {
             console.error("PayPal checkout error", err);
-            onError("PayPal checkout didn't go through — try again.");
+            checkoutUnfinished(orderIdRef.current);
           }}
         />
       </div>
