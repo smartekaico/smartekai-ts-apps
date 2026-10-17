@@ -1,3 +1,5 @@
+> **2026-10-17 — payment provider changed to NOWPayments (USDT TRC20).** Tasks 0–11 below are done (render gating, credit primitives, refunds, UI). The PayPal-specific parts (Tasks 4, 5, 9, 10, 12–14 payment steps) are superseded: the NOWPayments work is implemented directly from the spec `.agents/cars-4by4-builder/specs/2026-10-16-credits-and-paypal-checkout-design.md` §1, §2, §5–§9, without a code-complete plan.
+
 # Credits + PayPal Checkout (cars-4by4-builder) Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
