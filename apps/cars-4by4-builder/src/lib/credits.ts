@@ -84,7 +84,7 @@ export const capturePayPalOrder = createServerFn({ method: "POST" })
           return { ok: true, credited: 0, balance: (await getCreditState(user)).balance };
         }
         console.error(
-          `[paypal] MANUAL REVIEW: order ${data.orderId} already captured but not credited to user ${user.id} (debug_id ${err.debugId ?? "n/a"})`,
+          `[paypal] MANUAL REVIEW: order ${data.orderId} already captured; requested by user ${user.id}; ledger: ${prior ? `credited to ${prior.userId ?? "a deleted user"}` : "not credited"} (debug_id ${err.debugId ?? "n/a"})`,
         );
         return fail(`We couldn't confirm this payment — contact support with order ${data.orderId}`);
       }
@@ -111,12 +111,24 @@ export const capturePayPalOrder = createServerFn({ method: "POST" })
       return fail(`We couldn't confirm that payment. If you were charged, contact us with order ${data.orderId}.`);
     }
 
-    const result = await creditPurchase({
-      userId: user.id,
-      credits: pack.credits,
-      orderId: data.orderId,
-      amountUsd: pack.priceUsd,
-    });
+    let result: Awaited<ReturnType<typeof creditPurchase>>;
+    try {
+      result = await creditPurchase({
+        userId: user.id,
+        credits: pack.credits,
+        orderId: data.orderId,
+        amountUsd: pack.priceUsd,
+      });
+    } catch (err) {
+      // The money is captured; only the credit write failed. A retry replays the
+      // capture (same PayPal-Request-Id) and credits once — but flag it in case
+      // the buyer never retries.
+      console.error(
+        `[paypal] MANUAL REVIEW: order ${data.orderId} (user ${user.id}, capture ${capture.captureId}) captured but credit write failed`,
+        err,
+      );
+      return fail(`We couldn't add your credits yet. If you were charged, contact us with order ${data.orderId}.`);
+    }
     return {
       ok: true,
       credited: result === "credited" ? pack.credits : 0,
