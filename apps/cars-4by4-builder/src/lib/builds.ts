@@ -10,8 +10,8 @@ import { summarize } from "@/lib/pricing";
 import { storeOf } from "@/lib/store";
 import type { Store } from "@/lib/store";
 import type { CreditBlock } from "@/lib/credit-packs";
-import { chargeRender, refundFailedBuild, refundRender } from "@/server/credits";
-import { STALE_PROCESSING_MS, runGeneration } from "@/server/generate";
+import { chargeRender, refundRender } from "@/server/credits";
+import { STALE_PROCESSING_MS, TIMED_OUT_MESSAGE, failProcessingBuild, runGeneration } from "@/server/generate";
 import { originalImageUrl, publicImageUrl } from "@/server/images";
 import { photoRules, renderRules, tryConsume } from "@/server/rate-limit";
 import { requestIp } from "@/server/request";
@@ -238,7 +238,22 @@ export const startBuild = createServerFn({ method: "POST" })
         });
       }
     } catch (err) {
-      await refundRender(user.id, gate.charge, target.id);
+      // The flip/insert threw, but it may still have committed (e.g. the response
+      // was lost). If the row is `processing`, it holds the charge: fail it and let
+      // refundFailedBuild (exactly-once) give it back. If no processing row
+      // matched, the write never took, so the charge lives nowhere else and
+      // refundRender is the only refund. If even that check fails we can't tell
+      // which — refund nothing (a committed row is swept later) and log.
+      try {
+        if (!(await failProcessingBuild(target.id, "Generation failed — try again."))) {
+          await refundRender(user.id, gate.charge, target.id);
+        }
+      } catch (refundErr) {
+        console.error(
+          `[builds] MANUAL REVIEW: start of build ${target.id} failed and its ${gate.charge} charge state is unknown`,
+          refundErr,
+        );
+      }
       throw err;
     }
 
@@ -254,17 +269,17 @@ function validateSlugOrId(slugOrId: string): string {
 /** Shared by the public page and the report. Throws notFound for missing/draft builds. */
 async function loadBuild(slugOrId: string) {
   const db = getDbCars();
-  const build = (await db.select().from(builds).where(or(eq(builds.slug, slugOrId), eq(builds.id, slugOrId)))).at(0);
+  let build = (await db.select().from(builds).where(or(eq(builds.slug, slugOrId), eq(builds.id, slugOrId)))).at(0);
   if (!build || build.status === "draft") throw notFound();
 
-  let status = build.status;
-  let errorMessage = build.errorMessage;
-  if (status === "processing" && Date.now() - build.updatedAt.getTime() > STALE_PROCESSING_MS) {
-    status = "failed";
-    errorMessage = "Generation timed out — try again.";
-    await db.update(builds).set({ status, errorMessage, updatedAt: new Date() }).where(eq(builds.id, build.id));
-    await refundFailedBuild(build.id); // a render lost to a restart gives back what it used
+  if (build.status === "processing" && Date.now() - build.updatedAt.getTime() > STALE_PROCESSING_MS) {
+    // A render lost to a restart: fail + refund — unless it finished meanwhile
+    // (the guarded UPDATE matches nothing), in which case report the real row.
+    await failProcessingBuild(build.id, TIMED_OUT_MESSAGE, new Date(Date.now() - STALE_PROCESSING_MS));
+    build = (await db.select().from(builds).where(eq(builds.id, build.id))).at(0);
+    if (!build) throw notFound();
   }
+  const { status, errorMessage } = build;
 
   const vehicle = (await db.select().from(vehicles).where(eq(vehicles.id, build.vehicleId))).at(0);
   if (!vehicle) throw notFound();

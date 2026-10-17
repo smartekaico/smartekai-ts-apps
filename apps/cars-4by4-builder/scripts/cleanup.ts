@@ -1,6 +1,8 @@
 import { and, eq, lt, notExists } from "drizzle-orm";
 import { builds, carsUsers, getDbCars } from "@smartekai/db/cars";
 import { BUCKETS, deleteObject } from "@smartekai/storage";
+import { refundFailedBuild } from "../src/server/credits";
+import { STALE_PROCESSING_MS, TIMED_OUT_MESSAGE } from "../src/server/generate";
 
 const DAY = 86_400_000;
 
@@ -11,6 +13,18 @@ const DAY = 86_400_000;
 async function main() {
   const db = getDbCars();
   const now = Date.now();
+
+  // Spec 3 §3: renders stuck in `processing` (server restarted mid-render) fail
+  // and are refunded, even if nobody reopens the build page. Status-guarded, so a
+  // build that completes meanwhile is left alone; refundFailedBuild is exactly-once.
+  const timedOut = await db
+    .update(builds)
+    .set({ status: "failed", errorMessage: TIMED_OUT_MESSAGE, updatedAt: new Date() })
+    .where(and(eq(builds.status, "processing"), lt(builds.updatedAt, new Date(now - STALE_PROCESSING_MS))))
+    .returning({ id: builds.id });
+  for (const b of timedOut) await refundFailedBuild(b.id);
+  console.log(`cleanup: timed out and refunded ${timedOut.length} stuck renders`);
+
   const staleDrafts = await db
     .select()
     .from(builds)

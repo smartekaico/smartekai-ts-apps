@@ -1,5 +1,5 @@
 import { and, eq, gte, sql } from "drizzle-orm";
-import { builds, carsUsers, creditLedger, getDbCars } from "@smartekai/db/cars";
+import { carsUsers, creditLedger, getDbCars } from "@smartekai/db/cars";
 import type { BuildCharge } from "@smartekai/db/cars";
 import { RENDER_COST } from "@/lib/credit-packs";
 import type { CreditBlock, CreditState } from "@/lib/credit-packs";
@@ -65,7 +65,13 @@ export async function chargeRender(user: SessionUser, buildId: string, ip: strin
   return { ok: false, error: "You're out of credits.", action: "buy-credits" };
 }
 
-/** Gives back what a render used. Never throws — a failed refund is logged for manual review. */
+/**
+ * Gives back what a render used, for a charge that is NOT stored on a build row
+ * (startBuild's flip/insert didn't take). The caller guarantees it is called at
+ * most once per charge — nothing here guards against a double refund. Never use
+ * it for failed builds — use refundFailedBuild. Never throws — a failed refund
+ * is logged for manual review.
+ */
 export async function refundRender(userId: string, charge: BuildCharge, buildId: string): Promise<void> {
   const db = getDbCars();
   try {
@@ -85,34 +91,83 @@ export async function refundRender(userId: string, charge: BuildCharge, buildId:
   }
 }
 
+type RefundCounts = { cleared: number; restored: number };
+
+function countsOf(result: { rows: Record<string, unknown>[] }): RefundCounts {
+  const row = result.rows[0] ?? {};
+  return { cleared: Number(row.cleared ?? 0), restored: Number(row.restored ?? 0) };
+}
+
 /**
- * Refunds a failed build exactly once: clearing `charge` in the same conditional
- * UPDATE is the guard. Call after the build is marked failed. Never throws.
+ * Refunds a failed build exactly once. Each case is ONE SQL statement
+ * (data-modifying CTEs), so clearing `builds.charge` — the exactly-once guard —
+ * commits or rolls back together with the balance/flag change and the ledger
+ * row: a crash can't leave the charge cleared but the refund unpaid. A
+ * concurrent second call blocks on the build row, then re-checks `charge` and
+ * matches nothing. Only builds already marked `failed` are refunded. If the
+ * owning user was deleted (user_id set null), the charge is just cleared.
+ * Never throws: a DB error is logged for manual review (the charge stays set,
+ * so a later call can retry).
  */
 export async function refundFailedBuild(buildId: string): Promise<void> {
   const db = getDbCars();
   try {
-    for (const charge of ["credit", "free"] as const) {
-      const cleared = await db
-        .update(builds)
-        .set({ charge: null })
-        .where(and(eq(builds.id, buildId), eq(builds.status, "failed"), eq(builds.charge, charge)))
-        .returning({ userId: builds.userId });
-      const row = cleared.at(0);
-      if (row) {
-        if (row.userId) await refundRender(row.userId, charge, buildId);
-        return;
-      }
+    const credit = countsOf(
+      await db.execute(sql`
+        WITH c AS (
+          UPDATE builds SET charge = NULL
+          WHERE id = ${buildId} AND status = 'failed' AND charge = 'credit'
+          RETURNING user_id
+        ), u AS (
+          UPDATE cars_user SET credit_balance = credit_balance + ${RENDER_COST}::integer
+          FROM c WHERE cars_user.id = c.user_id
+          RETURNING cars_user.id
+        ), l AS (
+          INSERT INTO credit_ledger (id, user_id, delta, reason, build_id)
+          SELECT ${crypto.randomUUID()}::text, u.id, ${RENDER_COST}::integer, 'refund', ${buildId}::text FROM u
+          RETURNING id
+        )
+        SELECT (SELECT count(*) FROM c) AS cleared, (SELECT count(*) FROM l) AS restored
+      `),
+    );
+    if (credit.cleared > 0) {
+      if (credit.restored === 0) console.warn(`[credits] build ${buildId}: credit charge cleared, owner gone — no refund`);
+      return;
+    }
+    const free = countsOf(
+      await db.execute(sql`
+        WITH c AS (
+          UPDATE builds SET charge = NULL
+          WHERE id = ${buildId} AND status = 'failed' AND charge = 'free'
+          RETURNING user_id
+        ), u AS (
+          UPDATE cars_user SET free_render_used = false
+          FROM c WHERE cars_user.id = c.user_id
+          RETURNING cars_user.id
+        )
+        SELECT (SELECT count(*) FROM c) AS cleared, (SELECT count(*) FROM u) AS restored
+      `),
+    );
+    if (free.cleared > 0 && free.restored === 0) {
+      console.warn(`[credits] build ${buildId}: free charge cleared, owner gone — nothing to release`);
     }
   } catch (err) {
     console.error(`[credits] MANUAL REVIEW: refund for failed build ${buildId} failed`, err);
   }
 }
 
-function isUniqueViolation(err: unknown): boolean {
+const PAYPAL_ORDER_UNIQUE = "credit_ledger_paypal_order_id_unique";
+
+/** Only a duplicate PayPal order id counts; any other unique violation is a real error. */
+function isDuplicateOrder(err: unknown): boolean {
   let e: unknown = err;
   for (let depth = 0; depth < 5 && e && typeof e === "object"; depth++) {
-    if ((e as { code?: unknown }).code === "23505") return true;
+    const { code, constraint, message } = e as { code?: unknown; constraint?: unknown; message?: unknown };
+    if (code === "23505") {
+      if (constraint === PAYPAL_ORDER_UNIQUE) return true;
+      if (constraint === undefined && typeof message === "string" && message.includes(PAYPAL_ORDER_UNIQUE)) return true;
+      return false;
+    }
     e = (e as { cause?: unknown }).cause; // drizzle wraps driver errors
   }
   return false;
@@ -144,7 +199,7 @@ export async function creditPurchase(input: {
     ]);
     return "credited";
   } catch (err) {
-    if (isUniqueViolation(err)) return "duplicate";
+    if (isDuplicateOrder(err)) return "duplicate";
     throw err;
   }
 }
