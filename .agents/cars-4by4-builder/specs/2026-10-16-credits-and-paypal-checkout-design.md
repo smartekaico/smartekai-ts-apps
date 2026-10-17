@@ -26,8 +26,8 @@ identity and `onLinkAccount`.
 | `cars_user.free_render_used boolean not null default false` | One free render per user. |
 | New `credit_ledger` table | Audit trail of every balance change. |
 
-`credit_ledger` columns: `id text pk`, `user_id text not null` (FK
-`cars_user.id` `on delete cascade`), `delta integer not null` (+N / −`RENDER_COST`),
+`credit_ledger` columns: `id text pk`, `user_id text` (FK
+`cars_user.id` `on delete set null` — deleting a user keeps the audit trail), `delta integer not null` (+N / −`RENDER_COST`),
 `reason text not null` (`purchase | render | refund | grant`), `build_id
 text` (no FK — ledger outlives cleaned-up builds), `paypal_order_id text
 unique`, `amount_usd numeric(10,2)`, `created_at timestamp default now()`.

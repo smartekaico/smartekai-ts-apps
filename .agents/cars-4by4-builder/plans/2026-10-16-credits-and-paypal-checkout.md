@@ -91,7 +91,7 @@ Shell vars win over both `.env.local` files (`vite.config.ts` and Node `--env-fi
 **Root**
 - Modify `turbo.json` — `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_ENV` in `globalEnv`.
 
-**Unchanged on purpose:** `scripts/render-gallery.ts` calls `renderUpgrade` directly (never `startBuild`), so curated renders already bypass credits (Spec 3 §0). `scripts/cleanup.ts` deletes stale *guest* users only; guests never hold credits, so the `credit_ledger` cascade never removes purchase history there.
+**Unchanged on purpose:** `scripts/render-gallery.ts` calls `renderUpgrade` directly (never `startBuild`), so curated renders already bypass credits (Spec 3 §0). `scripts/cleanup.ts` deletes stale *guest* users only; guests never hold credits. `credit_ledger.user_id` is `on delete set null`, so deleting any user keeps their purchase history.
 
 ---
 
@@ -235,9 +235,8 @@ export const creditLedger = pgTable(
   "credit_ledger",
   {
     id: text("id").primaryKey(),
-    userId: text("user_id")
-      .notNull()
-      .references(() => carsUsers.id, { onDelete: "cascade" }),
+    // Nullable + set null: deleting a user keeps their purchase history (audit trail).
+    userId: text("user_id").references(() => carsUsers.id, { onDelete: "set null" }),
     delta: integer("delta").notNull(), // +N purchase/refund/grant, −RENDER_COST render
     reason: text("reason").$type<CreditReason>().notNull(),
     buildId: text("build_id"),
@@ -298,7 +297,7 @@ Expected (order may differ; `generate` emits a full-schema snapshot, so the colu
 	"charge" text,
 CREATE TABLE "credit_ledger" (
 	"id" text PRIMARY KEY NOT NULL,
-	"user_id" text NOT NULL,
+	"user_id" text,
 	"delta" integer NOT NULL,
 	"reason" text NOT NULL,
 	"build_id" text,
@@ -307,7 +306,7 @@ CREATE TABLE "credit_ledger" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "credit_ledger_paypal_order_id_unique" UNIQUE("paypal_order_id")
 );
-ALTER TABLE "credit_ledger" ADD CONSTRAINT "credit_ledger_user_id_cars_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."cars_user"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "credit_ledger" ADD CONSTRAINT "credit_ledger_user_id_cars_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."cars_user"("id") ON DELETE set null ON UPDATE no action;
 CREATE INDEX "credit_ledger_user_id_idx" ON "credit_ledger" USING btree ("user_id");
 ```
 
@@ -345,7 +344,7 @@ ALTER TABLE "cars_user" ADD COLUMN "free_render_used" boolean DEFAULT false NOT 
 ALTER TABLE "builds" ADD COLUMN "charge" text;
 CREATE TABLE "credit_ledger" (
 	"id" text PRIMARY KEY NOT NULL,
-	"user_id" text NOT NULL,
+	"user_id" text,
 	"delta" integer NOT NULL,
 	"reason" text NOT NULL,
 	"build_id" text,
@@ -354,7 +353,7 @@ CREATE TABLE "credit_ledger" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "credit_ledger_paypal_order_id_unique" UNIQUE("paypal_order_id")
 );
-ALTER TABLE "credit_ledger" ADD CONSTRAINT "credit_ledger_user_id_cars_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."cars_user"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "credit_ledger" ADD CONSTRAINT "credit_ledger_user_id_cars_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."cars_user"("id") ON DELETE set null ON UPDATE no action;
 CREATE INDEX "credit_ledger_user_id_idx" ON "credit_ledger" USING btree ("user_id");
 SQL
 ```
@@ -374,7 +373,7 @@ select table_name, column_name, data_type, column_default, is_nullable
 SQL
 ```
 
-Expected: `builds.charge text null YES`; `cars_user.credit_balance integer 0 NO`; `cars_user.free_render_used boolean false NO`; `\d credit_ledger` lists the 8 columns, `credit_ledger_pkey`, `credit_ledger_paypal_order_id_unique`, `credit_ledger_user_id_idx`, and the FK `credit_ledger_user_id_cars_user_id_fk … ON DELETE CASCADE`.
+Expected: `builds.charge text null YES`; `cars_user.credit_balance integer 0 NO`; `cars_user.free_render_used boolean false NO`; `\d credit_ledger` lists the 8 columns, `credit_ledger_pkey`, `credit_ledger_paypal_order_id_unique`, `credit_ledger_user_id_idx`, and the FK `credit_ledger_user_id_cars_user_id_fk … ON DELETE SET NULL`.
 
 - [ ] **Step 4: Drift check — drizzle sees no remaining schema diff (branch only)**
 
@@ -923,7 +922,8 @@ try {
     .where(eq(creditLedger.userId, id));
   console.log("ledger:", rows.map((r) => `${r.reason}${r.delta > 0 ? "+" : ""}${r.delta}`).sort().join(" "));
 } finally {
-  await db.delete(carsUsers).where(eq(carsUsers.id, id)); // ledger rows cascade
+  await db.delete(creditLedger).where(eq(creditLedger.userId, id)); // test rows only; real deletes keep the ledger
+  await db.delete(carsUsers).where(eq(carsUsers.id, id));
 }
 ```
 
@@ -2069,7 +2069,7 @@ ALTER TABLE "cars_user" ADD COLUMN "free_render_used" boolean DEFAULT false NOT 
 ALTER TABLE "builds" ADD COLUMN "charge" text;
 CREATE TABLE "credit_ledger" (
 	"id" text PRIMARY KEY NOT NULL,
-	"user_id" text NOT NULL,
+	"user_id" text,
 	"delta" integer NOT NULL,
 	"reason" text NOT NULL,
 	"build_id" text,
@@ -2078,7 +2078,7 @@ CREATE TABLE "credit_ledger" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "credit_ledger_paypal_order_id_unique" UNIQUE("paypal_order_id")
 );
-ALTER TABLE "credit_ledger" ADD CONSTRAINT "credit_ledger_user_id_cars_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."cars_user"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "credit_ledger" ADD CONSTRAINT "credit_ledger_user_id_cars_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."cars_user"("id") ON DELETE set null ON UPDATE no action;
 CREATE INDEX "credit_ledger_user_id_idx" ON "credit_ledger" USING btree ("user_id");
 SQL
 ```
