@@ -72,6 +72,49 @@ against production** (`.agents/logs/2026-10-16-cars-db-push-drops-sequences.md`)
 hand-written DDL, cross-checked with `drizzle-kit generate`, rehearsed on a
 Neon branch with `psql -1`, applied to production only after asking.
 
+### Canonical DDL (production migration)
+
+Additive only, applied in one transaction (`psql -v ON_ERROR_STOP=1 -1`).
+Extracted from `drizzle-kit generate` against `src/cars/schema.ts`
+(2026-10-17) and rehearsed on the Neon branch `cars-credits` (fresh from
+`production`): applied cleanly, and `db:push:cars` against the branch then
+planned only the 8 known legacy `DROP SEQUENCE`s — no schema drift.
+Production already has `builds.user_id` (Spec 2).
+
+```sql
+ALTER TABLE "cars_user" ADD COLUMN "credit_balance" integer DEFAULT 0 NOT NULL;
+ALTER TABLE "cars_user" ADD COLUMN "free_render_used" boolean DEFAULT false NOT NULL;
+ALTER TABLE "builds" ADD COLUMN "charge" text;
+CREATE TABLE "credit_ledger" (
+	"id" text PRIMARY KEY NOT NULL,
+	"user_id" text,
+	"delta" integer NOT NULL,
+	"reason" text NOT NULL,
+	"build_id" text,
+	"payment_ref" text,
+	"amount_usd" numeric(10, 2),
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "credit_ledger_payment_ref_unique" UNIQUE("payment_ref")
+);
+CREATE TABLE "credit_purchases" (
+	"id" text PRIMARY KEY NOT NULL,
+	"user_id" text,
+	"pack_id" text NOT NULL,
+	"credits" integer NOT NULL,
+	"amount_usd" numeric(10, 2) NOT NULL,
+	"provider_invoice_id" text,
+	"provider_payment_id" text,
+	"status" text DEFAULT 'pending' NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "credit_purchases_provider_payment_id_unique" UNIQUE("provider_payment_id")
+);
+ALTER TABLE "credit_ledger" ADD CONSTRAINT "credit_ledger_user_id_cars_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."cars_user"("id") ON DELETE set null ON UPDATE no action;
+ALTER TABLE "credit_purchases" ADD CONSTRAINT "credit_purchases_user_id_cars_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."cars_user"("id") ON DELETE set null ON UPDATE no action;
+CREATE INDEX "credit_ledger_user_id_idx" ON "credit_ledger" USING btree ("user_id");
+CREATE INDEX "credit_purchases_user_id_idx" ON "credit_purchases" USING btree ("user_id");
+```
+
 ### Atomicity
 
 The cars db is `neon-http`: no interactive transactions. So:
