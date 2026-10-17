@@ -1,3 +1,5 @@
+> **Current work (2026-10-17):** Spec 3 — credits + PayPal checkout. Plan: `2026-10-16-credits-and-paypal-checkout.md` (branch `feat/cars-credits`). Done and merged to `main`: Spec 2 — accounts, gated report, My projects (`2026-10-16-accounts-and-full-report.md`). Never run `db:push:cars` against production — see `.agents/logs/2026-10-16-cars-db-push-drops-sequences.md`. The gallery-first MVP plan below is complete and kept for history.
+
 # Gallery-First Affiliate MVP (cars-4by4-builder) Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
