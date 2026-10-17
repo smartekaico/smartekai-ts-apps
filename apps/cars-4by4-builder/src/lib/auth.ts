@@ -30,12 +30,22 @@ export const auth = createAuth({
       // sign-in (the builds then become unowned when the guest is deleted).
       onLinkAccount: async ({ anonymousUser, newUser }) => {
         try {
-          await getDbCars()
-            .update(builds)
-            .set({ userId: newUser.user.id })
-            .where(eq(builds.userId, anonymousUser.user.id));
+          const db = getDbCars();
+          await db.update(builds).set({ userId: newUser.user.id }).where(eq(builds.userId, anonymousUser.user.id));
+          // Spec 3 §4: signing up must not reset the free render
+          // (new.free_render_used = new OR guest). Guests never hold credits,
+          // so no balance moves.
+          const guest = (
+            await db
+              .select({ freeRenderUsed: carsUsers.freeRenderUsed })
+              .from(carsUsers)
+              .where(eq(carsUsers.id, anonymousUser.user.id))
+          ).at(0);
+          if (guest?.freeRenderUsed) {
+            await db.update(carsUsers).set({ freeRenderUsed: true }).where(eq(carsUsers.id, newUser.user.id));
+          }
         } catch (err) {
-          console.error("onLinkAccount: moving guest builds failed", err);
+          console.error("onLinkAccount: moving guest builds / free render failed", err);
         }
       },
     }),
