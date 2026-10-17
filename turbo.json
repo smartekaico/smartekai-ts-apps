@@ -17,7 +17,10 @@
     "CARS_DAILY_RENDER_CAP",
     "PUBLIC_SITE_URL",
     "GOOGLE_CLIENT_ID",
-    "GOOGLE_CLIENT_SECRET"
+    "GOOGLE_CLIENT_SECRET",
+    "PAYPAL_CLIENT_ID",
+    "PAYPAL_CLIENT_SECRET",
+    "PAYPAL_ENV"
   ],
   "tasks": {
     "build": {
