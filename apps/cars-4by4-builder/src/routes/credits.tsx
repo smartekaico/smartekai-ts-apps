@@ -1,15 +1,10 @@
-import { useRef, useState } from "react";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { PayPalButtons, PayPalScriptProvider } from "@paypal/react-paypal-js";
+import { createFileRoute } from "@tanstack/react-router";
 import { CREDIT_PACKS, RENDER_COST, rendersFor } from "@/lib/credit-packs";
 import type { CreditPack } from "@/lib/credit-packs";
-import { capturePayPalOrder, createPayPalOrder, getCreditsPage } from "@/lib/credits";
+import { getCreditsPage } from "@/lib/credits";
 import { safeNext } from "@/lib/next";
-import { notifyCreditsChanged } from "@/lib/use-credits";
-import { Toast } from "@/components/Toast";
 
 type CreditsSearch = { next?: string };
-type Notice = { message: string; tone: "success" | "error" };
 
 export const Route = createFileRoute("/credits")({
   validateSearch: (search: Record<string, unknown>): CreditsSearch => ({
@@ -22,20 +17,7 @@ export const Route = createFileRoute("/credits")({
 });
 
 function CreditsPage() {
-  const { balance, paypalClientId } = Route.useLoaderData();
-  const { next } = Route.useSearch();
-  const router = useRouter();
-  const [notice, setNotice] = useState<Notice | null>(null);
-
-  async function purchased(credited: number) {
-    notifyCreditsChanged(); // header chip
-    await router.invalidate(); // this page's balance
-    setNotice({
-      tone: "success",
-      message: credited > 0 ? `Added ${credited} credits.` : "That order is already in your balance.",
-    });
-    if (next) window.setTimeout(() => window.location.assign(next), 1500);
-  }
+  const { balance, next } = Route.useLoaderData();
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8">
@@ -46,50 +28,21 @@ function CreditsPage() {
       </p>
       {next && <p className="mt-1 text-sm text-muted-foreground">After you buy, we'll take you back to your build.</p>}
 
-      {paypalClientId ? (
-        <PayPalScriptProvider options={{ clientId: paypalClientId, currency: "USD", intent: "capture" }}>
-          <ul className="mt-8 grid gap-4 md:grid-cols-3">
-            {CREDIT_PACKS.map((pack) => (
-              <PackCard
-                key={pack.id}
-                pack={pack}
-                onPurchased={purchased}
-                onError={(message) => setNotice({ tone: "error", message })}
-              />
-            ))}
-          </ul>
-        </PayPalScriptProvider>
-      ) : (
-        <p className="mt-8 rounded-md border border-border p-4 text-sm text-muted-foreground">
-          Checkout isn't available right now — try again later.
-        </p>
-      )}
+      <ul className="mt-8 grid gap-4 md:grid-cols-2">
+        {CREDIT_PACKS.map((pack) => (
+          <PackCard key={pack.id} pack={pack} />
+        ))}
+      </ul>
 
-      <p className="mt-8 text-xs text-muted-foreground">Payments are processed by PayPal. Prices in USD.</p>
-      {notice && <Toast message={notice.message} tone={notice.tone} onDismiss={() => setNotice(null)} />}
+      <p className="mt-8 text-xs text-muted-foreground">
+        Payments are processed by NOWPayments in USDT on the Tron network (TRC20). Prices in USD.
+      </p>
     </main>
   );
 }
 
-function PackCard({
-  pack,
-  onPurchased,
-  onError,
-}: {
-  pack: CreditPack;
-  onPurchased: (credited: number) => Promise<void>;
-  onError: (message: string) => void;
-}) {
-  // The last order id PayPal handed us, so an error message can quote it.
-  const orderIdRef = useRef<string | null>(null);
-
-  function checkoutUnfinished(orderId: string | null) {
-    notifyCreditsChanged(); // a capture may have landed — refresh the header chip
-    onError(
-      `Checkout didn't finish. If you were charged, contact us with your PayPal order id${orderId ? ` ${orderId}` : ""}.`,
-    );
-  }
-
+// Checkout button is a placeholder until the NOWPayments invoice flow lands (Spec 3 §5).
+function PackCard({ pack }: { pack: CreditPack }) {
   return (
     <li className="flex flex-col gap-2 rounded-lg border border-border bg-card p-5">
       <h2 className="text-xl">{pack.name}</h2>
@@ -98,39 +51,13 @@ function PackCard({
       </p>
       <p className="text-sm text-muted-foreground">≈ {rendersFor(pack.credits)} renders</p>
       <p className="text-lg font-bold">${pack.priceUsd}</p>
-      <div className="mt-2 min-h-[50px]">
-        <PayPalButtons
-          style={{ layout: "vertical", label: "pay" }}
-          createOrder={async () => {
-            orderIdRef.current = null;
-            const result = await createPayPalOrder({ data: { packId: pack.id } });
-            if (!result.ok) throw new Error(result.error);
-            orderIdRef.current = result.orderId;
-            return result.orderId;
-          }}
-          onApprove={async (data) => {
-            orderIdRef.current = data.orderID;
-            let result: Awaited<ReturnType<typeof capturePayPalOrder>>;
-            try {
-              result = await capturePayPalOrder({ data: { orderId: data.orderID, packId: pack.id } });
-            } catch (err) {
-              console.error("PayPal capture request failed", err);
-              checkoutUnfinished(data.orderID);
-              return;
-            }
-            if (!result.ok) {
-              notifyCreditsChanged();
-              onError(result.error);
-              return;
-            }
-            await onPurchased(result.credited);
-          }}
-          onError={(err) => {
-            console.error("PayPal checkout error", err);
-            checkoutUnfinished(orderIdRef.current);
-          }}
-        />
-      </div>
+      <button
+        type="button"
+        disabled
+        className="mt-2 rounded-md bg-primary px-4 py-2 font-semibold text-primary-foreground opacity-50"
+      >
+        Coming soon
+      </button>
     </li>
   );
 }

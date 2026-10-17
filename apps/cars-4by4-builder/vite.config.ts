@@ -35,7 +35,6 @@ export default defineConfig(({ mode }) => {
         "@smartekai/db/cars",
         "@smartekai/ai",
         "@smartekai/storage",
-        "@smartekai/paypal",
         "@smartekai/auth/factory",
       ],
       // lucide-react is installed at different versions across workspace
