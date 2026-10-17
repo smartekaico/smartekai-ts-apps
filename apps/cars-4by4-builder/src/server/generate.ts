@@ -1,6 +1,7 @@
 import { eq, inArray } from "drizzle-orm";
 import { builds, getDbCars, parts, vehicles } from "@smartekai/db/cars";
 import { describeVehicle } from "@/lib/prompt";
+import { refundFailedBuild } from "@/server/credits";
 import { renderUpgrade } from "@/server/render-core";
 
 /** A `processing` build older than this is treated as failed (server restarted mid-render). */
@@ -33,5 +34,6 @@ export async function runGeneration(buildId: string): Promise<void> {
       .update(builds)
       .set({ status: "failed", errorMessage: "Generation failed — try again.", updatedAt: new Date() })
       .where(eq(builds.id, buildId));
+    await refundFailedBuild(buildId); // Spec 3 §3: a failed render gives back what it used (once)
   }
 }

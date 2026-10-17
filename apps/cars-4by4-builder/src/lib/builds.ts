@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { notFound, redirect } from "@tanstack/react-router";
-import { and, asc, count, desc, eq, gte, inArray, ne, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, isNull, ne, or } from "drizzle-orm";
 import { builds, getDbCars, parts, presets, vehicles } from "@smartekai/db/cars";
 import type { DetectedVehicle, Part } from "@smartekai/db/cars";
 import { detectVehicle } from "@smartekai/ai";
@@ -9,6 +9,8 @@ import { MAX_PARTS } from "@/lib/catalog";
 import { summarize } from "@/lib/pricing";
 import { storeOf } from "@/lib/store";
 import type { Store } from "@/lib/store";
+import type { CreditBlock } from "@/lib/credit-packs";
+import { chargeRender, refundFailedBuild, refundRender } from "@/server/credits";
 import { STALE_PROCESSING_MS, runGeneration } from "@/server/generate";
 import { originalImageUrl, publicImageUrl } from "@/server/images";
 import { photoRules, renderRules, tryConsume } from "@/server/rate-limit";
@@ -19,8 +21,8 @@ const ACCEPTED_TYPES: Record<string, string> = { "image/jpeg": "jpg", "image/png
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
 const DAILY_RENDER_CAP = Number(process.env.CARS_DAILY_RENDER_CAP ?? 200);
 
-type Fail = { ok: false; error: string };
-const fail = (error: string): Fail => ({ ok: false, error });
+type Fail = { ok: false; error: string; action?: CreditBlock };
+const fail = (error: string, action?: CreditBlock): Fail => ({ ok: false, error, ...(action ? { action } : {}) });
 
 export type PublicPart = {
   id: string;
@@ -160,7 +162,8 @@ export const startBuild = createServerFn({ method: "POST" })
       return fail("Some upgrades don't fit this vehicle — go back and re-check.");
     }
 
-    if (!tryConsume(renderRules(requestIp()))) return fail("You've hit the render limit for now — try again in an hour.");
+    const ip = requestIp();
+    if (!tryConsume(renderRules(ip))) return fail("You've hit the render limit for now — try again in an hour.");
 
     const startOfDay = new Date();
     startOfDay.setUTCHours(0, 0, 0, 0);
@@ -172,31 +175,75 @@ export const startBuild = createServerFn({ method: "POST" })
       return fail("We're at capacity today — browse the gallery and check back tomorrow.");
     }
 
-    let id: string;
+    // Spec 3 §3: every render is charged to a session user — a guest or an account.
+    // PhotoStep creates a guest session first, so this is rare.
+    const user = await currentUser();
+    if (!user) return fail("Sign in to keep building.", "sign-in");
+
+    // Resolve what to render before charging, so a bad request costs nothing.
+    let target: { kind: "draft"; id: string } | { kind: "stock"; id: string; imageKey: string };
     if (data.buildId) {
-      const updated = await db
-        .update(builds)
-        .set({ status: "processing", vehicleId: vehicle.id, selectedPartIds: data.partIds, updatedAt: new Date() })
-        .where(and(eq(builds.id, data.buildId), eq(builds.status, "draft")))
-        .returning({ id: builds.id });
-      if (updated.length === 0) return fail("That photo expired — upload it again.");
-      id = data.buildId;
+      const draft = (
+        await db
+          .select({ userId: builds.userId })
+          .from(builds)
+          .where(and(eq(builds.id, data.buildId), eq(builds.status, "draft")))
+      ).at(0);
+      // Renders cost credits: only the caller's own draft (or an unowned one) may be started.
+      if (!draft || (draft.userId !== null && draft.userId !== user.id)) {
+        return fail("That photo expired — upload it again.");
+      }
+      target = { kind: "draft", id: data.buildId };
     } else {
       if (!vehicle.stockImageKey) return fail("No studio photo for this vehicle yet — upload your own.");
-      id = crypto.randomUUID();
-      const user = await currentUser();
-      await db.insert(builds).values({
-        id,
-        userId: user?.id ?? null,
-        vehicleId: vehicle.id,
-        originalImageKey: vehicle.stockImageKey,
-        status: "processing",
-        selectedPartIds: data.partIds,
-      });
+      target = { kind: "stock", id: crypto.randomUUID(), imageKey: vehicle.stockImageKey };
     }
 
-    void runGeneration(id); // intentionally not awaited — the build page polls getBuild
-    return { ok: true, id };
+    const gate = await chargeRender(user, target.id, ip);
+    if (!gate.ok) return fail(gate.error, gate.action);
+
+    try {
+      if (target.kind === "draft") {
+        const updated = await db
+          .update(builds)
+          .set({
+            status: "processing",
+            userId: user.id,
+            charge: gate.charge,
+            vehicleId: vehicle.id,
+            selectedPartIds: data.partIds,
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(builds.id, target.id),
+              eq(builds.status, "draft"),
+              or(isNull(builds.userId), eq(builds.userId, user.id)),
+            ),
+          )
+          .returning({ id: builds.id });
+        if (updated.length === 0) {
+          await refundRender(user.id, gate.charge, target.id); // lost a race (double click, cleanup)
+          return fail("That photo expired — upload it again.");
+        }
+      } else {
+        await db.insert(builds).values({
+          id: target.id,
+          userId: user.id,
+          charge: gate.charge,
+          vehicleId: vehicle.id,
+          originalImageKey: target.imageKey,
+          status: "processing",
+          selectedPartIds: data.partIds,
+        });
+      }
+    } catch (err) {
+      await refundRender(user.id, gate.charge, target.id);
+      throw err;
+    }
+
+    void runGeneration(target.id); // intentionally not awaited — the build page polls getBuild
+    return { ok: true, id: target.id };
   });
 
 function validateSlugOrId(slugOrId: string): string {
@@ -216,6 +263,7 @@ async function loadBuild(slugOrId: string) {
     status = "failed";
     errorMessage = "Generation timed out — try again.";
     await db.update(builds).set({ status, errorMessage, updatedAt: new Date() }).where(eq(builds.id, build.id));
+    await refundFailedBuild(build.id); // a render lost to a restart gives back what it used
   }
 
   const vehicle = (await db.select().from(vehicles).where(eq(vehicles.id, build.vehicleId))).at(0);
