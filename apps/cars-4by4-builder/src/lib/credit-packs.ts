@@ -3,12 +3,12 @@
 
 export const RENDER_COST = 10;
 
-// No pack under ~$10: PayPal's fixed per-transaction fee would take ~13% of a
-// $4.99 sale. The server always resolves price from `id`.
+// Paid in USDT (TRC20) via NOWPayments. Starter must stay above NOWPayments'
+// per-currency minimum for usdttrc20 (spec §2). The server always resolves
+// price from `id`; a client-sent amount is never trusted.
 export const CREDIT_PACKS = [
-  { id: "starter", name: "Starter", credits: 100, priceUsd: "9.99" }, // ≈ 10 renders
-  { id: "builder", name: "Builder", credits: 300, priceUsd: "24.99" }, // ≈ 30 renders
-  { id: "pro", name: "Pro", credits: 1000, priceUsd: "69.99" }, // ≈ 100 renders
+  { id: "starter", name: "Starter", credits: 100, priceUsd: "14.00" }, // ≈ 10 renders
+  { id: "pro", name: "Pro", credits: 300, priceUsd: "30.00" }, // ≈ 30 renders
 ] as const;
 
 export type CreditPack = (typeof CREDIT_PACKS)[number];

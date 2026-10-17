@@ -7,6 +7,12 @@ export type BuildStatus = "draft" | "processing" | "completed" | "failed";
 /** What a render used, so a failure can give back the right thing. null = curated, pre-credits, or already refunded. */
 export type BuildCharge = "free" | "credit";
 export type CreditReason = "purchase" | "render" | "refund" | "grant";
+/**
+ * Spec 3 §1. pending → waiting/confirming/sending (mirrors NOWPayments) →
+ * credited (terminal, never overwritten) | partially_paid | expired | failed |
+ * refunded | review (paid but mismatched — manual review).
+ */
+export type CreditPurchaseStatus = "pending" | "waiting" | "confirming" | "sending" | "credited" | "partially_paid" | "expired" | "failed" | "refunded" | "review";
 export declare const carsUsers: import("drizzle-orm/pg-core").PgTableWithColumns<{
     name: "cars_user";
     schema: undefined;
@@ -1513,8 +1519,8 @@ export declare const creditLedger: import("drizzle-orm/pg-core").PgTableWithColu
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        paypalOrderId: import("drizzle-orm/pg-core").PgColumn<{
-            name: "paypal_order_id";
+        paymentRef: import("drizzle-orm/pg-core").PgColumn<{
+            name: "payment_ref";
             tableName: "credit_ledger";
             dataType: "string";
             columnType: "PgText";
@@ -1550,6 +1556,185 @@ export declare const creditLedger: import("drizzle-orm/pg-core").PgTableWithColu
         createdAt: import("drizzle-orm/pg-core").PgColumn<{
             name: "created_at";
             tableName: "credit_ledger";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+    };
+    dialect: "pg";
+}>;
+export declare const creditPurchases: import("drizzle-orm/pg-core").PgTableWithColumns<{
+    name: "credit_purchases";
+    schema: undefined;
+    columns: {
+        id: import("drizzle-orm/pg-core").PgColumn<{
+            name: "id";
+            tableName: "credit_purchases";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: true;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        userId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "user_id";
+            tableName: "credit_purchases";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        packId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "pack_id";
+            tableName: "credit_purchases";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        credits: import("drizzle-orm/pg-core").PgColumn<{
+            name: "credits";
+            tableName: "credit_purchases";
+            dataType: "number";
+            columnType: "PgInteger";
+            data: number;
+            driverParam: string | number;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        amountUsd: import("drizzle-orm/pg-core").PgColumn<{
+            name: "amount_usd";
+            tableName: "credit_purchases";
+            dataType: "string";
+            columnType: "PgNumeric";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        providerInvoiceId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "provider_invoice_id";
+            tableName: "credit_purchases";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        providerPaymentId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "provider_payment_id";
+            tableName: "credit_purchases";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        status: import("drizzle-orm/pg-core").PgColumn<{
+            name: "status";
+            tableName: "credit_purchases";
+            dataType: "string";
+            columnType: "PgText";
+            data: CreditPurchaseStatus;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            $type: CreditPurchaseStatus;
+        }>;
+        createdAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "created_at";
+            tableName: "credit_purchases";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        updatedAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "updated_at";
+            tableName: "credit_purchases";
             dataType: "date";
             columnType: "PgTimestamp";
             data: Date;
@@ -1647,3 +1832,5 @@ export type Part = typeof parts.$inferSelect;
 export type Preset = typeof presets.$inferSelect;
 export type Build = typeof builds.$inferSelect;
 export type CreditLedgerEntry = typeof creditLedger.$inferSelect;
+export type CreditPurchase = typeof creditPurchases.$inferSelect;
+export type NewCreditPurchase = typeof creditPurchases.$inferInsert;

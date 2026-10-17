@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.outboundClicks = exports.creditLedger = exports.builds = exports.presets = exports.parts = exports.vehicles = exports.carsVerifications = exports.carsAccounts = exports.carsSessions = exports.carsUsers = void 0;
+exports.outboundClicks = exports.creditPurchases = exports.creditLedger = exports.builds = exports.presets = exports.parts = exports.vehicles = exports.carsVerifications = exports.carsAccounts = exports.carsSessions = exports.carsUsers = void 0;
 const pg_core_1 = require("drizzle-orm/pg-core");
 // Better Auth tables (guests via the anonymous plugin, accounts via email or Google).
 exports.carsUsers = (0, pg_core_1.pgTable)("cars_user", {
@@ -118,7 +118,8 @@ exports.builds = (0, pg_core_1.pgTable)("builds", {
     userIdx: (0, pg_core_1.index)("builds_user_id_idx").on(table.userId),
 }));
 // Audit trail of every balance change (Spec 3 §1). Purchases are idempotent
-// by the unique paypal_order_id. build_id has no FK: the ledger outlives
+// by the unique payment_ref (provider-neutral; NOWPayments:
+// "nowpayments:<payment_id>"). build_id has no FK: the ledger outlives
 // cleaned-up builds.
 exports.creditLedger = (0, pg_core_1.pgTable)("credit_ledger", {
     id: (0, pg_core_1.text)("id").primaryKey(),
@@ -127,11 +128,27 @@ exports.creditLedger = (0, pg_core_1.pgTable)("credit_ledger", {
     delta: (0, pg_core_1.integer)("delta").notNull(), // +N purchase/refund/grant, −RENDER_COST render
     reason: (0, pg_core_1.text)("reason").$type().notNull(),
     buildId: (0, pg_core_1.text)("build_id"),
-    paypalOrderId: (0, pg_core_1.text)("paypal_order_id").unique(),
+    paymentRef: (0, pg_core_1.text)("payment_ref").unique("credit_ledger_payment_ref_unique"),
     amountUsd: (0, pg_core_1.numeric)("amount_usd", { precision: 10, scale: 2 }),
     createdAt: (0, pg_core_1.timestamp)("created_at").defaultNow().notNull(),
 }, (table) => ({
     userIdx: (0, pg_core_1.index)("credit_ledger_user_id_idx").on(table.userId),
+}));
+// One row per checkout attempt (Spec 3 §1/§5). id is also the NOWPayments
+// order_id. amount_usd snapshots the pack price at checkout.
+exports.creditPurchases = (0, pg_core_1.pgTable)("credit_purchases", {
+    id: (0, pg_core_1.text)("id").primaryKey(),
+    userId: (0, pg_core_1.text)("user_id").references(() => exports.carsUsers.id, { onDelete: "set null" }),
+    packId: (0, pg_core_1.text)("pack_id").notNull(),
+    credits: (0, pg_core_1.integer)("credits").notNull(),
+    amountUsd: (0, pg_core_1.numeric)("amount_usd", { precision: 10, scale: 2 }).notNull(),
+    providerInvoiceId: (0, pg_core_1.text)("provider_invoice_id"),
+    providerPaymentId: (0, pg_core_1.text)("provider_payment_id").unique("credit_purchases_provider_payment_id_unique"),
+    status: (0, pg_core_1.text)("status").$type().notNull().default("pending"),
+    createdAt: (0, pg_core_1.timestamp)("created_at").defaultNow().notNull(),
+    updatedAt: (0, pg_core_1.timestamp)("updated_at").defaultNow().notNull(),
+}, (table) => ({
+    userIdx: (0, pg_core_1.index)("credit_purchases_user_id_idx").on(table.userId),
 }));
 exports.outboundClicks = (0, pg_core_1.pgTable)("outbound_clicks", {
     id: (0, pg_core_1.text)("id").primaryKey(),

@@ -21,6 +21,22 @@ export type BuildStatus = "draft" | "processing" | "completed" | "failed";
 /** What a render used, so a failure can give back the right thing. null = curated, pre-credits, or already refunded. */
 export type BuildCharge = "free" | "credit";
 export type CreditReason = "purchase" | "render" | "refund" | "grant";
+/**
+ * Spec 3 §1. pending → waiting/confirming/sending (mirrors NOWPayments) →
+ * credited (terminal, never overwritten) | partially_paid | expired | failed |
+ * refunded | review (paid but mismatched — manual review).
+ */
+export type CreditPurchaseStatus =
+  | "pending"
+  | "waiting"
+  | "confirming"
+  | "sending"
+  | "credited"
+  | "partially_paid"
+  | "expired"
+  | "failed"
+  | "refunded"
+  | "review";
 
 // Better Auth tables (guests via the anonymous plugin, accounts via email or Google).
 export const carsUsers = pgTable("cars_user", {
@@ -158,7 +174,8 @@ export const builds = pgTable(
 );
 
 // Audit trail of every balance change (Spec 3 §1). Purchases are idempotent
-// by the unique paypal_order_id. build_id has no FK: the ledger outlives
+// by the unique payment_ref (provider-neutral; NOWPayments:
+// "nowpayments:<payment_id>"). build_id has no FK: the ledger outlives
 // cleaned-up builds.
 export const creditLedger = pgTable(
   "credit_ledger",
@@ -169,12 +186,33 @@ export const creditLedger = pgTable(
     delta: integer("delta").notNull(), // +N purchase/refund/grant, −RENDER_COST render
     reason: text("reason").$type<CreditReason>().notNull(),
     buildId: text("build_id"),
-    paypalOrderId: text("paypal_order_id").unique(),
+    paymentRef: text("payment_ref").unique("credit_ledger_payment_ref_unique"),
     amountUsd: numeric("amount_usd", { precision: 10, scale: 2 }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => ({
     userIdx: index("credit_ledger_user_id_idx").on(table.userId),
+  }),
+);
+
+// One row per checkout attempt (Spec 3 §1/§5). id is also the NOWPayments
+// order_id. amount_usd snapshots the pack price at checkout.
+export const creditPurchases = pgTable(
+  "credit_purchases",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").references(() => carsUsers.id, { onDelete: "set null" }),
+    packId: text("pack_id").notNull(),
+    credits: integer("credits").notNull(),
+    amountUsd: numeric("amount_usd", { precision: 10, scale: 2 }).notNull(),
+    providerInvoiceId: text("provider_invoice_id"),
+    providerPaymentId: text("provider_payment_id").unique("credit_purchases_provider_payment_id_unique"),
+    status: text("status").$type<CreditPurchaseStatus>().notNull().default("pending"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdx: index("credit_purchases_user_id_idx").on(table.userId),
   }),
 );
 
@@ -190,3 +228,5 @@ export type Part = typeof parts.$inferSelect;
 export type Preset = typeof presets.$inferSelect;
 export type Build = typeof builds.$inferSelect;
 export type CreditLedgerEntry = typeof creditLedger.$inferSelect;
+export type CreditPurchase = typeof creditPurchases.$inferSelect;
+export type NewCreditPurchase = typeof creditPurchases.$inferInsert;
