@@ -1,4 +1,4 @@
-> **Current work (2026-10-17):** Spec 3 — credits + PayPal checkout. Plan: `2026-10-16-credits-and-paypal-checkout.md` (branch `feat/cars-credits`). Done and merged to `main`: Spec 2 — accounts, gated report, My projects (`2026-10-16-accounts-and-full-report.md`). Never run `db:push:cars` against production — see `.agents/logs/2026-10-16-cars-db-push-drops-sequences.md`. The gallery-first MVP plan below is complete and kept for history.
+> **Current work (2026-10-18):** Spec 3 — credits + NOWPayments checkout (USDT TRC20). Spec: `specs/2026-10-16-credits-and-paypal-checkout-design.md`; plan: `2026-10-16-credits-and-paypal-checkout.md` (branch `feat/cars-credits`). Code is complete and the scoped gate is green; still pending: the production DDL apply (ask-first) and the NOWPayments sandbox end-to-end. Done and merged to `main`: Spec 2 — accounts, gated report, My projects (`2026-10-16-accounts-and-full-report.md`). Never run `db:push:cars` against production — see `.agents/logs/2026-10-16-cars-db-push-drops-sequences.md`. The gallery-first MVP plan below is complete and kept for history.
 
 # Gallery-First Affiliate MVP (cars-4by4-builder) Implementation Plan
 

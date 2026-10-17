@@ -32,3 +32,6 @@ export const photoRules = (ip: string): Rule[] => [{ key: `photo:h:${ip}`, limit
 
 /** Spec 3 §3: clearing cookies yields a new guest, so cap free renders per network. Free-render path only. */
 export const freeRenderRules = (ip: string): Rule[] => [{ key: `free:d:${ip}`, limit: 2, windowMs: 24 * HOUR }];
+
+/** Spec 3 §5 flow 2: at most 10 checkouts (invoices) per account per hour. */
+export const checkoutRules = (userId: string): Rule[] => [{ key: `checkout:h:${userId}`, limit: 10, windowMs: HOUR }];

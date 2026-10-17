@@ -1,4 +1,6 @@
 > **2026-10-17 — payment provider changed to NOWPayments (USDT TRC20).** Tasks 0–11 below are done (render gating, credit primitives, refunds, UI). The PayPal-specific parts (Tasks 4, 5, 9, 10, 12–14 payment steps) are superseded: the NOWPayments work is implemented directly from the spec `.agents/cars-4by4-builder/specs/2026-10-16-credits-and-paypal-checkout-design.md` §1, §2, §5–§9, without a code-complete plan.
+>
+> **2026-10-18 status.** Code is complete: `packages/nowpayments`, the checkout server fn (`src/server/checkout.ts`), the IPN route (`src/routes/api/nowpayments/ipn.ts`), the `/credits` page and its status panel, and render gating with exactly-once refunds. Scoped gate (type-check/lint/build) is green. Remaining: the production DDL apply (Task 13, ask-first — the DDL is rehearsed on the Neon branch `cars-credits`), and the NOWPayments **sandbox** end-to-end (`NOWPAYMENTS_ENV=sandbox` keys are in the root `.env.local`), which also confirms the IPN signature form and the `usdttrc20` min-amount.
 
 # Credits + PayPal Checkout (cars-4by4-builder) Implementation Plan
 

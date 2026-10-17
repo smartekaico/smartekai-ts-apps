@@ -18,6 +18,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as BuildsSlugRouteImport } from './routes/builds/$slug'
 import { Route as GoPartIdRouteImport } from './routes/go/$partId'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiNowpaymentsIpnRouteImport } from './routes/api/nowpayments/ipn'
 import { Route as BuildsSlugReportRouteImport } from './routes/builds/$slug_.report'
 
 const IndexRoute = IndexRouteImport.update({
@@ -65,6 +66,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiNowpaymentsIpnRoute = ApiNowpaymentsIpnRouteImport.update({
+  id: '/api/nowpayments/ipn',
+  path: '/api/nowpayments/ipn',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BuildsSlugReportRoute = BuildsSlugReportRouteImport.update({
   id: '/builds/$slug_/report',
   path: '/builds/$slug/report',
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/builds/$slug': typeof BuildsSlugRoute
   '/go/$partId': typeof GoPartIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/nowpayments/ipn': typeof ApiNowpaymentsIpnRoute
   '/builds/$slug/report': typeof BuildsSlugReportRoute
 }
 export interface FileRoutesByTo {
@@ -93,6 +100,7 @@ export interface FileRoutesByTo {
   '/builds/$slug': typeof BuildsSlugRoute
   '/go/$partId': typeof GoPartIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/nowpayments/ipn': typeof ApiNowpaymentsIpnRoute
   '/builds/$slug/report': typeof BuildsSlugReportRoute
 }
 export interface FileRoutesById {
@@ -106,6 +114,7 @@ export interface FileRoutesById {
   '/builds/$slug': typeof BuildsSlugRoute
   '/go/$partId': typeof GoPartIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/nowpayments/ipn': typeof ApiNowpaymentsIpnRoute
   '/builds/$slug_/report': typeof BuildsSlugReportRoute
 }
 export interface FileRouteTypes {
@@ -120,6 +129,7 @@ export interface FileRouteTypes {
     | '/builds/$slug'
     | '/go/$partId'
     | '/api/auth/$'
+    | '/api/nowpayments/ipn'
     | '/builds/$slug/report'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -132,6 +142,7 @@ export interface FileRouteTypes {
     | '/builds/$slug'
     | '/go/$partId'
     | '/api/auth/$'
+    | '/api/nowpayments/ipn'
     | '/builds/$slug/report'
   id:
     | '__root__'
@@ -144,6 +155,7 @@ export interface FileRouteTypes {
     | '/builds/$slug'
     | '/go/$partId'
     | '/api/auth/$'
+    | '/api/nowpayments/ipn'
     | '/builds/$slug_/report'
   fileRoutesById: FileRoutesById
 }
@@ -157,6 +169,7 @@ export interface RootRouteChildren {
   BuildsSlugRoute: typeof BuildsSlugRoute
   GoPartIdRoute: typeof GoPartIdRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiNowpaymentsIpnRoute: typeof ApiNowpaymentsIpnRoute
   BuildsSlugReportRoute: typeof BuildsSlugReportRoute
 }
 
@@ -225,6 +238,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/nowpayments/ipn': {
+      id: '/api/nowpayments/ipn'
+      path: '/api/nowpayments/ipn'
+      fullPath: '/api/nowpayments/ipn'
+      preLoaderRoute: typeof ApiNowpaymentsIpnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/builds/$slug_/report': {
       id: '/builds/$slug_/report'
       path: '/builds/$slug/report'
@@ -245,6 +265,7 @@ const rootRouteChildren: RootRouteChildren = {
   BuildsSlugRoute: BuildsSlugRoute,
   GoPartIdRoute: GoPartIdRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiNowpaymentsIpnRoute: ApiNowpaymentsIpnRoute,
   BuildsSlugReportRoute: BuildsSlugReportRoute,
 }
 export const routeTree = rootRouteImport
