@@ -41,7 +41,7 @@ BRANCH_DB="$(neon connection-string cars-credits --project-id ancient-hall-95124
 
 Shell vars win over both `.env.local` files (`vite.config.ts` and Node `--env-file` never overwrite an existing var), so `<command>` (dev server, tsx scripts) talks to the branch, not production. `DATABASE_NEONDB_SMARTEKAI` is in `turbo.json` `globalEnv`, so `npm run dev:cars` passes it through.
 
-**Branch:** stay on `feat/cars-accounts` (== `main` at `b56f8a1` when this plan was written). Never commit to `main`; merging is ask-first.
+**Branch:** `feat/cars-credits` (branched from `feat/cars-accounts` == `main` + this plan). Never commit to `main`; merging is ask-first.
 
 **Ask-first checkpoints:**
 1. Task 13 Step 2 — applying the DDL to the **production** cars database.
@@ -105,7 +105,7 @@ git branch --show-current
 git status --short
 ```
 
-Expected: `feat/cars-accounts`; status shows at most the untracked `.agents/cars-4by4-builder/sops/sop-affiliate-links.md` (not ours — leave it alone, never `git add -A` at the repo root).
+Expected: `feat/cars-credits`; status shows at most the untracked `.agents/cars-4by4-builder/sops/sop-affiliate-links.md` (not ours — leave it alone, never `git add -A` at the repo root).
 
 - [ ] **Step 2: Confirm tools**
 
