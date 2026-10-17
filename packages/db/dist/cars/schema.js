@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.outboundClicks = exports.builds = exports.presets = exports.parts = exports.vehicles = exports.carsVerifications = exports.carsAccounts = exports.carsSessions = exports.carsUsers = void 0;
+exports.outboundClicks = exports.creditLedger = exports.builds = exports.presets = exports.parts = exports.vehicles = exports.carsVerifications = exports.carsAccounts = exports.carsSessions = exports.carsUsers = void 0;
 const pg_core_1 = require("drizzle-orm/pg-core");
 // Better Auth tables (guests via the anonymous plugin, accounts via email or Google).
 exports.carsUsers = (0, pg_core_1.pgTable)("cars_user", {
@@ -10,6 +10,10 @@ exports.carsUsers = (0, pg_core_1.pgTable)("cars_user", {
     emailVerified: (0, pg_core_1.boolean)("email_verified").notNull(),
     image: (0, pg_core_1.text)("image"),
     isAnonymous: (0, pg_core_1.boolean)("is_anonymous").default(false),
+    // Spec 3 §1. Guests never hold credits; every user (guest or account) gets
+    // one free render. Better Auth never writes these — the defaults apply.
+    creditBalance: (0, pg_core_1.integer)("credit_balance").notNull().default(0),
+    freeRenderUsed: (0, pg_core_1.boolean)("free_render_used").notNull().default(false),
     createdAt: (0, pg_core_1.timestamp)("created_at").notNull(),
     updatedAt: (0, pg_core_1.timestamp)("updated_at").notNull(),
 });
@@ -104,6 +108,7 @@ exports.builds = (0, pg_core_1.pgTable)("builds", {
     renderKey: (0, pg_core_1.text)("render_key"),
     status: (0, pg_core_1.text)("status").$type().notNull().default("draft"),
     errorMessage: (0, pg_core_1.text)("error_message"),
+    charge: (0, pg_core_1.text)("charge").$type(),
     selectedPartIds: (0, pg_core_1.text)("selected_part_ids").array().notNull(),
     detectedVehicle: (0, pg_core_1.jsonb)("detected_vehicle").$type(),
     createdAt: (0, pg_core_1.timestamp)("created_at").defaultNow().notNull(),
@@ -111,6 +116,22 @@ exports.builds = (0, pg_core_1.pgTable)("builds", {
 }, (table) => ({
     createdAtIdx: (0, pg_core_1.index)("builds_created_at_idx").on(table.createdAt),
     userIdx: (0, pg_core_1.index)("builds_user_id_idx").on(table.userId),
+}));
+// Audit trail of every balance change (Spec 3 §1). Purchases are idempotent
+// by the unique paypal_order_id. build_id has no FK: the ledger outlives
+// cleaned-up builds.
+exports.creditLedger = (0, pg_core_1.pgTable)("credit_ledger", {
+    id: (0, pg_core_1.text)("id").primaryKey(),
+    // Nullable + set null: deleting a user keeps their purchase history (audit trail).
+    userId: (0, pg_core_1.text)("user_id").references(() => exports.carsUsers.id, { onDelete: "set null" }),
+    delta: (0, pg_core_1.integer)("delta").notNull(), // +N purchase/refund/grant, −RENDER_COST render
+    reason: (0, pg_core_1.text)("reason").$type().notNull(),
+    buildId: (0, pg_core_1.text)("build_id"),
+    paypalOrderId: (0, pg_core_1.text)("paypal_order_id").unique(),
+    amountUsd: (0, pg_core_1.numeric)("amount_usd", { precision: 10, scale: 2 }),
+    createdAt: (0, pg_core_1.timestamp)("created_at").defaultNow().notNull(),
+}, (table) => ({
+    userIdx: (0, pg_core_1.index)("credit_ledger_user_id_idx").on(table.userId),
 }));
 exports.outboundClicks = (0, pg_core_1.pgTable)("outbound_clicks", {
     id: (0, pg_core_1.text)("id").primaryKey(),

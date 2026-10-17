@@ -25,6 +25,7 @@ export default defineConfig({
     "presets",
     "builds",
     "outbound_clicks",
+    "credit_ledger",
     "cars_user",
     "cars_session",
     "cars_account",

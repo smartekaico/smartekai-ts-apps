@@ -18,6 +18,9 @@ export type DetectedVehicle = {
   color: string | null;
 };
 export type BuildStatus = "draft" | "processing" | "completed" | "failed";
+/** What a render used, so a failure can give back the right thing. null = curated, pre-credits, or already refunded. */
+export type BuildCharge = "free" | "credit";
+export type CreditReason = "purchase" | "render" | "refund" | "grant";
 
 // Better Auth tables (guests via the anonymous plugin, accounts via email or Google).
 export const carsUsers = pgTable("cars_user", {
@@ -27,6 +30,10 @@ export const carsUsers = pgTable("cars_user", {
   emailVerified: boolean("email_verified").notNull(),
   image: text("image"),
   isAnonymous: boolean("is_anonymous").default(false),
+  // Spec 3 §1. Guests never hold credits; every user (guest or account) gets
+  // one free render. Better Auth never writes these — the defaults apply.
+  creditBalance: integer("credit_balance").notNull().default(0),
+  freeRenderUsed: boolean("free_render_used").notNull().default(false),
   createdAt: timestamp("created_at").notNull(),
   updatedAt: timestamp("updated_at").notNull(),
 });
@@ -138,6 +145,7 @@ export const builds = pgTable(
     renderKey: text("render_key"),
     status: text("status").$type<BuildStatus>().notNull().default("draft"),
     errorMessage: text("error_message"),
+    charge: text("charge").$type<BuildCharge>(),
     selectedPartIds: text("selected_part_ids").array().notNull(),
     detectedVehicle: jsonb("detected_vehicle").$type<DetectedVehicle>(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -146,6 +154,27 @@ export const builds = pgTable(
   (table) => ({
     createdAtIdx: index("builds_created_at_idx").on(table.createdAt),
     userIdx: index("builds_user_id_idx").on(table.userId),
+  }),
+);
+
+// Audit trail of every balance change (Spec 3 §1). Purchases are idempotent
+// by the unique paypal_order_id. build_id has no FK: the ledger outlives
+// cleaned-up builds.
+export const creditLedger = pgTable(
+  "credit_ledger",
+  {
+    id: text("id").primaryKey(),
+    // Nullable + set null: deleting a user keeps their purchase history (audit trail).
+    userId: text("user_id").references(() => carsUsers.id, { onDelete: "set null" }),
+    delta: integer("delta").notNull(), // +N purchase/refund/grant, −RENDER_COST render
+    reason: text("reason").$type<CreditReason>().notNull(),
+    buildId: text("build_id"),
+    paypalOrderId: text("paypal_order_id").unique(),
+    amountUsd: numeric("amount_usd", { precision: 10, scale: 2 }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdx: index("credit_ledger_user_id_idx").on(table.userId),
   }),
 );
 
@@ -160,3 +189,4 @@ export type Vehicle = typeof vehicles.$inferSelect;
 export type Part = typeof parts.$inferSelect;
 export type Preset = typeof presets.$inferSelect;
 export type Build = typeof builds.$inferSelect;
+export type CreditLedgerEntry = typeof creditLedger.$inferSelect;

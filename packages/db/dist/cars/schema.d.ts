@@ -4,6 +4,9 @@ export type DetectedVehicle = {
     color: string | null;
 };
 export type BuildStatus = "draft" | "processing" | "completed" | "failed";
+/** What a render used, so a failure can give back the right thing. null = curated, pre-credits, or already refunded. */
+export type BuildCharge = "free" | "credit";
+export type CreditReason = "purchase" | "render" | "refund" | "grant";
 export declare const carsUsers: import("drizzle-orm/pg-core").PgTableWithColumns<{
     name: "cars_user";
     schema: undefined;
@@ -101,6 +104,40 @@ export declare const carsUsers: import("drizzle-orm/pg-core").PgTableWithColumns
             data: boolean;
             driverParam: boolean;
             notNull: false;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        creditBalance: import("drizzle-orm/pg-core").PgColumn<{
+            name: "credit_balance";
+            tableName: "cars_user";
+            dataType: "number";
+            columnType: "PgInteger";
+            data: number;
+            driverParam: string | number;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        freeRenderUsed: import("drizzle-orm/pg-core").PgColumn<{
+            name: "free_render_used";
+            tableName: "cars_user";
+            dataType: "boolean";
+            columnType: "PgBoolean";
+            data: boolean;
+            driverParam: boolean;
+            notNull: true;
             hasDefault: true;
             isPrimaryKey: false;
             isAutoincrement: false;
@@ -1267,6 +1304,25 @@ export declare const builds: import("drizzle-orm/pg-core").PgTableWithColumns<{
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        charge: import("drizzle-orm/pg-core").PgColumn<{
+            name: "charge";
+            tableName: "builds";
+            dataType: "string";
+            columnType: "PgText";
+            data: BuildCharge;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            $type: BuildCharge;
+        }>;
         selectedPartIds: import("drizzle-orm/pg-core").PgColumn<{
             name: "selected_part_ids";
             tableName: "builds";
@@ -1366,6 +1422,151 @@ export declare const builds: import("drizzle-orm/pg-core").PgTableWithColumns<{
     };
     dialect: "pg";
 }>;
+export declare const creditLedger: import("drizzle-orm/pg-core").PgTableWithColumns<{
+    name: "credit_ledger";
+    schema: undefined;
+    columns: {
+        id: import("drizzle-orm/pg-core").PgColumn<{
+            name: "id";
+            tableName: "credit_ledger";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: true;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        userId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "user_id";
+            tableName: "credit_ledger";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        delta: import("drizzle-orm/pg-core").PgColumn<{
+            name: "delta";
+            tableName: "credit_ledger";
+            dataType: "number";
+            columnType: "PgInteger";
+            data: number;
+            driverParam: string | number;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        reason: import("drizzle-orm/pg-core").PgColumn<{
+            name: "reason";
+            tableName: "credit_ledger";
+            dataType: "string";
+            columnType: "PgText";
+            data: CreditReason;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            $type: CreditReason;
+        }>;
+        buildId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "build_id";
+            tableName: "credit_ledger";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        paypalOrderId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "paypal_order_id";
+            tableName: "credit_ledger";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        amountUsd: import("drizzle-orm/pg-core").PgColumn<{
+            name: "amount_usd";
+            tableName: "credit_ledger";
+            dataType: "string";
+            columnType: "PgNumeric";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        createdAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "created_at";
+            tableName: "credit_ledger";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+    };
+    dialect: "pg";
+}>;
 export declare const outboundClicks: import("drizzle-orm/pg-core").PgTableWithColumns<{
     name: "outbound_clicks";
     schema: undefined;
@@ -1445,3 +1646,4 @@ export type Vehicle = typeof vehicles.$inferSelect;
 export type Part = typeof parts.$inferSelect;
 export type Preset = typeof presets.$inferSelect;
 export type Build = typeof builds.$inferSelect;
+export type CreditLedgerEntry = typeof creditLedger.$inferSelect;
