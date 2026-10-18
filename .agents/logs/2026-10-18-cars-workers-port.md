@@ -241,37 +241,117 @@ are `cpuTime` / `wallTime` in ms:
 | server functions (`/_serverFn/…`) | 0–13 | 0–351 | 17 |
 | **queue render (consumer)** | **339** | **12 423** | 1 |
 
-Landing-page CPU is the widest spread (7–37 ms) — the SSR pass is DB-bound but not
-free; the report page repeats the same spread.
+Landing-page CPU is the widest spread (7–37 ms), and that spread is cold isolates
+rather than route cost: 35 warm loads give `/` n=11 min 5 / p50 8 / p90 8 / max 9 ms
+and `/builds/<slug>` n=6 min 5 / p50 7 / p90 10 / max 10 ms — 0/17 over 10 ms. Only
+the first hit in a fresh isolate pays ~37 ms (module init + first DB connection).
 
-### The limit this has to fit, and why the runs did not fail
+### Which limit each number actually has to fit
 
 The account is **still on Workers Free** — `cf accounts subscriptions get` returns
 only the three Free zones, `R2 Paid`, and `Teams Free Base`, and no Workers Paid
-subscription. Free's cap is 10 ms CPU per HTTP request. Invocations at 78–339 ms
-completed anyway because Cloudflare's limits page grants every isolate "some
-built-in flexibility to allow for cases where your Worker infrequently runs over
-the configured limit", terminating only once a Worker "starts hitting the limit
-consistently". These were a handful of runs, so they spent the burst allowance —
-not evidence the limit is higher. Under real traffic, sign-up (every sign-up hashes
-a password) and renders (every render) would start returning **Error 1102**.
+subscription. The cap depends on the invocation type, and the table above mixes two
+of them:
 
-So Spec §7's fallbacks apply, in order:
+- **HTTP requests: 10 ms CPU** (Workers limits, "CPU time per HTTP request").
+- **Queue consumers: 30 s CPU by default, on Free as well as Paid** — Queues limits,
+  "By default, the maximum CPU time per consumer Worker invocation is set to 30
+  seconds", on a page whose preamble says its limits "apply to both Workers Paid and
+  Workers Free plans". So the 339 ms render is **1.1 % of its budget** and is not a
+  constraint at all.
+- **Cron Triggers: 10 ms** on Free — but the render cron only *enqueues* (§5), so it
+  does no Gemini or image work and stays far below that.
 
-1. **Password hashing → Web Crypto PBKDF2-SHA256.** Buys sign-up/sign-in back under
-   10 ms. Branch check first: production has no scrypt hashes to migrate beyond
-   test accounts.
-2. **Report page → client-side.** The report is 37 ms at its worst; landing is the
-   same shape, so §7.2 as written does not cover both.
-3. **Render consumer → Workers Paid.** 339 ms is Gemini's returned image being
-   decoded and pushed to object storage; no arrangement of 1 and 2 puts that inside
-   10 ms. This one is not optional: the port cannot run on Free.
+That leaves password auth as the only HTTP route over 10 ms, which §7.1 addresses.
 
-Fallbacks 1 and 2 were **not applied** — with 3 forced, the 10 ms budget stops
-being the constraint, and rewriting auth's password hashing is a real behaviour
-change that should be the user's call. Recommendation: Workers Paid, $5/month.
-Against Standard's 30 M included CPU-ms/month that is roughly 88 k renders, 350 k
-sign-ups, or ~3 M page views.
+### §7.1 applied — PBKDF2 password hashing (2026-10-19)
+
+Counted first, per the spec: production has **no password hashes at all**
+(`cars_account` is empty; the 3 `cars_user` rows are all `is_anonymous`), so there was
+nothing to migrate. The branch has 27 scrypt hashes in Better Auth's `salt:key` form,
+which made a live compatibility test possible.
+
+`pbkdf2Password` (`packages/auth/src/factory.ts`) is Web Crypto PBKDF2-HMAC-SHA256,
+wired in as `emailAndPassword.password` in `apps/cars-4by4-builder/src/lib/auth.ts`.
+Hashes are `pbkdf2-sha256$<iters>$<salt>$<key>`; anything without that prefix goes to
+`verifyPassword` from `better-auth/crypto`, so pre-existing scrypt hashes still verify.
+
+**workerd caps PBKDF2 at 100 000 iterations.** The first deploy used 600 000 (OWASP's
+floor for PBKDF2-HMAC-SHA256) and every sign-up/sign-in returned 500 —
+`NotSupportedError: Pbkdf2 failed: iteration counts above 100000 are not supported
+(requested 600000)`. `PBKDF2_ITERATIONS` is therefore 100 000: the strongest native
+KDF this runtime offers, and still below OWASP's guidance.
+
+Re-measured on version `5926b1da-cdf6-41c1-97c0-aa8c07767420`, same method:
+
+| invocation | CPU ms | n | before |
+|---|---|---|---|
+| `POST /api/auth/sign-up/email` | 36, 22, 21, 20 — median **22** | 4 | 84 |
+| `POST /api/auth/sign-in/email` (PBKDF2 verify) | 20, 18, 19, 19 — median **19** | 4 | 78, 84 |
+| `POST /api/auth/sign-in/email` (legacy scrypt hash) | **76** | 1 | 78, 84 |
+| `POST /api/auth/sign-in/email` (wrong password → 401) | 19 | 1 | — |
+
+So the change buys **~4×** (84 → ~20 ms). Native Web Crypto work *is* counted as CPU
+(the ~20 ms is ~14 ms of PBKDF2 plus the route), so this is a real saving and not an
+accounting artefact. It does not by itself get under 10 ms, and cannot: 100 000 is the
+platform ceiling, so the only way further down is a weaker hash. A legacy scrypt row
+still costs 76 ms until that user's password is next set.
+
+Click-through on the preview (Playwright, branch DB): create an account
+(`pbkdf2-ui-2210@example.com`), sign out, sign in again → `/projects` renders signed
+in, 0 console errors; wrong password → 401; legacy scrypt fixture
+(`cars-workers-test@example.com`) → 200. Guest→account conversion still works.
+
+**The trade, stated plainly.** PBKDF2-SHA256 at 100 000 iterations is 6× below
+OWASP's recommended cost and is not memory-hard, where Better Auth's scrypt
+(N=16384, r=16, p=1, ~32 MB per guess) is. Sign-up CPU falls ~4×; the hash an
+attacker faces if the database leaks gets materially weaker. Only one side of that
+is recoverable on this runtime, and only by moving the work:
+
+- keep scrypt and hash inside a **Durable Object** (Cloudflare's own remedy for CPU
+  limits is "Offload work — Move expensive computation to Durable Objects"; a DO
+  invocation has a 30 s CPU budget, and the HTTP request only pays wall time) —
+  strong hash, ~0 ms on the request, at the cost of a DO class and binding;
+- or **Workers Paid**, which lifts the HTTP CPU cap to 5 min and removes the question
+  entirely.
+
+Neither is urgent: production has zero credential accounts, and the burst below shows
+the cap is not biting. The shipped code is the middle option — cheaper, weaker,
+documented — and reverting it is one line (`emailAndPassword: { enabled: true }`),
+because the verifier accepts both formats either way.
+
+### Burst experiment — the 10 ms cap is not enforced per request
+
+25 consecutive `POST /api/auth/sign-up/email` with the *old* scrypt hashing (71–85 ms
+CPU each, the 84 ms above) all returned **200**: no `exceededCpu`, no Error 1102, 25
+accounts written (`burst-1-2139@example.com` … `burst-25-2139@example.com`, plus
+`preview-task8-2132@example.com`, all branch DB). Across every measurement in this
+log — ~130 invocations — the outcome was `ok` except one client-cancelled server
+function; `exceededCpu` has never appeared once.
+
+That does not make the cap disappear: the docs grant each isolate "some built-in
+flexibility to allow for cases where your Worker infrequently runs over the
+configured limit", and terminate a Worker that "starts hitting the limit
+consistently". What it means is that the documented 10 ms is not a hard per-request
+kill, and that Cloudflare's own framing expects this app's shape — the same page says
+"Heavier workloads that handle authentication, server-side rendering, or parse large
+payloads typically use 10-20 ms".
+
+### §7 verdict
+
+The port runs on **Workers Free**. Everything in the CPU table now sits inside its own
+budget except password auth at ~20 ms against a documented 10 ms — and 25/25 burst
+runs at 84 ms succeeded, so auth is not what will break this app tomorrow. Spec §7's
+fallbacks, in order:
+
+1. **Password hashing → PBKDF2 — applied.** 84 → ~20 ms, at the cost noted above.
+2. **Report page → client-side — not applied.** Only the 37 ms cold-isolate outlier was
+   ever over 10 ms; warm, the report is 2 ms and `/builds/<slug>` peaks at exactly 10 ms.
+3. **Workers Paid — not needed for the reason first recorded.** The 339 ms render runs
+   in a queue consumer with a 30 s budget; the earlier "the port cannot run on Free"
+   verdict compared that number against the HTTP cap. Paid still buys real headroom
+   (100 k requests/day is the Free ceiling, `limits.cpu_ms` unlocks the HTTP cap), but
+   that is a capacity choice, not a blocker, and it is the user's to make.
 
 Side effect to remember: the preview worker's `AWS_ENDPOINT_URL_S3` is the same
 production bucket the root `.env.local` points at, so the Task 8 render wrote one
@@ -279,18 +359,24 @@ more orphan object there (no `builds` row references it).
 
 ## Open
 
-- Task 8 is **deployed and measured** (above). What is left is the plan's §7
-  decision — Paid vs fallbacks 1+2 — and then `npx wrangler delete
-  cars-4by4-builder-preview` once the user agrees. `wrangler deploy -c <config>`
-  does not work here; see the deviation note in the plan's Task 8.
+- Task 8 is **deployed, measured, and §7.1 applied** (above): auth 84 → ~20 ms, preview
+  on version `5926b1da-cdf6-41c1-97c0-aa8c07767420`. What is left is the user's call on
+  the hash trade (keep the weaker-but-cheaper PBKDF2, move hashing to a Durable Object,
+  or go Paid), and then `npx wrangler delete cars-4by4-builder-preview` once they agree.
+  `wrangler deploy -c <config>` does not work here; see the deviation note in the plan's
+  Task 8.
+- `packages/auth/dist` is **tracked build output** (`npm run build -w @smartekai/auth`).
+  Rebuilding it also rewrites `dist/index.js`/`dist/index.d.ts`, which is unrelated drift
+  from `src/index.ts` — `industryRole: { type: "string", defaultValue: "LEGAL" }` reached
+  the source without a rebuild. Those two files were deliberately left out of the auth
+  change and want their own commit.
 - Task 3 Step 5's probe used the **pooled** URL for the app-style neon-http driver;
   only the DDL used the direct URL.
 - The rate-limit probe ran through `tsx` + `packages/db/dist` (CJS), i.e. the same
   SQL, not the workerd bundle. The workerd path is exercised by the Task 6
   click-through.
-- Task 8 (CPU measurement on the Free plan) and Task 9 (`wrangler deploy`,
-  `wrangler secret put`, custom domain) are ask-first and still outstanding, as is the
-  real paid round-trip (USDT).
+- Task 9 (`wrangler deploy`, `wrangler secret put`, custom domain) is ask-first and still
+  outstanding, as is the real paid round-trip (USDT).
 - Task 5's cron caps were verified by triggering the handler, not by counting real
   subrequests in the Cloudflare dashboard (only a deploy can do that).
 - **Object storage is not branch-scoped here.** `AWS_ENDPOINT_URL_S3` in the root

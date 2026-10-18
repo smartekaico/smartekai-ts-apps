@@ -1,4 +1,4 @@
-import { createAuth } from "@smartekai/auth/factory";
+import { createAuth, pbkdf2Password } from "@smartekai/auth/factory";
 import { eq } from "drizzle-orm";
 import { anonymous } from "better-auth/plugins";
 import { builds, carsAccounts, carsSessions, carsUsers, carsVerifications, getDbCars } from "@smartekai/db/cars";
@@ -15,7 +15,9 @@ export const auth = createAuth({
     account: carsAccounts,
     verification: carsVerifications,
   },
-  emailAndPassword: { enabled: true },
+  // Web Crypto PBKDF2 rather than Better Auth's pure-JS scrypt: measured at ~80 ms
+  // of CPU per sign-up on a Worker, where a Free-plan request gets 10 ms.
+  emailAndPassword: { enabled: true, password: pbkdf2Password },
   // Only offer Google when it's configured; otherwise sign-in attempts 500.
   socialProviders:
     process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET

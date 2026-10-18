@@ -517,14 +517,31 @@ server function). Free's budget is 10 ms per request:
 | server functions (`/_serverFn/…`) | 0–13 |
 
 The account is **still on Workers Free** (`cf accounts subscriptions get`: three
-Free zones + `R2 Paid` + `Teams Free Base`, no Workers Paid), yet nothing failed —
-Cloudflare gives each isolate "built-in flexibility" for infrequent overages and
-only terminates a Worker that "starts hitting the limit consistently". So the
-over-10 ms runs spent the burst allowance; under real traffic sign-up and renders
-would return Error 1102. §7 verdict: fallback 3 (Workers Paid) is forced — the
-339 ms render consumer cannot be optimised into 10 ms — so §7 fallbacks 1 (PBKDF2
-password hashing) and 2 (client-side report) were deliberately **not** applied, and
-the Paid-vs-fallbacks choice was handed back to the user. Numbers and reasoning:
+Free zones + `R2 Paid` + `Teams Free Base`, no Workers Paid).
+
+**§7.1 was then applied (2026-10-19).** Production turned out to hold no password
+hashes at all (`cars_account` is empty), so `emailAndPassword.password` now uses Web
+Crypto PBKDF2-HMAC-SHA256 (`pbkdf2Password` in `packages/auth/src/factory.ts`), with
+Better Auth's own verifier as the fallback for any `salt:key` row. Two things came
+out of it:
+
+- **workerd rejects PBKDF2 above 100 000 iterations** (`NotSupportedError: Pbkdf2
+  failed: iteration counts above 100000 are not supported`), so the constant is
+  100 000 — the platform ceiling, and still 6× below OWASP's floor for
+  PBKDF2-SHA256. Sign-up/sign-in CPU fell from 78–84 ms to **18–22 ms**; a legacy
+  scrypt row still costs 76 ms until that password is re-set.
+- **The "Paid is forced" verdict above was wrong.** It compared the render consumer's
+  339 ms against the *HTTP* cap, but queue consumers get **30 s CPU on Free as well as
+  Paid** (Queues limits: "the maximum CPU time per consumer Worker invocation is set
+  to 30 seconds", on a page whose limits "apply to both … plans"). Renders were never
+  the blocker. Warm page loads all fit (p90 8–10 ms), so password auth is the only
+  HTTP route over 10 ms — and 25/25 burst sign-ups at 84 ms returned 200, with no
+  `exceededCpu` in ~130 measured invocations.
+
+So the port **runs on Workers Free**: fallback 2 is unnecessary, fallback 3 is a
+capacity choice rather than a blocker, and the remaining call is the user's — keep the
+cheaper-but-weaker hash, move hashing to a Durable Object (which has a 30 s budget, so
+scrypt can stay), or go Paid. Numbers and reasoning:
 `.agents/logs/2026-10-18-cars-workers-port.md`, "Task 8" section.
 
 ### Task 9 — ASK-FIRST: production go-live

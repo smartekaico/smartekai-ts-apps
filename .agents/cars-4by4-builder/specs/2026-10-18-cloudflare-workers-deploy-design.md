@@ -74,8 +74,10 @@ export default {
   (`import { env } from "cloudflare:workers"`). If `send` throws:
   `failProcessingBuild(buildId, "Couldn't start the render — try again.")`
   (which refunds exactly once) and return that error to the client.
-- Queue consumer CPU on Free is unspecified by Cloudflare; the Gemini base64
-  decode + upload is the heaviest step. Measured in §8.
+- Queue consumer CPU is **30 s by default on Free as well as Paid** (Queues limits:
+  "the maximum CPU time per consumer Worker invocation is set to 30 seconds"); the
+  Gemini base64 decode + upload is the heaviest step, and measured 339 ms in §8 —
+  1.1 % of that budget, so the render path is not CPU-constrained on Free.
 - Unchanged: status guards, `STALE_PROCESSING_MS` sweep on read and in cron,
   build-page polling.
 
@@ -149,9 +151,15 @@ Neon branch first, **user approval required** before production.
   1. Better Auth password hashing → `emailAndPassword.password.{hash,verify}`
      using Web Crypto PBKDF2-SHA256 (existing scrypt hashes: none in
      production beyond test accounts — verify with a count first; if any,
-     verify-old-then-rehash).
+     verify-old-then-rehash). **Applied 2026-10-19:** production had zero
+     hashes. workerd caps PBKDF2 at **100 000 iterations** (`NotSupportedError`
+     above that), so that is the constant — the platform ceiling, and 6× below
+     OWASP's floor for PBKDF2-SHA256. Took sign-up/sign-in 84 → ~20 ms: better,
+     but not inside 10 ms, and no iteration count can be.
   2. Report page SSR too heavy → render the shopping list client-side.
-  3. Anything else / render consumer → upgrade to Workers Paid.
+     Not needed: warm, the report is 2 ms.
+  3. Anything else → upgrade to Workers Paid. The **render consumer is not a case
+     for this** — queue consumer CPU is 30 s on Free as well as Paid (§3).
 
 ## 8. Done when
 
@@ -200,15 +208,23 @@ Click-through under `vite dev` (real workerd runtime) on the Neon
 - [x] **CPU measured** for: sign-up, sign-in, report page, a queue render
       (`wrangler tail` / Workers observability `cpuTime` after a preview
       deploy to `*.workers.dev`, user go-ahead first). Each ≤ 10 ms, or the §7 fallback applied.
-      **Over budget, so §7 applies.** Preview `cars-4by4-builder-preview.smartekaico.workers.dev`,
-      61 invocations (60 `ok`): sign-up **84 ms**, sign-in **78 / 84 ms**, queue
-      render **339 ms** CPU (12 423 ms wall), `/` 7–**37 ms**, report page 2 / **37 ms**,
-      build page 10 ms, `/projects` 7 ms, `/credits` 6 ms, server functions 0–13 ms.
-      The account is still on Workers Free, so those runs only passed on the
-      runtime's burst allowance for infrequent overages — under traffic they would
-      be Error 1102. §7 fallback **3 (Workers Paid) is forced** by the render
-      consumer, so fallbacks 1 and 2 were deliberately not applied; the choice was
-      handed back to the user. Full table: `.agents/logs/2026-10-18-cars-workers-port.md`.
+      **Over budget on auth, so §7.1 was applied.** Preview
+      `cars-4by4-builder-preview.smartekaico.workers.dev`, 61 invocations (60 `ok`):
+      sign-up **84 ms**, sign-in **78 / 84 ms**, queue render **339 ms** CPU
+      (12 423 ms wall), `/` 7–**37 ms**, report page 2 / **37 ms**, build page 10 ms,
+      `/projects` 7 ms, `/credits` 6 ms, server functions 0–13 ms. Two corrections
+      followed from re-measuring rather than reading the numbers at face value:
+      warm page loads are **5–10 ms** (37 ms was the cold-isolate first hit, 0/17 over
+      10 ms), and the 339 ms render runs in a **queue consumer, whose CPU budget is
+      30 s on Free as well as Paid** — so renders were never over a limit at all.
+      That leaves auth, which §7.1 fixes: `emailAndPassword.password` is now Web Crypto
+      PBKDF2-HMAC-SHA256 at workerd's **100 000-iteration ceiling** (it rejects more:
+      `NotSupportedError`), taking sign-up/sign-in from 78–84 ms to **18–22 ms**, with
+      scrypt rows still verifying (76 ms until re-set). 25/25 burst sign-ups at 84 ms
+      returned 200 and `exceededCpu` has never appeared, so the port runs on **Workers
+      Free**; fallback 2 is unnecessary and fallback 3 is a capacity choice, not a
+      blocker. Full table and the hash-strength trade:
+      `.agents/logs/2026-10-18-cars-workers-port.md`.
       **Not measured** — needs the preview deploy, which is Task 8's ask-first step.
 
 Then, with the user's go-ahead: production `rate_limits` DDL, secrets set,

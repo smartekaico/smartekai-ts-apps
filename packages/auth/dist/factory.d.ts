@@ -2,6 +2,13 @@ import type { BetterAuthOptions } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 type DrizzleDb = Parameters<typeof drizzleAdapter>[0];
 type DrizzleSchema = NonNullable<Parameters<typeof drizzleAdapter>[1]["schema"]>;
+export declare const pbkdf2Password: {
+    hash(password: string): Promise<string>;
+    verify({ hash, password }: {
+        hash: string;
+        password: string;
+    }): Promise<boolean>;
+};
 export type CreateAuthOptions = Omit<BetterAuthOptions, "database"> & {
     db: DrizzleDb;
     schema: DrizzleSchema;
