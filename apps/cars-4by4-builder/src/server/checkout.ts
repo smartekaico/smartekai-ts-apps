@@ -2,6 +2,8 @@ import {
   NOWPAYMENTS_PAY_CURRENCY,
   NowPaymentsError,
   createInvoice as createNowInvoice,
+  getMinAmount,
+  priceMeetsMinimum,
   toCents,
 } from "@smartekai/nowpayments";
 import type { NowPayment } from "@smartekai/nowpayments";
@@ -32,6 +34,28 @@ export type StartCheckoutResult = { ok: true; invoiceUrl: string } | { ok: false
 const CHECKOUT_FAILED = "Couldn't start checkout — try again.";
 
 /**
+ * The floor under a usdttrc20 deposit, in USD, or null if NOWPayments wouldn't tell us (then we
+ * try the invoice anyway — see priceMeetsMinimum's fail-open note).
+ *
+ * The pair matters, and getting it wrong overstates the floor by ~60%: `currency_from=usd` asks
+ * "what USD amount converts into the USDT minimum" ($18.55 at the time of writing), whereas the
+ * question our USD-priced invoice is subject to is the minimum usdttrc20 *deposit* ($11.37).
+ */
+async function minimumFiat(): Promise<number | null> {
+  try {
+    const min = await getMinAmount(NOWPAYMENTS_PAY_CURRENCY, NOWPAYMENTS_PAY_CURRENCY, PRICE_CURRENCY);
+    // min_amount is in usdttrc20, fiat_equivalent is that same floor in USD — the like-for-like
+    // number for a USD pack price.
+    const raw = min.fiatEquivalent ?? min.minAmount;
+    const floor = typeof raw === "number" ? raw : Number(raw);
+    return Number.isFinite(floor) && floor > 0 ? floor : null;
+  } catch (err) {
+    console.warn(`${LOG} min-amount lookup failed, skipping the floor check:`, err instanceof Error ? err.message : err);
+    return null;
+  }
+}
+
+/**
  * Flow 2: purchase row (pending) → NOWPayments invoice → store the invoice id.
  * On an invoice failure the purchase becomes `failed`. `next` must already be safeNext'd.
  */
@@ -40,6 +64,17 @@ export async function startCheckout(userId: string, pack: CreditPack, next?: str
   if (!site) {
     console.error(`${LOG} PUBLIC_SITE_URL is not set (or not an http(s) URL) — checkout disabled`);
     return { ok: false, error: "Checkout isn't available right now." };
+  }
+
+  // Checked before the purchase row exists: an unpayable invoice would otherwise leave a
+  // `pending` purchase and send the buyer to a payment page that can never be satisfied.
+  const floor = await minimumFiat();
+  if (floor !== null && !priceMeetsMinimum(pack.priceUsd, floor)) {
+    console.warn(`${LOG} ${pack.id} ($${pack.priceUsd}) is under the usdttrc20 floor ($${floor}) — refusing checkout`);
+    return {
+      ok: false,
+      error: `${pack.name} can't be paid right now — the network minimum is $${floor.toFixed(2)}, above this pack's $${pack.priceUsd}. Pick a bigger pack, or try again later.`,
+    };
   }
 
   const purchaseId = await createPurchase(userId, pack);

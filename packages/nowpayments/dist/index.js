@@ -6,6 +6,7 @@ exports.createInvoice = createInvoice;
 exports.getPayment = getPayment;
 exports.toCents = toCents;
 exports.getMinAmount = getMinAmount;
+exports.priceMeetsMinimum = priceMeetsMinimum;
 exports.signIpn = signIpn;
 exports.matchIpnSignature = matchIpnSignature;
 exports.verifyIpnSignature = verifyIpnSignature;
@@ -181,7 +182,13 @@ function toCents(value) {
         return null;
     return Number(m[1]) * 100 + Number((m[2] ?? "").padEnd(2, "0"));
 }
-/** Setup / go-live check only (spec §2 crypto minimums). */
+/**
+ * `GET /min-amount` — the floor NOWPayments puts under a payment, per currency pair.
+ *
+ * With `from` set to the price currency, `fiatEquivalent` is the floor in fiat, which is what
+ * {@link priceMeetsMinimum} wants. The floor floats (usdttrc20 was $11.36, then $18.55), so this
+ * is a per-checkout check, not a go-live constant.
+ */
 async function getMinAmount(from, to, fiatEquivalent) {
     const qs = new URLSearchParams({ currency_from: from, currency_to: to });
     if (fiatEquivalent)
@@ -195,6 +202,19 @@ async function getMinAmount(from, to, fiatEquivalent) {
         minAmount: amount(json.min_amount),
         fiatEquivalent: amount(json.fiat_equivalent),
     };
+}
+/**
+ * True if `priceAmount` (in the price currency, e.g. USD) reaches the provider's floor.
+ *
+ * Fail-open: a missing, zero or unparsable floor counts as "no floor" (true), so a stale or
+ * broken `/min-amount` response never blocks a sale by itself.
+ */
+function priceMeetsMinimum(priceAmount, minFiat) {
+    const min = typeof minFiat === "number" ? minFiat : Number(minFiat);
+    if (!Number.isFinite(min) || min <= 0)
+        return true;
+    const price = typeof priceAmount === "number" ? priceAmount : Number(priceAmount);
+    return Number.isFinite(price) && price >= min;
 }
 // ---------------------------------------------------------------------------
 // IPN signature

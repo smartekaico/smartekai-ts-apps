@@ -154,6 +154,15 @@ Before going live, check `GET /v1/min-amount?currency_from=usdttrc20&currency_to
 price). If it isn't, Starter cannot be paid and the packs must change
 (ask the user).
 
+> **2026-10-18 — checked, then made a runtime rule.** `fiat_equivalent` is **$11.35** (`min_amount`
+> 11.367146 usdttrc20), comfortably below $14.00, so Starter is payable; the live payment page
+> renders a $14 invoice as 13.96 USDT. **Use exactly the pair above.** `currency_from=usd`
+> answers a *different* question — "what USD amount converts into the USDT minimum" — and
+> reports $18.55; mistaking that for the floor makes Starter look unpayable (it did, and it
+> isn't). The floor also moves, so this is no longer only a go-live checklist item:
+> `startCheckout` (spec §5) re-reads it per checkout and refuses a pack below it, before
+> creating a purchase row.
+
 ## 3. Render gating — `startBuild` (built)
 
 After the existing validation, IP rate limit and daily cap, before the build
