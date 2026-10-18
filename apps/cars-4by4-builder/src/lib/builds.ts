@@ -11,8 +11,9 @@ import { storeOf } from "@/lib/store";
 import type { Store } from "@/lib/store";
 import type { CreditBlock } from "@/lib/credit-packs";
 import { chargeRender, refundRender } from "@/server/credits";
-import { STALE_PROCESSING_MS, TIMED_OUT_MESSAGE, failProcessingBuild, runGeneration } from "@/server/generate";
+import { STALE_PROCESSING_MS, TIMED_OUT_MESSAGE, failProcessingBuild } from "@/server/generate";
 import { originalImageUrl, publicImageUrl } from "@/server/images";
+import { enqueueRender } from "@/server/render-queue";
 import { photoRules, renderRules, tryConsume } from "@/server/rate-limit";
 import { requestIp } from "@/server/request";
 import { accountUser, currentUser } from "@/server/session";
@@ -262,7 +263,16 @@ export const startBuild = createServerFn({ method: "POST" })
       throw err;
     }
 
-    void runGeneration(target.id); // intentionally not awaited — the build page polls getBuild
+    try {
+      await enqueueRender(target.id);
+    } catch (err) {
+      // Never queued, so nothing will run it: fail now (refunds exactly once).
+      console.error(`[builds] enqueue of build ${target.id} failed`, err);
+      await failProcessingBuild(target.id, "Couldn't start the render — try again.").catch((failErr: unknown) =>
+        console.error(`[builds] build ${target.id}: marking failed also failed — the stale sweep refunds it`, failErr),
+      );
+      return fail("Couldn't start the render — try again.");
+    }
     return { ok: true, id: target.id };
   });
 
