@@ -197,9 +197,18 @@ Click-through under `vite dev` (real workerd runtime) on the Neon
 - [x] `wrangler deploy --dry-run --outdir` succeeds; bundle size recorded.
       Exit 0 → **Total Upload 4390.95 KiB / gzip 977.45 KiB** (62 worker modules
       3696.35 KiB; 26 client assets). Bindings read back: `RENDER_QUEUE` plus 7 vars.
-- [ ] **CPU measured** for: sign-up, sign-in, report page, a queue render
+- [x] **CPU measured** for: sign-up, sign-in, report page, a queue render
       (`wrangler tail` / Workers observability `cpuTime` after a preview
       deploy to `*.workers.dev`, user go-ahead first). Each ≤ 10 ms, or the §7 fallback applied.
+      **Over budget, so §7 applies.** Preview `cars-4by4-builder-preview.smartekaico.workers.dev`,
+      61 invocations (60 `ok`): sign-up **84 ms**, sign-in **78 / 84 ms**, queue
+      render **339 ms** CPU (12 423 ms wall), `/` 7–**37 ms**, report page 2 / **37 ms**,
+      build page 10 ms, `/projects` 7 ms, `/credits` 6 ms, server functions 0–13 ms.
+      The account is still on Workers Free, so those runs only passed on the
+      runtime's burst allowance for infrequent overages — under traffic they would
+      be Error 1102. §7 fallback **3 (Workers Paid) is forced** by the render
+      consumer, so fallbacks 1 and 2 were deliberately not applied; the choice was
+      handed back to the user. Full table: `.agents/logs/2026-10-18-cars-workers-port.md`.
       **Not measured** — needs the preview deploy, which is Task 8's ask-first step.
 
 Then, with the user's go-ahead: production `rate_limits` DDL, secrets set,

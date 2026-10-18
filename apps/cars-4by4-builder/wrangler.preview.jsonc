@@ -20,10 +20,10 @@
     "consumers": [{ "queue": "cars-render", "max_batch_size": 1, "max_retries": 0 }]
   },
   "vars": {
-    // Replace PREVIEW_SUBDOMAIN with this account's workers.dev subdomain
-    // (shown by `npx wrangler whoami` after `npx wrangler login`).
-    "BETTER_AUTH_URL": "https://cars-4by4-builder-preview.PREVIEW_SUBDOMAIN.workers.dev",
-    "PUBLIC_SITE_URL": "https://cars-4by4-builder-preview.PREVIEW_SUBDOMAIN.workers.dev",
+    // Preview host: <worker name>.<account workers.dev subdomain>
+    // (subdomain from GET /accounts/{id}/workers/subdomain → "smartekaico").
+    "BETTER_AUTH_URL": "https://cars-4by4-builder-preview.smartekaico.workers.dev",
+    "PUBLIC_SITE_URL": "https://cars-4by4-builder-preview.smartekaico.workers.dev",
     "NOWPAYMENTS_ENV": "live",
     "CARS_DAILY_RENDER_CAP": "200",
     "GOOGLE_AI_MODEL": "gemini-2.5-flash",

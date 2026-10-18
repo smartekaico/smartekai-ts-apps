@@ -184,16 +184,105 @@ retargets the workerd dev server at live data. Under Nitro the same root file wa
 read directly (`.agents/logs/2026-10-18-cars-spec3-ddl-applied-production.md`).
 Fixed by the `dev-vars.ts` guard described above.
 
+## Task 8 — preview deploy and CPU measurement (2026-10-19)
+
+Deployed and measured on the user's go-ahead. Account
+`82e8bdf2828490cd4f28d0ce94e4667d`; the workers.dev subdomain is `smartekaico`
+(`GET /accounts/{id}/workers/subdomain` — `wrangler whoami` no longer prints it),
+so the preview worker is
+**https://cars-4by4-builder-preview.smartekaico.workers.dev** (version
+`f292efd9-6cae-42b6-be8b-3267125f6b8c`, startup 49 ms, 4390.95 KiB / 977.45 KiB
+gzip). The `cars-render` queue already existed (created 2026-10-18T21:15Z).
+
+Setup notes, in the order they mattered:
+
+- `PREVIEW_SUBDOMAIN` in `wrangler.preview.jsonc` → `smartekaico`.
+- `wrangler secret put -c wrangler.preview.jsonc` on a worker that does not exist
+  yet does not fail: non-interactively it answers its own "create a new Worker?"
+  prompt with *yes*, uploads a placeholder script, and stores the secret. The
+  deploy then replaces the placeholder, and all 7 secrets survive (`wrangler secret
+  list`). So the order deploy-then-secrets is not required.
+- The 7 preview secrets were piped from the generated `apps/cars-4by4-builder/.dev.vars`
+  (branch DB `ep-wild-bar-b1pi4db8-pooler`, never production):
+  `DATABASE_NEONDB_SMARTEKAI`, `BETTER_AUTH_SECRET`, `GOOGLE_AI_API_KEY`,
+  `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `NOWPAYMENTS_API_KEY`,
+  `NOWPAYMENTS_IPN_SECRET`. `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` exist nowhere,
+  so Google sign-in stays dead on the preview exactly as it is locally.
+- Build + deploy is `CARS_WRANGLER_CONFIG=wrangler.preview.jsonc npx vite build &&
+  npx wrangler deploy` — no `-c`, per the deviation already recorded in the plan.
+
+Click-through on the real worker (branch DB, via Playwright): `/` → `/build` →
+Nissan Patrol + Overlander preset → studio photo → render → build page →
+`/projects` → `/credits` → `/builds/<id>/report`, plus sign-up, sign-out and sign-in.
+The guest build created on the preview (`e1156aa6-2f45-4389-b4c3-61797ab659fa`)
+completed through the queue and then **moved to `cars-workers-test@example.com`**
+when that account signed in — the guest→account move works on Workers, not just
+under `vite dev`. Console: 1 error, a `/favicon.ico` 404 (the repo ships no
+favicon at all — pre-existing, unrelated to the port). A new account
+(`preview-task8-2132@example.com`) was created on the branch DB.
+
+### Measured CPU
+
+`npx wrangler tail cars-4by4-builder-preview --format json`, 61 invocations, 60
+`ok` + 1 `canceled` (a client-aborted server function during a navigation). Values
+are `cpuTime` / `wallTime` in ms:
+
+| invocation | CPU ms | wall ms | n |
+|---|---|---|---|
+| `GET /` (landing) | 7, 9, 10, 10, **37** | 123–297 | 5 |
+| `GET /build` | 8 | 137 | 1 |
+| `GET /builds/<id>` | 10 | 345 | 1 |
+| `GET /builds/<id>/report` | 2, **37** | 2, 417 | 2 |
+| `GET /projects` · `GET /credits` | 7 · 6 | 124 · 120 | 1 each |
+| `POST /api/auth/sign-up/email` | **84** | 573 | 1 |
+| `POST /api/auth/sign-in/email` | **78, 84** | 420, 1599 | 2 |
+| `POST /api/auth/sign-out` | 7, 12 | 577, 586 | 2 |
+| `POST /api/auth/sign-in/anonymous` | 5 | 232 | 1 |
+| server functions (`/_serverFn/…`) | 0–13 | 0–351 | 17 |
+| **queue render (consumer)** | **339** | **12 423** | 1 |
+
+Landing-page CPU is the widest spread (7–37 ms) — the SSR pass is DB-bound but not
+free; the report page repeats the same spread.
+
+### The limit this has to fit, and why the runs did not fail
+
+The account is **still on Workers Free** — `cf accounts subscriptions get` returns
+only the three Free zones, `R2 Paid`, and `Teams Free Base`, and no Workers Paid
+subscription. Free's cap is 10 ms CPU per HTTP request. Invocations at 78–339 ms
+completed anyway because Cloudflare's limits page grants every isolate "some
+built-in flexibility to allow for cases where your Worker infrequently runs over
+the configured limit", terminating only once a Worker "starts hitting the limit
+consistently". These were a handful of runs, so they spent the burst allowance —
+not evidence the limit is higher. Under real traffic, sign-up (every sign-up hashes
+a password) and renders (every render) would start returning **Error 1102**.
+
+So Spec §7's fallbacks apply, in order:
+
+1. **Password hashing → Web Crypto PBKDF2-SHA256.** Buys sign-up/sign-in back under
+   10 ms. Branch check first: production has no scrypt hashes to migrate beyond
+   test accounts.
+2. **Report page → client-side.** The report is 37 ms at its worst; landing is the
+   same shape, so §7.2 as written does not cover both.
+3. **Render consumer → Workers Paid.** 339 ms is Gemini's returned image being
+   decoded and pushed to object storage; no arrangement of 1 and 2 puts that inside
+   10 ms. This one is not optional: the port cannot run on Free.
+
+Fallbacks 1 and 2 were **not applied** — with 3 forced, the 10 ms budget stops
+being the constraint, and rewriting auth's password hashing is a real behaviour
+change that should be the user's call. Recommendation: Workers Paid, $5/month.
+Against Standard's 30 M included CPU-ms/month that is roughly 88 k renders, 350 k
+sign-ups, or ~3 M page views.
+
+Side effect to remember: the preview worker's `AWS_ENDPOINT_URL_S3` is the same
+production bucket the root `.env.local` points at, so the Task 8 render wrote one
+more orphan object there (no `builds` row references it).
+
 ## Open
 
-- Task 8 is prepared but not deployed: `wrangler.preview.jsonc` exists and a
-  `CARS_WRANGLER_CONFIG=wrangler.preview.jsonc npx vite build` was verified to emit
-  `dist/server/wrangler.json` with the preview name, no routes, `workers_dev: true`,
-  no crons, the preview URL vars and the `cars-render` queue. Waiting on the user's
-  `npx wrangler login` + `npx wrangler queues create cars-render`, the real
-  workers.dev subdomain (the placeholder is `PREVIEW_SUBDOMAIN`), the preview
-  secrets, and go-ahead to deploy. `wrangler deploy -c <config>` does not work here —
-  see the deviation note in the plan's Task 8.
+- Task 8 is **deployed and measured** (above). What is left is the plan's §7
+  decision — Paid vs fallbacks 1+2 — and then `npx wrangler delete
+  cars-4by4-builder-preview` once the user agrees. `wrangler deploy -c <config>`
+  does not work here; see the deviation note in the plan's Task 8.
 - Task 3 Step 5's probe used the **pooled** URL for the app-style neon-http driver;
   only the DDL used the direct URL.
 - The rate-limit probe ran through `tsx` + `packages/db/dist` (CJS), i.e. the same

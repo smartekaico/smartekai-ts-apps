@@ -492,6 +492,41 @@ Commit: `docs(cars): Spec 4 local verification`.
 4. Record the numbers in the log. If any is over 10 ms, apply the spec §7 fallbacks in order, re-measure, and report to the user before choosing Paid.
 5. Delete the preview worker after the user agrees.
 
+**Done (2026-10-19).** Deployed as `cars-4by4-builder-preview` on
+`smartekaico.workers.dev` (account `82e8bdf2828490cd4f28d0ce94e4667d`; the
+subdomain comes from `GET /accounts/{id}/workers/subdomain` — `wrangler whoami` no
+longer prints it). The `cars-render` queue already existed. All 7 §5 secrets that
+exist anywhere were set from the generated `.dev.vars`
+(`GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` exist nowhere, so Google sign-in is dead
+on the preview — same as locally). Click-through passed end to end, including the
+guest→account build move; the only console error was a `/favicon.ico` 404 (the repo
+has no favicon).
+
+CPU, from `wrangler tail --format json` (61 invocations, 60 `ok` + 1 client-aborted
+server function). Free's budget is 10 ms per request:
+
+| invocation | CPU ms |
+|---|---|
+| `POST /api/auth/sign-up/email` | **84** |
+| `POST /api/auth/sign-in/email` | **78, 84** |
+| queue render (consumer) | **339** (12 423 ms wall) |
+| `GET /` | 7–**37** |
+| `GET /builds/<id>/report` | 2, **37** |
+| `GET /builds/<id>` · `/projects` · `/credits` · `/build` | 10 · 7 · 6 · 8 |
+| `POST /api/auth/sign-out` · `sign-in/anonymous` | 7, 12 · 5 |
+| server functions (`/_serverFn/…`) | 0–13 |
+
+The account is **still on Workers Free** (`cf accounts subscriptions get`: three
+Free zones + `R2 Paid` + `Teams Free Base`, no Workers Paid), yet nothing failed —
+Cloudflare gives each isolate "built-in flexibility" for infrequent overages and
+only terminates a Worker that "starts hitting the limit consistently". So the
+over-10 ms runs spent the burst allowance; under real traffic sign-up and renders
+would return Error 1102. §7 verdict: fallback 3 (Workers Paid) is forced — the
+339 ms render consumer cannot be optimised into 10 ms — so §7 fallbacks 1 (PBKDF2
+password hashing) and 2 (client-side report) were deliberately **not** applied, and
+the Paid-vs-fallbacks choice was handed back to the user. Numbers and reasoning:
+`.agents/logs/2026-10-18-cars-workers-port.md`, "Task 8" section.
+
 ### Task 9 — ASK-FIRST: production go-live
 
 Each of these needs the user's go-ahead:
