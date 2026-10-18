@@ -186,6 +186,14 @@ Fixed by the `dev-vars.ts` guard described above.
 
 ## Open
 
+- Task 8 is prepared but not deployed: `wrangler.preview.jsonc` exists and a
+  `CARS_WRANGLER_CONFIG=wrangler.preview.jsonc npx vite build` was verified to emit
+  `dist/server/wrangler.json` with the preview name, no routes, `workers_dev: true`,
+  no crons, the preview URL vars and the `cars-render` queue. Waiting on the user's
+  `npx wrangler login` + `npx wrangler queues create cars-render`, the real
+  workers.dev subdomain (the placeholder is `PREVIEW_SUBDOMAIN`), the preview
+  secrets, and go-ahead to deploy. `wrangler deploy -c <config>` does not work here —
+  see the deviation note in the plan's Task 8.
 - Task 3 Step 5's probe used the **pooled** URL for the app-style neon-http driver;
   only the DDL used the direct URL.
 - The rate-limit probe ran through `tsx` + `packages/db/dist` (CJS), i.e. the same

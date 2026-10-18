@@ -473,7 +473,21 @@ Commit: `docs(cars): Spec 4 local verification`.
    - copy `wrangler.jsonc` to `wrangler.preview.jsonc`, with `name: "cars-4by4-builder-preview"`, no `routes`, `"workers_dev": true` and no `triggers`;
    - point `BETTER_AUTH_URL` and `PUBLIC_SITE_URL` at the `workers.dev` URL;
    - set the secrets on the preview worker only, with `DATABASE_NEONDB_SMARTEKAI` = the branch URL.
-2. Deploy: `npx vite build && npx wrangler deploy -c wrangler.preview.jsonc`.
+
+   **Deviations found while doing this (2026-10-18):**
+   - `wrangler deploy -c wrangler.preview.jsonc` **cannot work**: bundling `src/server.ts`
+     outside Vite fails on the virtual module `tanstack-start-manifest:v`. The plugin
+     resolves the entry `wrangler config` at build time and writes the real deploy
+     config to `.wrangler/deploy/config.json` → `dist/server/wrangler.json`
+     (`no_bundle: true`, assets `dist/client`), which is what plain `wrangler deploy`
+     reads. So the preview is built, not just deployed: `vite.config.ts` now passes
+     `configPath: process.env.CARS_WRANGLER_CONFIG` to `cloudflare(...)` (unset =
+     discover `wrangler.jsonc`, so dev and production are unchanged).
+   - The preview host is not known before `wrangler login`, so both URL vars carry the
+     literal `PREVIEW_SUBDOMAIN` placeholder; replace it with the account's workers.dev
+     subdomain (`wrangler whoami`) and re-build before deploying.
+2. Deploy: `CARS_WRANGLER_CONFIG=wrangler.preview.jsonc npx vite build && npx wrangler deploy`
+   (no `-c` — the redirect config above is what selects the built preview bundle).
 3. Measure CPU. Run sign-up, sign-in, the report page and one render. Read each invocation's **CPU time** in Workers observability (dashboard → the worker → Logs / Observability → `$workers.cpuTimeMs`), or watch `npx wrangler tail cars-4by4-builder-preview --format json`.
 4. Record the numbers in the log. If any is over 10 ms, apply the spec §7 fallbacks in order, re-measure, and report to the user before choosing Paid.
 5. Delete the preview worker after the user agrees.

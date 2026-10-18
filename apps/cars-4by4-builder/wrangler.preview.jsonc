@@ -1,0 +1,33 @@
+{
+  // Preview/measurement worker for Task 8 of
+  // .agents/cars-4by4-builder/plans/2026-10-18-cloudflare-workers-deploy.md.
+  // Deploy with: npx vite build && npx wrangler deploy -c wrangler.preview.jsonc
+  // Differences from wrangler.jsonc: its own worker name, no custom domain
+  // (workers.dev only), no cron (a preview must not run scheduled cleanup), and
+  // the two URL vars point at the preview host so Better Auth accepts its own
+  // origin. The queues block is kept so a render can go through the consumer —
+  // that is one of the four CPU measurements.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cars-4by4-builder-preview",
+  "main": "src/server.ts",
+  "compatibility_date": "2026-10-18",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "upload_source_maps": true,
+  "workers_dev": true,
+  "queues": {
+    "producers": [{ "binding": "RENDER_QUEUE", "queue": "cars-render" }],
+    "consumers": [{ "queue": "cars-render", "max_batch_size": 1, "max_retries": 0 }]
+  },
+  "vars": {
+    // Replace PREVIEW_SUBDOMAIN with this account's workers.dev subdomain
+    // (shown by `npx wrangler whoami` after `npx wrangler login`).
+    "BETTER_AUTH_URL": "https://cars-4by4-builder-preview.PREVIEW_SUBDOMAIN.workers.dev",
+    "PUBLIC_SITE_URL": "https://cars-4by4-builder-preview.PREVIEW_SUBDOMAIN.workers.dev",
+    "NOWPAYMENTS_ENV": "live",
+    "CARS_DAILY_RENDER_CAP": "200",
+    "GOOGLE_AI_MODEL": "gemini-2.5-flash",
+    "AWS_REGION": "eu-central-1",
+    "AWS_ENDPOINT_URL_S3": "https://br-frosty-band-b195s0t1.storage.c-5.eu-central-1.aws.neon.tech"
+  }
+}

@@ -47,7 +47,16 @@ export default defineConfig({
       { find: /^@smartekai\/ui$/, replacement: pkgSrc("ui") },
     ],
   },
-  plugins: [cloudflare({ viteEnvironment: { name: "ssr" } }), tanstackStart(), viteReact()],
+  plugins: [
+    // `configPath` is only set for the Task 8 preview deploy
+    // (`CARS_WRANGLER_CONFIG=wrangler.preview.jsonc npx vite build && npx wrangler deploy`):
+    // the plugin resolves the entry worker's wrangler config at build time and
+    // writes the redirected deploy config to `.wrangler/deploy/`, so a preview
+    // must be built, not just deployed with `-c`. Unset = wrangler.jsonc.
+    cloudflare({ configPath: process.env.CARS_WRANGLER_CONFIG, viteEnvironment: { name: "ssr" } }),
+    tanstackStart(),
+    viteReact(),
+  ],
   environments: {
     ssr: {
       resolve: { mainFields: workerMainFields },
