@@ -122,9 +122,10 @@ gains an "ARB" / "Tire Rack" case.
 
 - [ ] Amazon Associates and EPN accounts approved.
 - [ ] Every seeded part has an `affiliateUrl`; seed applied.
-- [ ] Buy buttons name the store, carry `rel="sponsored nofollow noopener"`,
-      and a disclosure sits above the shop list.
-- [ ] Prices read "Est. price".
+- [x] Buy buttons name the store, carry `rel="sponsored nofollow noopener"`,
+      and a disclosure sits above the shop list. *(`src/lib/store.ts`,
+      `ShopList.tsx`; merged with Spec 2.)*
+- [x] Prices read "Est. price". *(`ShopList.tsx`, `PartCard.tsx`.)*
 - [ ] Click-through: Buy → `/go/$partId` → one `outbound_clicks` row → store page
       with the affiliate tag intact.
 
