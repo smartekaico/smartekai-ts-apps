@@ -34,6 +34,13 @@ Branch `feat/cars-cloudflare`. Scope: cars only.
   `DEEPGRAM_API_KEY` were left out of `dev-vars.ts`. Cars uses
   `@smartekai/auth/factory`, which imports only `better-auth`; `BETTER_AUTH_SECRET`
   is kept.
+- **`scripts/dev-vars.ts` now refuses production** (Task 5, agreed with the user —
+  see "Incident" below). It exits non-zero without writing when the resolved
+  `DATABASE_NEONDB_SMARTEKAI` contains the production endpoint
+  (`ep-winter-frost-b1drw3en`), and always logs the DB host it wrote.
+  `CARS_ALLOW_PROD_DB=1` overrides. This is beyond the plan's Step 6; the plan's
+  Task 1 Step 7 rule ("local dev must never use the production database") is what
+  it enforces.
 - **`wrangler types` narrows `ProcessEnv`.** After Step 5, `worker-configuration.d.ts`
   declares every `wrangler.jsonc` var as always-defined in `NodeJS.ProcessEnv`, so the
   five pre-existing `process.env.X ?? fallback` reads on cars paths became lint errors
@@ -114,6 +121,69 @@ so the give-back path works. Test rows deleted.
 Instrumentation patches to `node_modules/vite` and the CF plugin's module runner were
 reverted; `packages/auth/dist` restored with `git checkout`.
 
+**Task 4 (queue render, branch).** A guest render through the UI (studio-image
+path, `lc300` + 2 parts) → build
+`a9e88303-…`: `processing` → `completed`, `charge = free`, `render_key` set, and
+the dev log showed `QUEUE cars-render 1/1 (17104ms)` — the consumer ran
+`runGeneration`. The build page rendered the before/after slider.
+
+Forced failure: `GOOGLE_AI_IMAGE_MODEL=bogus` + `npm run dev-vars` → render
+`90de818c-…` → `status = failed`, `error_message = "Generation failed — try again."`,
+`charge = NULL` (nulled by `refundFailedBuild` as its exactly-once guard),
+`render_key` null, **no** `credit_ledger` row, and the guest's
+`free_render_used` went back to `false` — exactly one refund, of the right kind.
+The same run exercised the rate-limit `ON CONFLICT DO UPDATE` path in workerd
+(all four keys 1 → 2), which Task 3's probe had only covered in Node.
+
+**Task 5 (hourly cron, branch).**
+
+```bash
+DATABASE_NEONDB_SMARTEKAI="$BR" npx tsx --env-file=../../.env.local scripts/cleanup.ts
+# cleanup: timed out and refunded 0 stuck renders
+# cleanup: removed 0 builds, 0 stale guests, 2 rate-limit windows
+curl "http://localhost:3002/cdn-cgi/handler/scheduled?cron=17+*+*+*+*"
+# cleanup: timed out and refunded 0 stuck renders
+# cleanup: removed 0 builds, 0 stale guests, 0 rate-limit windows
+```
+
+The script run pruned the two rate-limit windows that had already expired, which
+is also proof it reached the branch database (production has no `rate_limits`
+table — the prune would have thrown). The `--env-file` URL is overridden by the
+shell var, as the plan requires.
+
+## Incident: dev server briefly pointed at production (2026-10-18, ~19:51Z)
+
+While re-generating `.dev.vars` for the Task 4 forced-failure test
+(`GOOGLE_AI_IMAGE_MODEL=bogus npm run dev-vars`), `dev-vars.ts` re-resolved
+`DATABASE_NEONDB_SMARTEKAI` from the monorepo-root `.env.local` — which points at
+**production**. The dev server was restarted and one `startBuild` attempt ran
+against production: the anonymous sign-in created a guest row, and the request
+then died on the first write (`render:h`) with
+`relation "rate_limits" does not exist`, which surfaced in the UI as
+"Something went wrong — try again." (Not a rate-limit bug: the table simply does
+not exist in production yet; Task 9 applies that DDL.)
+
+Production footprint, measured afterwards (read-only):
+
+| table | rows written |
+|---|---|
+| `cars_user` | 1 (anonymous, `free_render_used = false`, 0 credits) |
+| `cars_session` | 1 (that guest's) |
+| `builds`, `credit_ledger`, `credit_purchases`, `rate_limits` | 0 |
+
+By the user's decision the stray guest and its session were **left in place** —
+inert, and deleting rows in production is a destructive write that deserves more
+care than the value of one empty guest row. Cleanup is manual if ever wanted:
+`delete from cars_session where user_id = '5BcmG92kp6o4XymsC9WwBSvVwMv2puyV';`
+then `delete from cars_user where id = '5BcmG92kp6o4XymsC9WwBSvVwMv2puyV';`.
+
+Root cause is structural, not a slip: the root `.env.local` holds the production
+DB URL for the other apps, the app `.env.local` only overrides `BETTER_AUTH_URL`,
+and `.dev.vars` is *generated* from them — so a bare `npm run dev-vars` silently
+retargets the workerd dev server at live data. Under Nitro the same root file was
+read directly (`.agents/logs/2026-10-18-cars-spec3-ddl-applied-production.md`).
+Fixed by the `dev-vars.ts` guard described above.
+
 ## Open
 
 - Task 3 Step 5's probe used the **pooled** URL for the app-style neon-http driver;
@@ -124,3 +194,5 @@ reverted; `packages/auth/dist` restored with `git checkout`.
 - Task 8 (CPU measurement on the Free plan) and Task 9 (`wrangler deploy`,
   `wrangler secret put`, custom domain) are ask-first and still outstanding, as is the
   real paid round-trip (USDT).
+- Task 5's cron caps were verified by triggering the handler, not by counting real
+  subrequests in the Cloudflare dashboard (only a deploy can do that).

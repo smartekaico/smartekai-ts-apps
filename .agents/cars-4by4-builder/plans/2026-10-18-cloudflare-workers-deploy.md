@@ -321,7 +321,7 @@ Every rule's limit is ≥ 1, so the first insert in a window always succeeds.
 
 ### Task 4: Render through Cloudflare Queues
 
-- [ ] **Step 1: `src/server/render-queue.ts`.** It is server-only, so `cloudflare:workers` never reaches the client graph.
+- [x] **Step 1: `src/server/render-queue.ts`.** It is server-only, so `cloudflare:workers` never reaches the client graph.
 
 ```ts
 import { env } from "cloudflare:workers";
@@ -334,7 +334,7 @@ export async function enqueueRender(buildId: string): Promise<void> {
 }
 ```
 
-- [ ] **Step 2: `src/lib/builds.ts:265`.** Replace `void runGeneration(target.id); …` with the code below. Then remove the now-unused `runGeneration` import, and import `enqueueRender` and `failProcessingBuild` if they aren't already imported.
+- [x] **Step 2: `src/lib/builds.ts:265`.** Replace `void runGeneration(target.id); …` with the code below. Then remove the now-unused `runGeneration` import, and import `enqueueRender` and `failProcessingBuild` if they aren't already imported.
 
 ```ts
     try {
@@ -350,7 +350,7 @@ export async function enqueueRender(buildId: string): Promise<void> {
     return { ok: true, id: target.id };
 ```
 
-- [ ] **Step 3: Consumer in `src/server.ts`**
+- [x] **Step 3: Consumer in `src/server.ts`**
 
 ```ts
 import handler from "@tanstack/react-start/server-entry";
@@ -372,16 +372,16 @@ export default {
 } satisfies ExportedHandler<Env>;
 ```
 
-- [ ] **Step 4: Verify locally on the branch.** Workers' local queue simulation needs no Cloudflare login.
+- [x] **Step 4: Verify locally on the branch.** Workers' local queue simulation needs no Cloudflare login.
   - Start a guest render in the browser. The build page goes `processing`, then `completed`, and the dev log shows the consumer running.
   - Set `GOOGLE_AI_IMAGE_MODEL=bogus`, re-run `npm run dev-vars`, and render again. Expect the build `failed` and exactly one refund: a `free_render_used` reset, or one `render_refund` ledger row for a credit render.
   - Restore the model.
 
-- [ ] **Step 5:** Gate, then commit: `feat(cars): AI render runs in a Cloudflare Queue consumer`.
+- [x] **Step 5:** Gate, then commit: `feat(cars): AI render runs in a Cloudflare Queue consumer`.
 
 ### Task 5: Cleanup as an hourly cron (subrequest-capped)
 
-- [ ] **Step 1: Move the logic.** Move the body of `main()` from `scripts/cleanup.ts` into `src/server/cleanup.ts` as:
+- [x] **Step 1: Move the logic.** Move the body of `main()` from `scripts/cleanup.ts` into `src/server/cleanup.ts` as:
 
 ```ts
 export type CleanupCaps = { stuck?: number; builds?: number };
@@ -395,7 +395,7 @@ Change the logic as follows. Change no other logic.
 - **At the end:** call `pruneRateLimits()` and log its count.
 - **Imports:** use relative paths matching `src/server/*`, such as `./credits` and `./generate`. Use no `@/` alias, because `tsx` runs the script.
 
-- [ ] **Step 2: Thin script wrapper.** Replace `scripts/cleanup.ts` with:
+- [x] **Step 2: Thin script wrapper.** Replace `scripts/cleanup.ts` with:
 
 ```ts
 import { runCleanup } from "../src/server/cleanup";
@@ -414,7 +414,7 @@ DATABASE_NEONDB_SMARTEKAI="$BR" npx tsx --env-file=../../.env.local scripts/clea
 
 The shell var wins over `--env-file`; confirm that by checking that the logged host is the branch.
 
-- [ ] **Step 3: Add the cron handler** to the default export in `src/server.ts`:
+- [x] **Step 3: Add the cron handler** to the default export in `src/server.ts`:
 
 ```ts
 import { runCleanup } from "@/server/cleanup";
@@ -425,13 +425,13 @@ import { runCleanup } from "@/server/cleanup";
   },
 ```
 
-- [ ] **Step 4: Trigger it locally.** Expect the cleanup log lines:
+- [x] **Step 4: Trigger it locally.** Expect the cleanup log lines:
 
 ```bash
 curl "http://localhost:3002/cdn-cgi/handler/scheduled?cron=17+*+*+*+*"
 ```
 
-- [ ] **Step 5:** Gate, then commit: `feat(cars): hourly cleanup as a Workers cron, subrequest-capped`.
+- [x] **Step 5:** Gate, then commit: `feat(cars): hourly cleanup as a Workers cron, subrequest-capped`.
 
 ### Task 6: Full click-through (local workerd, Neon branch)
 
