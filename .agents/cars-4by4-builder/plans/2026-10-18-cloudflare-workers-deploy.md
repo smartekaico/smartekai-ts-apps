@@ -43,7 +43,7 @@
 
 ### Task 1: Workers runtime boots locally
 
-- [ ] **Step 1: Dependencies**
+- [x] **Step 1: Dependencies**
 
 ```bash
 cd "apps/cars-4by4-builder"
@@ -57,7 +57,7 @@ In `package.json` scripts:
 
 Delete `apps/cars-4by4-builder/Dockerfile`.
 
-- [ ] **Step 2: `vite.config.ts`** (full file)
+- [x] **Step 2: `vite.config.ts`** (full file)
 
 ```ts
 import { defineConfig } from "vite";
@@ -75,7 +75,7 @@ export default defineConfig({
 });
 ```
 
-- [ ] **Step 3: `wrangler.jsonc`**
+- [x] **Step 3: `wrangler.jsonc`**
 
 ```jsonc
 {
@@ -104,7 +104,7 @@ export default defineConfig({
 
 Copy the non-secret values `GOOGLE_AI_MODEL`, `GOOGLE_AI_IMAGE_MODEL`, `AWS_REGION` and `AWS_ENDPOINT_URL_S3` from the root `.env.local` into `vars`. **Copy values only for those four keys.** Never put a secret in this file.
 
-- [ ] **Step 4: `src/server.ts`** (only `fetch` for now; Tasks 4 and 5 fill in the other handlers)
+- [x] **Step 4: `src/server.ts`** (only `fetch` for now; Tasks 4 and 5 fill in the other handlers)
 
 ```ts
 import handler from "@tanstack/react-start/server-entry";
@@ -114,7 +114,7 @@ export default {
 } satisfies ExportedHandler<Env>;
 ```
 
-- [ ] **Step 5: Types**
+- [x] **Step 5: Types**
 
 Run `npm run cf-typegen`. It writes `worker-configuration.d.ts`, which declares `Env`, including `RENDER_QUEUE`. Commit the file.
 
@@ -122,7 +122,7 @@ In `tsconfig.json`:
 - set `"types": ["vite/client", "./worker-configuration.d.ts"]`, or keep `include` covering it;
 - if `wrangler types` says so, drop the `DOM` lib clash per its output.
 
-- [ ] **Step 6: `scripts/dev-vars.ts`**
+- [x] **Step 6: `scripts/dev-vars.ts`**
 
 It writes `.dev.vars` with these precedence rules:
 - shell env wins, then the app `.env.local`, then the root `.env.local`;
@@ -170,7 +170,7 @@ Leave out `DEEPGRAM_API_KEY`, `RESEND_API_KEY` and `NEXT_PUBLIC_APP_URL` only af
 
 Add `.dev.vars`, `.wrangler/` and `dist/` to `apps/cars-4by4-builder/.gitignore` (create it if missing).
 
-- [ ] **Step 7: Boot against the Neon branch.** **Local dev must never use the production database.**
+- [x] **Step 7: Boot against the Neon branch.** **Local dev must never use the production database.**
 
 ```bash
 BR=$(npx neon connection-string cars-credits --project-id ancient-hall-95124568 --database-name neondb --pooled)
@@ -184,7 +184,7 @@ Expected:
 
 If a workspace package fails to bundle (a CJS interop error), fix it in that package or with `ssr.optimizeDeps`. Record what you did in `.agents/logs/2026-10-18-cars-workers-port.md`.
 
-- [ ] **Step 8: Gate + commit**
+- [x] **Step 8: Gate + commit**
 
 ```bash
 npx turbo run type-check lint build --filter=cars-4by4-builder...
@@ -195,7 +195,7 @@ Check `turbo.json`: its build `outputs` already include `dist/**`, so it needs n
 
 ### Task 2: Client IP from Cloudflare
 
-- [ ] Replace `src/server/request.ts`:
+- [x] Replace `src/server/request.ts`:
 
 ```ts
 import { getRequest, getRequestIP } from "@tanstack/react-start/server";
@@ -212,11 +212,11 @@ export function requestIp(): string {
 
 If `getRequest` isn't exported from `@tanstack/react-start/server`, use the `getRequestHeader` helper from the same module.
 
-- [ ] Gate, then commit: `fix(cars): client IP from cf-connecting-ip, never X-Forwarded-For`.
+- [x] Gate, then commit: `fix(cars): client IP from cf-connecting-ip, never X-Forwarded-For`.
 
 ### Task 3: Rate limits in Postgres
 
-- [ ] **Step 1: Schema** in `packages/db/src/cars/schema.ts`. Match the file's existing style: plain `timestamp(...)` (no time zone), and import `primaryKey`, `integer` and `index` from `drizzle-orm/pg-core` if they aren't already imported.
+- [x] **Step 1: Schema** in `packages/db/src/cars/schema.ts`. Match the file's existing style: plain `timestamp(...)` (no time zone), and import `primaryKey`, `integer` and `index` from `drizzle-orm/pg-core` if they aren't already imported.
 
 ```ts
 /** Spec 4 §6: fixed-window counters (Workers isolates share no memory). */
@@ -234,7 +234,7 @@ export const rateLimits = pgTable(
 
 Add `"rate_limits"` to `tablesFilter` in `packages/db/drizzle.cars.config.ts`. Rebuild with `npm run build -w @smartekai/db` and commit its `dist`.
 
-- [ ] **Step 2: DDL on the Neon branch**
+- [x] **Step 2: DDL on the Neon branch**
 
 Save this as `.agents/cars-4by4-builder/specs/2026-10-18-rate-limits.sql`:
 
@@ -255,7 +255,7 @@ psql -1 -v ON_ERROR_STOP=1 "$(npx neon connection-string cars-credits --project-
 
 Check it with `psql "<branch url>" -c '\d rate_limits'`: the columns, primary key and index must match the Drizzle table above. Never run drizzle-kit `push` (it drops legacy sequences).
 
-- [ ] **Step 3: `src/server/rate-limit.ts`**
+- [x] **Step 3: `src/server/rate-limit.ts`**
 
 Keep `Rule`, `HOUR` and every `*Rules` export exactly as they are. Replace the `Map`, `prune` and `tryConsume` with:
 
@@ -310,14 +310,14 @@ export async function pruneRateLimits(): Promise<number> {
 
 Every rule's limit is ≥ 1, so the first insert in a window always succeeds.
 
-- [ ] **Step 4: Callers.** Add `await` at `src/server/credits.ts:70` (`if (await tryConsume(freeRenderRules(ip)))`), `src/lib/credits.ts:57`, `src/lib/builds.ts:100` and `src/lib/builds.ts:171`. Type-check catches any missed caller, because a `Promise` is always truthy. Grep `tryConsume(` to be sure.
+- [x] **Step 4: Callers.** Add `await` at `src/server/credits.ts:70` (`if (await tryConsume(freeRenderRules(ip)))`), `src/lib/credits.ts:57`, `src/lib/builds.ts:100` and `src/lib/builds.ts:171`. Type-check catches any missed caller, because a `Promise` is always truthy. Grep `tryConsume(` to be sure.
 
-- [ ] **Step 5: Verify on the branch.** Use a temporary `.mts` script in the scratchpad. Do not commit it.
+- [x] **Step 5: Verify on the branch.** Use a temporary `.mts` script in the scratchpad. Do not commit it.
   - Call `tryConsume(freeRenderRules("203.0.113.9"))` three times; expect `true, true, false`.
   - Call `tryConsume(renderRules("203.0.113.9"))` six times; expect five `true`, then `false`, and the daily row's count stays 5, showing the give-back worked.
   - Delete the test rows afterwards.
 
-- [ ] **Step 6:** Gate, then commit: `feat(cars): rate limits in Postgres (rate_limits) for Workers`.
+- [x] **Step 6:** Gate, then commit: `feat(cars): rate limits in Postgres (rate_limits) for Workers`.
 
 ### Task 4: Render through Cloudflare Queues
 
