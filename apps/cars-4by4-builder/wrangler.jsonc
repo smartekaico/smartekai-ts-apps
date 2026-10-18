@@ -1,0 +1,31 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cars-4by4-builder",
+  // Custom entry: fetch + the render queue consumer + the cleanup cron (src/server.ts).
+  "main": "src/server.ts",
+  // nodejs_compat + a date >= 2025-04-01 populates process.env from vars and
+  // secrets, which the app and the workspace packages read — including at
+  // module scope (e.g. GOOGLE_AI_MODEL in @smartekai/ai).
+  "compatibility_date": "2026-10-18",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "upload_source_maps": true,
+  "routes": [{ "pattern": "cars.smartekai.com", "custom_domain": true }],
+  "queues": {
+    "producers": [{ "binding": "RENDER_QUEUE", "queue": "cars-render" }],
+    // max_retries 0: runGeneration never rejects and already fails + refunds a
+    // build, so a retry would only re-bill Gemini for work already given back.
+    "consumers": [{ "queue": "cars-render", "max_batch_size": 1, "max_retries": 0 }]
+  },
+  "triggers": { "crons": ["17 * * * *"] },
+  // Non-secret values only. Secrets go in with `wrangler secret put` (§5 of the spec).
+  "vars": {
+    "BETTER_AUTH_URL": "https://cars.smartekai.com",
+    "PUBLIC_SITE_URL": "https://cars.smartekai.com",
+    "NOWPAYMENTS_ENV": "live",
+    "CARS_DAILY_RENDER_CAP": "200",
+    "GOOGLE_AI_MODEL": "gemini-2.5-flash",
+    "AWS_REGION": "eu-central-1",
+    "AWS_ENDPOINT_URL_S3": "https://br-frosty-band-b195s0t1.storage.c-5.eu-central-1.aws.neon.tech"
+  }
+}

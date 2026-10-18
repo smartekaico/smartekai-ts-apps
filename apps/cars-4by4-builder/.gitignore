@@ -1,0 +1,5 @@
+# Cloudflare Workers (Spec 4). The root .gitignore's .env* does not cover
+# .dev.vars, and these are generated build/dev artifacts.
+.dev.vars
+.wrangler/
+dist/
