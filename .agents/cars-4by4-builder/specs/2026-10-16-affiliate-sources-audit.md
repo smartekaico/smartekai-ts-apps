@@ -3,7 +3,7 @@
 **Date:** 2026-10-16
 **App:** `apps/cars-4by4-builder`
 **Audits:** `.agents/cars-4by4-builder/sops/sop-affiliate-links.md`
-**Status:** Agreed. Spec 1 of 3 (2 = accounts + full report, 3 = credits + checkout).
+**Status:** Agreed. Spec 1 of 3 (2 = accounts + full report, 3 = credits + checkout). Step 1 code done; §7–§8 added 2026-10-18 (more programs + implementation tasks).
 
 The SOP was written as general advice. This audit checks its claims against
 primary sources (checked 2026-10-16) and against what the repo already does,
@@ -93,6 +93,9 @@ Code changes (small, done with Spec 2's report work):
 
 ### Step 2 — once the gallery has real traffic
 
+> **Updated 2026-10-18:** §7 widens Steps 2–3 with more programs; §8 lists
+> the implementation tasks.
+
 - **AvantLink → ARB USA** (application is reviewed; AvantLink rejects many new sites).
 - **CJ → Tire Rack** (tires).
 
@@ -114,8 +117,8 @@ gains an "ARB" / "Tire Rack" case.
   Tavily directly (AGENTS.md: providers stay behind `@smartekai/ai` /
   `@smartekai/crw`); writes columns we don't have (`partNumber`, `weightKg`,
   `compatibleVehicleIds`); scrapes prices, which Amazon forbids displaying;
-  schedules via GitHub Actions/`setInterval` (no CI; Dokploy schedules are the
-  option). Revisit as a `@smartekai/crw` + Gemini link-checker if the catalog
+  schedules via GitHub Actions/`setInterval` (no CI; a Cloudflare Cron Trigger
+  is the option once Spec 4 lands). Revisit as a `@smartekai/crw` + Gemini link-checker if the catalog
   outgrows hand-curation.
 
 ## 6. Done when (Step 1)
@@ -128,6 +131,166 @@ gains an "ARB" / "Tire Rack" case.
 - [x] Prices read "Est. price". *(`ShopList.tsx`, `PartCard.tsx`.)*
 - [ ] Click-through: Buy → `/go/$partId` → one `outbound_clicks` row → store page
       with the affiliate tag intact.
+
+
+## 7. More programs (added 2026-10-18)
+
+Rates come from roundups and disagree, so check the merchant's page on the
+network before relying on them.
+
+| # | Program | Network | Fit | Confidence |
+|---|---|---|---|---|
+| 1 | ARB USA | AvantLink | 6 of 21 seeded parts; 3–5%, 45-day cookie | Verified (§2) |
+| 2 | 4 Wheel Parts | AvantLink | Largest US 4x4 retailer; stocks ARB, OME, Warn, Bilstein, Smittybilt, Rough Country | Reported 3.2%, 30-day cookie (older listing: 2.4%) |
+| 3 | Tire Rack | CJ | Tires (BFGoodrich, Nitto) | Verified: 6%, 60-day cookie |
+| 4 | Baja Designs | AvantLink | Off-road LED lighting, premium | Own page, 30-day cookie (page is old) |
+| 5 | Morris 4x4 Center | CJ | Jeep/4x4 parts | Reported, 30-day cookie |
+| 6 | RealTruck | Impact | Bed covers, steps, lighting | Likely, ~4% (§2) |
+| 7 | Inspired Overland | In-house | Rooftop tents, order value $900+ | Own page: 5–10%, 30-day cookie |
+
+Not verified (no program found yet; check each brand's footer for
+"Affiliates"): CARiD, Summit Racing, Quadratec, Front Runner, iKamper,
+Roofnest, Dometic, MAXTRAX, Goal Zero.
+
+**Order:**
+
+- **Step 2:** one AvantLink application covering ARB USA, 4 Wheel Parts and
+  Baja Designs; one CJ application covering Tire Rack and Morris 4x4. AvantLink
+  reviews by hand and wants a live site, so apply after cars.smartekai.com is
+  live (Spec 4).
+- **Step 3:** RealTruck on Impact; sub-ID tagging.
+- **Later:** grow the existing `overland` category with high-ticket items
+  (rooftop tents, fridges, recovery boards), then join Inspired Overland and
+  similar in-house programs.
+
+**Per-part choice:** use the best-paying program that carries the exact part;
+if it doesn't carry it, fall back to Amazon, then eBay. Each part keeps one
+URL (§1).
+
+## 8. Implementation tasks (for an implementing agent)
+
+**Ground rules** (repo `AGENTS.md`):
+
+- Branch `feat/cars-affiliates` from `main`; never commit to `main`.
+- Scoped gate:
+  `npx turbo run type-check lint build --filter=cars-4by4-builder...`
+- Never run `db:push:cars` (it drops legacy sequences). Schema changes are
+  hand DDL (`psql -1`, direct URL), rehearsed first on the Neon branch
+  `cars-credits` (project `ancient-hall-95124568`).
+- **Ask the user first** before any production DDL or production seed run.
+- Spec 4 (Cloudflare Workers) may land before or after this work; nothing here
+  depends on the runtime.
+
+**What the user supplies** (not code): approved accounts, and per part a
+tracking URL plus the store it leads to. Tasks A–C, E and F can be built
+before any link exists. Task D needs the links.
+
+### Task A — store recorded per part (schema)
+
+Network links don't show the merchant in the host. AvantLink links run
+through `avantlink.com`, CJ through its click domains (`anrdoezrs.net`,
+`jdoqocy.com`, `tkqlhce.com`, `dpbolvw.net`, `kqzyfj.com`), and Impact
+through `*.sjv.io` or `*.pxf.io`. So `storeOf(url)` can't name the store, and
+Amazon requires the button to name it (§3). The fix is to store it:
+
+- `packages/db/src/cars/schema.ts`: add `parts.affiliateStore`, a nullable
+  `text("affiliate_store")`. Rebuild `packages/db` and commit its `dist`.
+- DDL file `.agents/cars-4by4-builder/specs/2026-10-18-parts-affiliate-store.sql`:
+  `ALTER TABLE parts ADD COLUMN affiliate_store text;`. Apply it to the
+  branch; production only on approval.
+
+### Task B — store registry and labels
+
+`src/lib/store.ts`:
+
+- Extend `Store` to: `amazon`, `ebay`, `arb`, `4wheelparts`, `tirerack`,
+  `bajadesigns`, `morris4x4`, `realtruck`, `inspiredoverland`, `other`.
+- Labels: "Buy on Amazon", "View on eBay", "Buy at ARB", "Buy at 4 Wheel
+  Parts", "Buy at Tire Rack", "Buy at Baja Designs", "Buy at Morris 4x4",
+  "Buy at RealTruck", "Buy at Inspired Overland", "Buy".
+- Change the signature to `storeOf(url, declared?)`. Rules:
+  1. An Amazon or eBay host always wins, whatever is declared. An Amazon
+     link is never labelled otherwise.
+  2. Otherwise a valid `declared` store wins, except that `amazon` or `ebay`
+     declared on a non-Amazon/eBay host falls through. Never label a
+     non-Amazon link as Amazon.
+  3. Otherwise detect the merchant's own domain: `arbusa.com`,
+     `4wheelparts.com`, `tirerack.com`, `bajadesigns.com`,
+     `morris4x4center.com`, `realtruck.com`, `inspiredoverland.com`. Use the
+     same anchored-suffix approach as today.
+  4. Otherwise `other`.
+- `src/lib/builds.ts:52` passes `p.affiliateStore`.
+- Spot-check the rules with a `npx tsx -e` one-liner covering each rule,
+  including `amazon.com.evil.com` → `other`, and an AvantLink URL with
+  declared `arb` → `arb`.
+
+### Task C — links data file and checker
+
+- New `src/seed/affiliate-links.ts`:
+  `export const AFFILIATE_LINKS: Partial<Record<string, { url: string; store: Store }>>`,
+  keyed by part id and empty at first.
+- `src/seed/parts.ts` merges it into `seedParts`: `affiliateUrl` and
+  `affiliateStore` come from the map, otherwise `null`. Keep the placeholder
+  comment accurate.
+- New `scripts/check-links.ts`, run as `npm run links:check`. It needs no
+  database: it reads the map and `seedParts`, then prints a table with these
+  columns:
+  - part id;
+  - store, as resolved by `storeOf`;
+  - URL host;
+  - HTTP status of a `GET`, following redirects, 10 s timeout.
+
+  It flags missing links, non-https URLs, an unknown part id in the map, and
+  any status ≥ 400. It exits non-zero only on malformed entries, not on
+  missing ones.
+
+### Task D — apply links (needs the user's links)
+
+- The user provides the URLs; paste them into `AFFILIATE_LINKS`.
+  `npm run links:check` must be clean.
+- Run `npm run db:seed` against the Neon branch first and verify
+  `select count(affiliate_url) from parts`. Production needs approval.
+- Seeding upserts whole part rows. That's fine today because parts are
+  seed-owned, but confirm nothing edits parts outside the seed before
+  running it on production.
+
+### Task E — sub-ID tagging in `/go/$partId`
+
+Append the build id, when present and matching `^[A-Za-z0-9_-]{1,64}$`, using
+the network's own parameter. Detect the network by host:
+
+| Network | Hosts | Parameter |
+|---|---|---|
+| AvantLink | `avantlink.com` | `ctc` |
+| CJ | the click domains above | `sid` |
+| Impact | `*.sjv.io`, `*.pxf.io` | `subId1` |
+| eBay | eBay hosts | `customid` |
+
+- Amazon and unknown hosts are left untouched; Amazon has no sub-ID (§4
+  Step 3).
+- Pure helper `withSubId(url, buildId)` goes in `src/lib/subid.ts`. Never
+  overwrite a parameter that's already set.
+- Spot-check every row with `npx tsx -e`.
+
+### Task F — verification (closes §6)
+
+On the Neon branch with at least one Amazon link and one network link:
+
+1. Each Buy button shows the right store name.
+2. The disclosure appears above the shop list.
+3. Clicking Buy goes to `/go/<id>` and inserts exactly one `outbound_clicks`
+   row.
+4. The redirect `Location` keeps the affiliate tag, plus the sub-ID for
+   network links.
+5. The gate passes.
+
+Tick §6.
+
+### Later (not now)
+
+The overland catalog: the user picks the products. Then add seed parts with
+`aiPromptSnippet`s and render a gallery build to check that the prompts look
+right.
 
 ## Sources
 
@@ -145,3 +308,9 @@ gains an "ARB" / "Tire Rack" case.
 - ArabClicks: Speero — https://www.arabclicks.com/advertisers/speero-affiliate-program/
 - Impact sub-IDs — https://help.impact.com/partner/what-would-you-like-to-learn-about/platform-features/tracking/tracking-links/link-parameters/sub-id-and-shared-id-parameters-explained-for-partners
 - FTC Endorsement Guides update (Manatt) — https://manatt.com/insights/newsletters/advertising-law/an-in-depth-look-at-the-ftcs-updates-2
+- 4 Wheel Parts (FlexOffers listing) — https://www.flexoffers.com/affiliate-programs/4-wheel-parts-affiliate-program/
+- Automotive programs roundup (Lasso, 2026) — https://getlasso.co/niche/automotive/
+- Car parts programs (Morris 4x4 on CJ) — https://makethatseachange.com/10-car-parts-affiliate-programs/
+- Baja Designs affiliate — https://www.bajadesigns.com/affiliate-program/
+- AvantLink review (Lasso) — https://getlasso.co/affiliate/avantlink/
+- Inspired Overland affiliate — https://inspiredoverland.com/pages/affiliate-program
