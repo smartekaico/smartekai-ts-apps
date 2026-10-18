@@ -196,3 +196,17 @@ Fixed by the `dev-vars.ts` guard described above.
   real paid round-trip (USDT).
 - Task 5's cron caps were verified by triggering the handler, not by counting real
   subrequests in the Cloudflare dashboard (only a deploy can do that).
+- **Object storage is not branch-scoped here.** `AWS_ENDPOINT_URL_S3` in the root
+  `.env.local` points at the production branch's bucket, so the Task 4/6 test renders
+  wrote real objects there: the `renders/` object for `a9e88303-…` (the completed
+  guest build) and the `uploads/` object for the photo `checkPhoto` accepted before
+  vehicle detection rejected it. No production `builds` row references them, so they
+  are orphans; left in place (deleting from a production bucket is a destructive step
+  that needs the user's go-ahead). The Neon branch DB and this bucket disagree by
+  design until production go-live.
+- **Google sign-in could not be exercised** (`GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`
+  unset everywhere; `socialProviders` is `{}`), yet `/sign-in` still renders a
+  "Continue with Google" button. Pre-existing UI/API mismatch, out of this plan's
+  scope, worth a separate look.
+- The Task 6 invoice (`5055666156`, `$14.00`, status `pending`) and the two earlier
+  unconsumed invoices are still unpaid — the paid round-trip remains open.

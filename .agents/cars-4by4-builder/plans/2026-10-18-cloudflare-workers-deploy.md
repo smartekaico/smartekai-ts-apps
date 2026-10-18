@@ -446,6 +446,14 @@ Run the spec §8 list and tick each item in the spec, with one line of evidence 
 
 Also check `/sitemap.xml`, the `/go/<partId>` redirect, and `/credits` pack buttons up to the point of invoice creation. Do not pay.
 
+Done — evidence for each item is in the spec §8 checklist, plus:
+`sitemap.xml` lists the curated slugs; `/go/arb-summit-bullbar` returns **302** to the
+part's affiliate URL and writes one `outbound_clicks` row (tested with a temporary
+`affiliate_url` on the branch, then reverted — nothing in the branch has one, so the
+default is 404); the credits page created invoice **5055666156** (`credit_purchases`
+row `c6430572-…`, `starter`, 100 credits, `$14.00`, `pending`, balance still 0) and
+sent the browser to `nowpayments.io/payment?iid=5055666156` — **not paid**.
+
 Commit: `docs(cars): Spec 4 local verification`.
 
 ### Task 7: Docs

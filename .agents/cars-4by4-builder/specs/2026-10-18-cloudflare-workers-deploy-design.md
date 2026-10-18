@@ -159,19 +159,48 @@ Gate: `npx turbo run type-check lint build --filter=cars-4by4-builder...`.
 Click-through under `vite dev` (real workerd runtime) on the Neon
 `cars-credits` branch:
 
-- [ ] Home, gallery, build page, report and `/credits` render; no hydration errors.
-- [ ] Guest render goes through the queue and completes; a forced failure
+- [x] Home, gallery, build page, report and `/credits` render; no hydration errors.
+      `/` 200 (12 Land Cruiser / 11 Patrol / 11 Wrangler cards), `/builds/patrol-dune` 200
+      (`<h1>Nissan Patrol — Desert / Dune</h1>`), `/builds/3f16b342-…/report` renders the
+      report + Print + parts, `/credits` 307 → `/sign-in?next=/credits` signed out and
+      renders signed in. Browser console: 0 errors, 0 warnings on `/`, `/build`,
+      `/builds/patrol-dune`, the build page, `/credits` and `/sitemap.xml`.
+- [x] Guest render goes through the queue and completes; a forced failure
       (bad `GOOGLE_AI_IMAGE_MODEL`) marks the build failed and refunds once.
-- [ ] Third free render from one IP in a day is refused (limit read from
+      `a9e88303-…`: `processing` → `completed`, `render_key` set, dev log
+      `QUEUE cars-render 1/1 (17104ms)`. Forced failure `90de818c-…`: `failed`,
+      `charge = NULL`, no `credit_ledger` row, `free_render_used` back to `false`
+      (one refund, of the right kind).
+- [x] Third free render from one IP in a day is refused (limit read from
       `rate_limits`, survives a dev-server restart).
-- [ ] Sign up (email+password), sign in, Google sign-in (if configured), guest
+      `free:d:127.0.0.1` = 2 in the branch; a fresh guest (cookies cleared) on a
+      restarted dev server got "Sign in to keep building.", the counter stayed at 2,
+      `free_render_used` was released and no `builds` row was created.
+- [x] Sign up (email+password), sign in, Google sign-in (if configured), guest
       builds move to the account.
-- [ ] Signed IPN replay (`signIpn`) → 200; unsigned → 401.
-- [ ] Cron: `curl "http://localhost:<port>/cdn-cgi/handler/scheduled?cron=17+*+*+*+*"` runs cleanup within the subrequest cap.
-- [ ] `wrangler deploy --dry-run --outdir` succeeds; bundle size recorded.
+      Sign-up created `VxW5zwbU…` (`is_anonymous = false`); its guest build
+      `3f16b342-…` moved to it, `free_render_used` carried over `true`, the guest row
+      was deleted. Signed out, signed back in → `/projects` lists the build.
+      **Google not exercised:** `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` are set
+      nowhere, so `socialProviders` is empty — yet the sign-in page still renders
+      "Continue with Google" (pre-existing UI/API mismatch, not a Workers regression).
+- [x] Signed IPN replay (`signIpn`) → 200; unsigned → 401.
+      Signed replay of payment `6382688870` → 200 `{"ok":true}`, log
+      `signature matched (recursive form)` then `(order 04061f2f-…, status waiting)
+      has no matching purchase — ignored` (the branch has no purchase row for it; the
+      provider lookup runs live). Unsigned → 401 `invalid signature`. Writing credits
+      still needs a settled payment.
+- [x] Cron: `curl "http://localhost:<port>/cdn-cgi/handler/scheduled?cron=17+*+*+*+*"` runs cleanup within the subrequest cap.
+      200 `ok`, and both cleanup lines appear in the dev log. `scripts/cleanup.ts` under
+      `tsx` prints the same lines plus `2 rate-limit windows` pruned. Real subrequest
+      counts are only visible after a deploy.
+- [x] `wrangler deploy --dry-run --outdir` succeeds; bundle size recorded.
+      Exit 0 → **Total Upload 4390.95 KiB / gzip 977.45 KiB** (62 worker modules
+      3696.35 KiB; 26 client assets). Bindings read back: `RENDER_QUEUE` plus 7 vars.
 - [ ] **CPU measured** for: sign-up, sign-in, report page, a queue render
       (`wrangler tail` / Workers observability `cpuTime` after a preview
       deploy to `*.workers.dev`, user go-ahead first). Each ≤ 10 ms, or the §7 fallback applied.
+      **Not measured** — needs the preview deploy, which is Task 8's ask-first step.
 
 Then, with the user's go-ahead: production `rate_limits` DDL, secrets set,
 first deploy to cars.smartekai.com, Google OAuth redirect URI
