@@ -67,7 +67,7 @@ export async function chargeRender(
   options: { allowCredits?: boolean } = {},
 ): Promise<RenderCharge> {
   if (await claimFreeRender(user.id)) {
-    if (tryConsume(freeRenderRules(ip))) return { ok: true, charge: "free" };
+    if (await tryConsume(freeRenderRules(ip))) return { ok: true, charge: "free" };
     await releaseFreeRender(user.id); // this network's free renders are used up today
     if (user.isAnonymous) return { ok: false, error: "Sign in to keep building.", action: "sign-in" };
     if (!options.allowCredits) {

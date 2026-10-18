@@ -31,5 +31,6 @@ export default defineConfig({
     "cars_session",
     "cars_account",
     "cars_verification",
+    "rate_limits",
   ],
 });

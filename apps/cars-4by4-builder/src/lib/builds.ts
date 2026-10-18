@@ -97,7 +97,7 @@ export const checkPhoto = createServerFn({ method: "POST" })
     const extension = ACCEPTED_TYPES[data.photo.type] as string | undefined;
     if (!extension) return fail("Please upload a JPG, PNG or WebP photo.");
     if (data.photo.size > MAX_PHOTO_BYTES) return fail("That photo is over 10 MB — try a smaller one.");
-    if (!tryConsume(photoRules(requestIp()))) return fail("Too many uploads — try again in a bit.");
+    if (!(await tryConsume(photoRules(requestIp())))) return fail("Too many uploads — try again in a bit.");
 
     const db = getDbCars();
     const vehicle = (await db.select({ id: vehicles.id }).from(vehicles).where(eq(vehicles.id, data.vehicleId))).at(0);
@@ -168,7 +168,7 @@ export const startBuild = createServerFn({ method: "POST" })
     }
 
     const ip = requestIp();
-    if (!tryConsume(renderRules(ip))) return fail("You've hit the render limit for now — try again in an hour.");
+    if (!(await tryConsume(renderRules(ip)))) return fail("You've hit the render limit for now — try again in an hour.");
 
     const startOfDay = new Date();
     startOfDay.setUTCHours(0, 0, 0, 0);

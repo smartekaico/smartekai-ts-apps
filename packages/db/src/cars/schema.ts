@@ -5,6 +5,7 @@ import {
   jsonb,
   numeric,
   pgTable,
+  primaryKey,
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
@@ -223,6 +224,22 @@ export const outboundClicks = pgTable("outbound_clicks", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+/** Spec 4 §6: fixed-window counters (Workers isolates share no memory). */
+export const rateLimits = pgTable(
+  "rate_limits",
+  {
+    key: text("key").notNull(),
+    windowStart: timestamp("window_start").notNull(),
+    count: integer("count").notNull(),
+    expiresAt: timestamp("expires_at").notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.key, table.windowStart] }),
+    expiresAtIdx: index("rate_limits_expires_at_idx").on(table.expiresAt),
+  }),
+);
+
+export type RateLimit = typeof rateLimits.$inferSelect;
 export type Vehicle = typeof vehicles.$inferSelect;
 export type Part = typeof parts.$inferSelect;
 export type Preset = typeof presets.$inferSelect;

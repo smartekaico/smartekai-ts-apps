@@ -54,7 +54,7 @@ export const createInvoice = createServerFn({ method: "POST" })
     if (!user) return { ok: false, error: "Sign in to buy credits." };
     const pack = findPack(data.packId);
     if (!pack) return { ok: false, error: "That pack doesn't exist." };
-    if (!tryConsume(checkoutRules(user.id))) return { ok: false, error: "Too many checkouts — try again in a bit." };
+    if (!(await tryConsume(checkoutRules(user.id)))) return { ok: false, error: "Too many checkouts — try again in a bit." };
     return startCheckout(user.id, pack, data.next);
   });
 

@@ -1827,6 +1827,83 @@ export declare const outboundClicks: import("drizzle-orm/pg-core").PgTableWithCo
     };
     dialect: "pg";
 }>;
+/** Spec 4 §6: fixed-window counters (Workers isolates share no memory). */
+export declare const rateLimits: import("drizzle-orm/pg-core").PgTableWithColumns<{
+    name: "rate_limits";
+    schema: undefined;
+    columns: {
+        key: import("drizzle-orm/pg-core").PgColumn<{
+            name: "key";
+            tableName: "rate_limits";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        windowStart: import("drizzle-orm/pg-core").PgColumn<{
+            name: "window_start";
+            tableName: "rate_limits";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        count: import("drizzle-orm/pg-core").PgColumn<{
+            name: "count";
+            tableName: "rate_limits";
+            dataType: "number";
+            columnType: "PgInteger";
+            data: number;
+            driverParam: string | number;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        expiresAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "expires_at";
+            tableName: "rate_limits";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+    };
+    dialect: "pg";
+}>;
+export type RateLimit = typeof rateLimits.$inferSelect;
 export type Vehicle = typeof vehicles.$inferSelect;
 export type Part = typeof parts.$inferSelect;
 export type Preset = typeof presets.$inferSelect;

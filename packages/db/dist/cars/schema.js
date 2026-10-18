@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.outboundClicks = exports.creditPurchases = exports.creditLedger = exports.builds = exports.presets = exports.parts = exports.vehicles = exports.carsVerifications = exports.carsAccounts = exports.carsSessions = exports.carsUsers = void 0;
+exports.rateLimits = exports.outboundClicks = exports.creditPurchases = exports.creditLedger = exports.builds = exports.presets = exports.parts = exports.vehicles = exports.carsVerifications = exports.carsAccounts = exports.carsSessions = exports.carsUsers = void 0;
 const pg_core_1 = require("drizzle-orm/pg-core");
 // Better Auth tables (guests via the anonymous plugin, accounts via email or Google).
 exports.carsUsers = (0, pg_core_1.pgTable)("cars_user", {
@@ -156,3 +156,13 @@ exports.outboundClicks = (0, pg_core_1.pgTable)("outbound_clicks", {
     buildId: (0, pg_core_1.text)("build_id"), // no FK: clicks outlive cleaned-up builds
     createdAt: (0, pg_core_1.timestamp)("created_at").defaultNow().notNull(),
 });
+/** Spec 4 §6: fixed-window counters (Workers isolates share no memory). */
+exports.rateLimits = (0, pg_core_1.pgTable)("rate_limits", {
+    key: (0, pg_core_1.text)("key").notNull(),
+    windowStart: (0, pg_core_1.timestamp)("window_start").notNull(),
+    count: (0, pg_core_1.integer)("count").notNull(),
+    expiresAt: (0, pg_core_1.timestamp)("expires_at").notNull(),
+}, (table) => ({
+    pk: (0, pg_core_1.primaryKey)({ columns: [table.key, table.windowStart] }),
+    expiresAtIdx: (0, pg_core_1.index)("rate_limits_expires_at_idx").on(table.expiresAt),
+}));
