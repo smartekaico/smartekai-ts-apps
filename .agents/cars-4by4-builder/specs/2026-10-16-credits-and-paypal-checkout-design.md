@@ -213,8 +213,15 @@ conventions as the removed `packages/paypal`):
   (`paymentId`, `invoiceId`, `orderId`, `status`, `priceAmount`,
   `priceCurrency`, `payCurrency`, `payAmount`, `actuallyPaid`; ids as
   strings — the API returns them as numbers).
-- `getMinAmount(from, to)` → `GET /min-amount` (setup/go-live checks only).
+- `getMinAmount(from, to, fiatEquivalent?)` → `GET /min-amount`. The pair
+  matters: `from=usdttrc20` answers the *deposit* floor our invoices are subject
+  to; `from=usd` answers a USD→USDT conversion and reports ~60% more (§2).
+- `priceMeetsMinimum(priceAmount, minFiat)` — the pure comparison `startCheckout`
+  uses; fail-open when the floor is unset, zero, or unparsable (§5).
 - `verifyIpnSignature(rawBody, header, secret)` — see §5 IPN (a).
+- `matchIpnSignature(rawBody, header, secret)` → `"recursive" | "top-level" | null` —
+  which form matched, logged by the IPN route. Production IPNs use **recursive**;
+  the documented top-level form is also accepted as a fail-safe (§5 (a)).
 - `signIpn(payload, secret)` — the same HMAC, for local replay tests.
 - `NowPaymentsError` with `operation`, `status` (0 = timeout/network),
   `body`, `code` (NOWPayments' error `code`, or `TIMEOUT` / `NETWORK` /
@@ -253,9 +260,12 @@ Removed: `packages/paypal` (`@smartekai/paypal`), `@paypal/react-paypal-js`,
      sort recursively. **We compute the recursive form first and also accept
      the documented top-level-replacer form**; both need the secret, so
      accepting either costs no security (and the body is never trusted
-     anyway, see (c)). The route logs which form matched; the e2e step
-     confirms against a real sandbox IPN and drops the form that never
-     matches. Invalid/missing signature → **401**. `order_description` is
+     anyway, see (c)). The route logs which form matched. **Confirmed against a
+     real live IPN on 2026-10-18: production sends the *recursive* form** —
+     NOWPayments' own documented top-level replacer is not what it signs with.
+     Both stay accepted: the docs and reality disagree, it costs one extra HMAC,
+     and the failure mode of guessing wrong is a paid purchase that never
+     credits. Invalid/missing signature → **401**. `order_description` is
      ASCII-only so PHP-vs-JS unicode escaping can't matter.
    - **(b) IP allowlist (optional).** If `NOWPAYMENTS_IPN_IPS` is set
      (comma-separated), the request IP (`requestIp()`, Traefik's
@@ -365,20 +375,36 @@ localhost can't receive IPNs. Options, both used:
 
 Gate: `npx turbo run type-check lint build --filter=cars-4by4-builder...`
 plus `--filter=@smartekai/nowpayments`. Click-through on the Neon branch +
-NOWPayments sandbox:
+the **live** API through a cloudflared tunnel — NOWPayments deprecated its
+sandbox in 2025, so production is the source of truth:
 
-- [ ] Guest's first render is free; the second asks to sign in.
-- [ ] After sign-up, the free render is still used.
-- [ ] A render spends exactly 10 credits; a balance of 9 is refused.
-- [ ] A forced render failure refunds the credit (or the free render).
-- [ ] Third free render from one IP in a day is refused (accounts get the
+- [x] Guest's first render is free; the second asks to sign in.
+- [x] After sign-up, the free render is still used.
+- [x] A render spends exactly 10 credits; a balance of 9 is refused.
+- [x] A forced render failure refunds the credit (or the free render).
+- [x] Third free render from one IP in a day is refused (accounts get the
       confirm-credits prompt).
-- [ ] `min-amount` for `usdttrc20` (fiat equivalent) is below $14.00.
-- [ ] The IPN signature form is confirmed against a real sandbox IPN.
-- [ ] `confirmed`/`finished` → credited exactly once (+100 / +300); a
+- [x] `min-amount` for `usdttrc20` (fiat equivalent) is below $14.00.
+- [x] The IPN signature form is confirmed against a real sandbox IPN.
+      *(against a real **live** IPN instead: `signature matched (recursive form)`.)*
+- [x] `confirmed`/`finished` → credited exactly once (+100 / +300); a
       duplicate IPN doesn't credit twice.
-- [ ] `partially_paid` → no credit + `MANUAL REVIEW`; `expired` → no credit.
-- [ ] Tampered signature → 401.
-- [ ] Body says `finished` but GET says `waiting` → no credit.
+- [x] `partially_paid` → no credit + `MANUAL REVIEW`; `expired` → no credit.
+- [x] Tampered signature → 401.
+- [x] Body says `finished` but GET says `waiting` → no credit.
 - [ ] Zero balance → "out of credits" → `/credits` → pay → return page shows
       "✓ 100 credits added" → back to the build.
+
+> **Evidence, 2026-10-18.** The render-gating items (1–5) by execution against
+> the Neon branch — 25/25, including the per-IP free-render cap and
+> exactly-once refunds. The crediting items (8–11) by the same route: 21/21
+> synthetic `NowPayment` objects, including duplicate IPNs, amount/currency/
+> invoice mismatches, a payment id reused on another order, and refunds never
+> clawing credits back. Signature handling (10) also verified over the public
+> tunnel (unsigned POST → 401). The floor (6) is $11.34553251 live, and a real
+> `$14` invoice renders as 13.960683 USDT on the payment page.
+>
+> **The one genuinely open item is the last.** Every step of it is verified
+> *individually* — including a real signed IPN arriving and moving a purchase
+> `pending → waiting` — but `confirmed`/`finished` → `credited` has only ever
+> been exercised with synthetic payments, never one the network settled.
