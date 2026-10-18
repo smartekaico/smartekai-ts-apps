@@ -1,4 +1,5 @@
 import handler from "@tanstack/react-start/server-entry";
+import { runCleanup } from "@/server/cleanup";
 import { runGeneration } from "@/server/generate";
 import type { RenderMessage } from "@/server/render-queue";
 
@@ -20,5 +21,9 @@ export default {
       else console.error(`[queue] malformed message ${msg.id}`);
       msg.ack();
     }
+  },
+  // Caps keep a run under the Free plan's 50 subrequests: 1 + 5 refunds + 2 reads + 8×3 deletes + 2 ≈ 34.
+  async scheduled(_controller: ScheduledController, _env: Env, ctx: ExecutionContext) {
+    ctx.waitUntil(runCleanup({ stuck: 5, builds: 8 }));
   },
 } satisfies ExportedHandler<Env>;
