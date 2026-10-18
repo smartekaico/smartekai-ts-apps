@@ -38,14 +38,24 @@ if [ -n "$CHANGED" ] && echo "$CHANGED" | grep -Eq '(^|/)package\.json$'; then
   echo "$CHANGED" | grep -E '(^|/)package\.json$' | sed 's/^/    /'
 fi
 
+# legal-os is the paused Next.js app (its TanStack Start migration is designed but not
+# started) and it carries pre-existing lint debt: 173 errors of unused imports/variables,
+# noExplicitAny and a11y that nothing is working on. Gating every change in every other
+# workspace on that made this gate permanently red, so it runs the workspaces in play.
+# The excluded app is always named here, never silently skipped — to see it:
+#   npx turbo run lint --filter=legal-os
+# Scoped with the user's explicit approval (ask-first per the note above).
+GATE_SCOPE='--filter=!legal-os'
+
 step "typecheck"
-npm run type-check || fail "typecheck"
+echo "  scope: every workspace except legal-os (paused — see the note)"
+npm run type-check -- $GATE_SCOPE || fail "typecheck"
 
 step "lint"
-npm run lint || fail "lint"
+npm run lint -- $GATE_SCOPE || fail "lint"
 
 step "build"
-npm run build || fail "build"
+npm run build -- $GATE_SCOPE || fail "build"
 
 step "test"
 echo "  no test suite exists in this repo yet -- skipped"
