@@ -10,7 +10,7 @@ export declare const auth: import("better-auth").Auth<{
             };
             industryRole: {
                 type: "string";
-                required: false;
+                defaultValue: string;
             };
             creditBalance: {
                 type: "number";
