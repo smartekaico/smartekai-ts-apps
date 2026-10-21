@@ -2,6 +2,9 @@ import { createAuth, pbkdf2Password } from "@smartekai/auth/factory";
 import { eq } from "drizzle-orm";
 import { anonymous } from "better-auth/plugins";
 import { builds, carsAccounts, carsSessions, carsUsers, carsVerifications, getDbCars } from "@smartekai/db/cars";
+import { googleProvider } from "@/server/social-auth";
+
+const google = googleProvider();
 
 export const auth = createAuth({
   baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3002",
@@ -18,11 +21,9 @@ export const auth = createAuth({
   // Web Crypto PBKDF2 rather than Better Auth's pure-JS scrypt: measured at ~80 ms
   // of CPU per sign-up on a Worker, where a Free-plan request gets 10 ms.
   emailAndPassword: { enabled: true, password: pbkdf2Password },
-  // Only offer Google when it's configured; otherwise sign-in attempts 500.
-  socialProviders:
-    process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
-      ? { google: { clientId: process.env.GOOGLE_CLIENT_ID, clientSecret: process.env.GOOGLE_CLIENT_SECRET } }
-      : {},
+  // Only offer Google when it can actually complete: credentials plus the
+  // registered redirect URI (`AUTH_GOOGLE_ENABLED`). See src/server/social-auth.ts.
+  socialProviders: google ? { google } : {},
   plugins: [
     anonymous({
       // Fires on /sign-in*, /sign-up* and /callback* (OAuth) in better-auth

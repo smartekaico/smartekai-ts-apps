@@ -38,7 +38,7 @@ export function ShopList({ parts, buildId }: { parts: ShopPart[]; buildId: strin
                   {formatPrice(Number(p.priceUsd))}
                 </p>
               )}
-              {p.store ? (
+              {p.store && (
                 <a
                   href={`/go/${p.id}?build=${buildId}`}
                   target="_blank"
@@ -48,8 +48,6 @@ export function ShopList({ parts, buildId }: { parts: ShopPart[]; buildId: strin
                   {BUY_LABEL[p.store]} <span aria-hidden="true">↗</span>
                   <span className="sr-only"> (opens in a new tab)</span>
                 </a>
-              ) : (
-                <span className="mt-1 inline-block text-xs text-muted-foreground">Link coming soon</span>
               )}
             </div>
           </li>

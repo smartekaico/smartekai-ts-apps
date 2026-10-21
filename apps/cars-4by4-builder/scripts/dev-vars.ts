@@ -10,7 +10,7 @@ const KEYS = [
   "GOOGLE_AI_API_KEY", "GOOGLE_AI_MODEL", "GOOGLE_AI_IMAGE_MODEL",
   "AWS_REGION", "AWS_ENDPOINT_URL_S3", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY",
   "NOWPAYMENTS_API_KEY", "NOWPAYMENTS_IPN_SECRET", "NOWPAYMENTS_ENV", "NOWPAYMENTS_IPN_IPS",
-  "CARS_DAILY_RENDER_CAP",
+  "CARS_DAILY_RENDER_CAP", "AUTH_GOOGLE_ENABLED",
 ] as const;
 const LOCAL_URL = process.env.DEV_SITE_URL ?? "http://localhost:3002";
 // Local dev must never touch the production database (Spec 4 Task 1 Step 7). The
