@@ -357,14 +357,62 @@ Side effect to remember: the preview worker's `AWS_ENDPOINT_URL_S3` is the same
 production bucket the root `.env.local` points at, so the Task 8 render wrote one
 more orphan object there (no `builds` row references it).
 
+## Task 9 — production go-live (2026-10-22)
+
+User-approved order: DDL → delete preview → secrets/deploy → smoke test. The user supplied
+the Google credentials at the same time.
+
+1. **DDL.** `rate_limits` was **absent** in production (`ep-winter-frost-b1drw3en-pooler`).
+   Applied `specs/2026-10-18-rate-limits.sql` with
+   `psql -w -v ON_ERROR_STOP=1 -1 -f`, so the table + index landed in one transaction.
+   Deploying first would have 500'd `/build` and the render path, which write through it.
+2. **Preview removed.** `wrangler delete` refuses a worker that is a queue consumer
+   (`code 10064`: *"Cannot delete this Worker as it is a consumer for a Queue."*). A queue
+   takes **one** active consumer, and the preview held `cars-render`'s slot — so a
+   production deploy would either have failed to attach its consumer or left production
+   renders being processed by the preview worker against the **branch** DB. Order:
+   `wrangler queues consumer remove cars-render cars-4by4-builder-preview` →
+   `wrangler delete cars-4by4-builder-preview`. The API then showed consumers `[]`,
+   producers `[]`, zero workers in the account.
+3. **Secrets before the first deploy.** The first `npm run deploy` failed during upload
+   validation, not at runtime: *"Uncaught Error: AWS_ACCESS_KEY_ID is not set —
+   packages/storage needs it to reach Neon Object Storage"*. `packages/storage` throws at
+   module scope and the deploy validates by evaluating the module graph, so **every**
+   required secret must exist before the first deploy — "deploy then add secrets" cannot
+   work here. `wrangler secret bulk` with the 9 §5 keys from root `.env.local` created the
+   worker and all secrets in one call (the temp JSON was written outside the repo and
+   deleted).
+4. **Deploy.** `Total Upload 4393.42 KiB / gzip 978.67 KiB`, startup 98 ms, version
+   `856b0a3a-ee37-482f-9880-58d2160c12b6`; triggers `cars.smartekai.com` (custom domain),
+   `17 * * * *`, producer + consumer for `cars-render`.
+5. **DNS/cert.** No `cars.smartekai.com` record existed; the deploy created it. `dig` →
+   172.67.208.218 / 104.21.91.25; `/` 200, TLS 49 ms.
+
+Smoke test: home 200 with the correct title; **guest render** (Wrangler JL + Overlander,
+6 parts, studio photo) → `bbf01940-d8d9-4672-b856-bf53bd2d9cea` went `processing` →
+`completed` in ~19 s, `charge: free`, both images 1408×768 straight from Neon Object
+Storage — and it created the first 3 `rate_limits` rows (`free:d`, `render:d`, `render:h`
+for the guest IP), so the new DDL is genuinely exercised; **sign-up** →
+`smoke-test-1021@smartekai.com`, account row `pbkdf2-sha256$100000` (§7.1 in production);
+**sign-in** → header shows the account, `POST /api/auth/sign-in/email` **21 ms CPU** /
+357 ms wall; auth-gated routes 307 when signed out.
+
+**Still open:** Google sign-in — the client is now configured and Better Auth sends
+`redirect_uri=https://cars.smartekai.com/api/auth/callback/google`, but Google answers
+`Error 400: redirect_uri_mismatch`, so that URI must be added to the OAuth client. Also
+open: the paid round-trip (a settled $14 payment → "✓ 100 credits added"), a first cron run
+to confirm (`:17`), and the hash trade (PBKDF2-100k).
+
+Test artifacts intentionally left in production: user `smoke-test-1021@smartekai.com`,
+guest build `bbf01940-…` and its `renders/` object.
+
 ## Open
 
-- Task 8 is **deployed, measured, and §7.1 applied** (above): auth 84 → ~20 ms, preview
-  on version `5926b1da-cdf6-41c1-97c0-aa8c07767420`. What is left is the user's call on
-  the hash trade (keep the weaker-but-cheaper PBKDF2, move hashing to a Durable Object,
-  or go Paid), and then `npx wrangler delete cars-4by4-builder-preview` once they agree.
-  `wrangler deploy -c <config>` does not work here; see the deviation note in the plan's
-  Task 8.
+- Task 8 and Task 9 are **done** — production runs version
+  `856b0a3a-ee37-482f-9880-58d2160c12b6` and the preview worker is deleted. What is left
+  is the user's call on the hash trade (keep the weaker-but-cheaper PBKDF2, move hashing
+  to a Durable Object, or go Paid). `wrangler deploy -c <config>` does not work here; see
+  the deviation note in the plan's Task 8.
 - `packages/auth/dist` is **tracked build output** (`npm run build -w @smartekai/auth`).
   Rebuilding it also rewrites `dist/index.js`/`dist/index.d.ts`, which is unrelated drift
   from `src/index.ts` — `industryRole: { type: "string", defaultValue: "LEGAL" }` reached
@@ -375,8 +423,8 @@ more orphan object there (no `builds` row references it).
 - The rate-limit probe ran through `tsx` + `packages/db/dist` (CJS), i.e. the same
   SQL, not the workerd bundle. The workerd path is exercised by the Task 6
   click-through.
-- Task 9 (`wrangler deploy`, `wrangler secret put`, custom domain) is ask-first and still
-  outstanding, as is the real paid round-trip (USDT).
+- The real paid round-trip (USDT) is still outstanding; everything else from Task 9 is
+  done (above). A first cron run at `:17` still needs confirming in the logs.
 - Task 5's cron caps were verified by triggering the handler, not by counting real
   subrequests in the Cloudflare dashboard (only a deploy can do that).
 - **Object storage is not branch-scoped here.** `AWS_ENDPOINT_URL_S3` in the root
@@ -385,11 +433,11 @@ more orphan object there (no `builds` row references it).
   guest build) and the `uploads/` object for the photo `checkPhoto` accepted before
   vehicle detection rejected it. No production `builds` row references them, so they
   are orphans; left in place (deleting from a production bucket is a destructive step
-  that needs the user's go-ahead). The Neon branch DB and this bucket disagree by
-  design until production go-live.
-- **Google sign-in could not be exercised** (`GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`
-  unset everywhere; `socialProviders` is `{}`), yet `/sign-in` still renders a
-  "Continue with Google" button. Pre-existing UI/API mismatch, out of this plan's
-  scope, worth a separate look.
-- The Task 6 invoice (`5055666156`, `$14.00`, status `pending`) and the two earlier
-  unconsumed invoices are still unpaid — the paid round-trip remains open.
+  that needs the user's go-ahead). Production is live now, so those orphans sit beside
+  real data until someone removes them.
+- **Google sign-in is still not usable**: the credentials are now set in production, but
+  Google answers `redirect_uri_mismatch` until
+  `https://cars.smartekai.com/api/auth/callback/google` is added to the OAuth client.
+  `/sign-in` renders the button either way.
+- Five unconsumed invoices are still unpaid (`5869119746`, `5683911791`, `5102802102`,
+  `5899540544`, `5055666156`) — do not pay them; the paid round-trip needs a fresh one.

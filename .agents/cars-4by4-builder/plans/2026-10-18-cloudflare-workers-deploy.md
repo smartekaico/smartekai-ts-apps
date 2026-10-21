@@ -544,18 +544,67 @@ cheaper-but-weaker hash, move hashing to a Durable Object (which has a 30 s budg
 scrypt can stay), or go Paid. Numbers and reasoning:
 `.agents/logs/2026-10-18-cars-workers-port.md`, "Task 8" section.
 
-### Task 9 — ASK-FIRST: production go-live
+### Task 9 — production go-live (DONE 2026-10-22, except the paid round-trip)
 
-Each of these needs the user's go-ahead:
-- apply `2026-10-18-rate-limits.sql` to production (direct URL, `psql -1`);
-- run `wrangler secret put` for each spec §5 secret (the user pastes the values);
-- `npm run deploy`;
-- add the Google OAuth redirect `https://cars.smartekai.com/api/auth/callback/google`;
-- confirm DNS and the custom domain.
+The user approved the cutover and chose this order. Each step below is what actually ran.
 
-Then:
-- smoke-test `/`;
-- run the open Spec 3 payment test: a real $14 payment ends with "✓ 100 credits added";
-- confirm a cron run in the logs.
+- [x] **Apply the DDL.** `psql "$DATABASE_NEONDB_SMARTEKAI" -w -v ON_ERROR_STOP=1 -1 -f
+      .agents/cars-4by4-builder/specs/2026-10-18-rate-limits.sql` against
+      `ep-winter-frost-b1drw3en-pooler` (production) → `CREATE TABLE` + `CREATE INDEX` in
+      one transaction, confirmed in `information_schema` + `pg_indexes`. The table was
+      **absent** beforehand, so deploying first would have 500'd every rate-limited route.
+- [x] **Free the queue consumer, then delete the preview worker.** `wrangler delete`
+      refuses while the worker is a queue consumer (`code 10064`), so:
+      `wrangler queues consumer remove cars-render cars-4by4-builder-preview`, then
+      `wrangler delete cars-4by4-builder-preview`. Verified via API afterwards:
+      `cars-render` consumers `[]`, producers `[]`, account workers `[]`.
+- [x] **Secrets before the first deploy.** `npm run deploy` validates the module scope, so a
+      missing secret aborts the upload (`AWS_ACCESS_KEY_ID is not set — packages/storage
+      needs it to reach Neon Object Storage`) and the worker is never created.
+      `wrangler secret bulk` with the 9 §5 values from root `.env.local` creates the worker
+      and its secrets in one step; the deploy then uploads code + `vars` over it.
+- [x] **Deploy.** `npm run deploy -w cars-4by4-builder` → `Uploaded cars-4by4-builder`
+      (4393.42 KiB / gzip 978.67 KiB, startup 98 ms) and `Deployed cars-4by4-builder
+      triggers`: `cars.smartekai.com` (custom domain), `schedule: 17 * * * *`, Producer +
+      Consumer for `cars-render`. Version `856b0a3a-ee37-482f-9880-58d2160c12b6`.
+- [x] **Confirm DNS and the custom domain.** No `cars.smartekai.com` record existed; the
+      deploy created it. `dig` → 172.67.208.218 / 104.21.91.25; `/` → 200, TLS 49 ms, cert
+      issued.
+- [ ] **Google OAuth redirect — open, user action.** The client now exists and Better Auth
+      sends `redirect_uri=https://cars.smartekai.com/api/auth/callback/google`, but Google
+      answers `Error 400: redirect_uri_mismatch`. Add that URI to the OAuth client
+      (`1059490591744-…apps.googleusercontent.com`) in the Google console.
+
+Smoke test, all against production:
+
+- [x] `/` → 200, title "4x4 Builder — see upgrades on your truck before you buy".
+- [x] **Guest render through the queue.** Wrangler JL + Overlander (6 parts, est. $12,470)
+      + studio photo → build `bbf01940-d8d9-4672-b856-bf53bd2d9cea` went `processing` →
+      `completed` in ~19 s with `charge: free` and `render_key
+      renders/bbf01940-….jpeg`; the page shows before/after at 1408×768 straight from Neon
+      Object Storage. This also wrote the first 3 `rate_limits` rows (free-daily,
+      render-daily, render-hourly for the guest IP), so the new DDL is exercised in prod.
+- [x] **Sign-up** — `smoke-test-1021@smartekai.com` via the toggle on `/sign-in`; its
+      `cars_account` row is `pbkdf2-sha256$100000` (90 chars) — §7.1 is live in production.
+- [x] **Sign-in** — same account; header shows "0 credits / My projects / Sign out".
+      `wrangler tail`: `POST /api/auth/sign-in/email` **21 ms CPU** / 357 ms wall.
+- [x] **Cron registered** — `schedules` → `17 * * * *`.
+- [x] Auth-gated routes redirect when signed out: `/sign-in`, `/credits`, `/projects`,
+      `/builds/<slug>/report` → 307. (`/builds/<slug>.report` is not a URL; the app links
+      `/builds/<slug>/report`.)
+- [ ] **Paid round-trip** — open: a real settled $14 payment ending with "✓ 100 credits
+      added". Never pay the unconsumed invoices (`5869119746`, `5683911791`, `5102802102`,
+      `5899540544`, `5055666156`).
+- [ ] Confirm the first cron run in the logs (`:17`).
 
 Finally, ask the user before merging `feat/cars-cloudflare` into `main`.
+
+**Operational notes from the cutover**
+
+- `NOWPAYMENTS_ENV=live` is in `vars`: production takes real payments from now on.
+- `GOOGLE_AI_IMAGE_MODEL` is not in `vars`; `packages/ai` falls back to
+  `gemini-3.1-flash-image` (the same model the preview used).
+- `NOWPAYMENTS_IPN_IPS` is unset. The IPN handler still verifies the HMAC signature and
+  re-fetches the payment from the API, so the allowlist is defense-in-depth only.
+- Test artifacts left in production: user `smoke-test-1021@smartekai.com` and guest build
+  `bbf01940-…` plus its `renders/` object. Remove when they are no longer useful.
