@@ -481,6 +481,13 @@ deletions were renders: `3f16b342…`, `a9e88303…`, `e1156aa6…` and the gues
 `bbf01940…`. Production now holds 9 curated builds, 3 anonymous users, 9 renders + 3
 `stock/*` bases, and 0 purchases/ledger rows.
 
-**Open after this work:** the Google console redirect URI, the 21 affiliate URLs, one
-settled $14 payment, a confirmed first `:17` cron run, and the PBKDF2-vs-Durable-Object
-hash decision.
+**Google is now on.** The console redirect URI was registered and
+`AUTH_GOOGLE_ENABLED` flipped to `"true"` (version `ded87cbb`) — verified by clicking the
+button through to Google's account chooser, with
+`redirect_uri=https://cars.smartekai.com/api/auth/callback/google` and no mismatch; the
+backend hands out a real auth URL again instead of `PROVIDER_NOT_FOUND`.
+
+**Open after this work:** the 21 affiliate URLs (template at
+`scripts/parts-links.template.csv`, blank rows skipped), one settled $14 payment
+(postponed 2026-10-22), a confirmed first `:17` cron run, and the
+PBKDF2-vs-Durable-Object hash decision.

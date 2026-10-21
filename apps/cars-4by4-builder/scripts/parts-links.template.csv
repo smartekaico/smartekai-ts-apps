@@ -1,0 +1,62 @@
+# parts.affiliate_url template — paste each product's link after the comma, then run
+# (from apps/cars-4by4-builder):
+#
+#   npm run parts:links -- ./scripts/parts-links.template.csv
+#
+# Rules enforced by the importer: https only, one row per part, no duplicate ids,
+# and every row is checked before anything is written. Amazon links must carry
+# tag=<your-associate-id>; without it the importer warns and the commission will
+# not attribute. Rows left blank are simply "no link yet" (no buy button shows).
+partId,url
+
+# ── Armor ───────────────────────────────────────────────────────────────────────
+# ARB StealthBar — ARB
+arb-stealthbar,
+# ARB Summit Bull Bar — ARB
+arb-summit-bullbar,
+# ARB Underbody Armor Kit — ARB
+arb-underbody-armor,
+# Ironman 4x4 Rock Sliders — Ironman 4x4
+ironman-rock-sliders,
+# Smittybilt SRC Side Armor — Smittybilt
+smittybilt-src,
+
+# ── Lighting & recovery ─────────────────────────────────────────────────────────
+# Ironman 4x4 Snorkel — Ironman 4x4
+ironman-snorkel,
+# KC HiLiTES Cube LED Pods — KC HiLiTES
+kc-hilites-cube,
+# Rigid 40" LED Light Bar — Rigid Industries
+rigid-led-lightbar,
+# Warn VR EVO 10-S Winch — Warn
+warn-vr-evo-10s,
+
+# ── Overland ────────────────────────────────────────────────────────────────────
+# ARB 270° Awning — ARB
+arb-270-awning,
+# ARB Esperance Rooftop Tent — ARB
+arb-esperance-tent,
+# Front Runner Slimline II Roof Rack — Front Runner
+frontrunner-slimline-ii,
+# Ironman 4x4 Hardshell Rooftop Tent — Ironman 4x4
+ironman-hardshell-tent,
+
+# ── Suspension ──────────────────────────────────────────────────────────────────
+# Bilstein 5100 Series Shocks — Bilstein
+bilstein-5100-shocks,
+# Ironman 4x4 Foam Cell Suspension — Ironman 4x4
+ironman-foam-cell,
+# Old Man Emu BP-51 Suspension Kit — Old Man Emu
+ome-bp51,
+# Rough Country 2.5" Lift Kit — Rough Country
+rough-country-lift-kit,
+
+# ── Wheels & tires ──────────────────────────────────────────────────────────────
+# 33" BFGoodrich KM3 Mud-Terrain Tires — BFGoodrich
+bfg-km3-33,
+# 35" Nitto Ridge Grappler Tires — Nitto
+nitto-ridge-grappler-35,
+# Fuel Vector Wheels — Fuel
+fuel-vector-wheels,
+# Method 701 Beadlock Wheels — Method
+method-beadlock-701,

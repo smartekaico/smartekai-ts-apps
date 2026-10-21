@@ -659,5 +659,8 @@ $14 invoice and the IPN watch were offered and deliberately not picked.)
       0 purchases, `cars-uploads` empty.
 - [x] **Step 6: Merge.** `feat/cars-cloudflare` fast-forwards `main` (user approved).
 
-**Left for the user:** the Google console redirect URI (`AUTH_GOOGLE_ENABLED="true"`
-afterwards), 21 affiliate URLs as a CSV, and one real payment for the credits path.
+**Left for the user:** 21 affiliate URLs as a CSV (start from
+`scripts/parts-links.template.csv`; blank rows are skipped), and one real payment for the
+credits path (postponed 2026-10-22). The Google console redirect URI was registered and
+`AUTH_GOOGLE_ENABLED` flipped to `"true"` on 2026-10-22 (version `ded87cbb`) — the button
+now reaches Google's account chooser with no `redirect_uri_mismatch`.

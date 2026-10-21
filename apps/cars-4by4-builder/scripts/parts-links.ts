@@ -22,6 +22,7 @@ function parseCsv(text: string): { id: string; url: string; line: number }[] {
     const id = trimmed.slice(0, comma).trim().replace(/^["']|["']$/g, "");
     const url = trimmed.slice(comma + 1).trim().replace(/^["']|["']$/g, "");
     if (id.toLowerCase() === "partid") return; // header row
+    if (url === "") return; // not linked yet — the template ships with these blank
     rows.push({ id, url, line });
   });
   return rows;
@@ -31,7 +32,7 @@ async function main() {
   const file = process.argv[2];
   if (!file) throw new Error('usage: npm run parts:links -- <file.csv>    rows: "partId,https://…"');
   const rows = parseCsv(readFileSync(resolve(process.env.INIT_CWD ?? process.cwd(), file), "utf8"));
-  if (rows.length === 0) throw new Error("no rows found");
+  if (rows.length === 0) throw new Error("no links to write — every row was blank (fill in the url column first)");
 
   const db = getDbCars();
   const known = new Set((await db.select({ id: parts.id }).from(parts)).map((p) => p.id));

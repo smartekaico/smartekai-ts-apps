@@ -24,10 +24,11 @@
     "PUBLIC_SITE_URL": "https://cars.smartekai.com",
     "NOWPAYMENTS_ENV": "live",
     "CARS_DAILY_RENDER_CAP": "200",
-    // Flip to "true" once the OAuth client has
-    // https://cars.smartekai.com/api/auth/callback/google registered; until
-    // then Google is neither registered by Better Auth nor shown on /sign-in.
-    "AUTH_GOOGLE_ENABLED": "false",
+    // Google is registered by Better Auth and shown on /sign-in only while this
+    // is "true" AND the secrets exist. It was held "false" until the OAuth client
+    // had https://cars.smartekai.com/api/auth/callback/google registered; that is
+    // now done, so Google sign-in is live.
+    "AUTH_GOOGLE_ENABLED": "true",
     "GOOGLE_AI_MODEL": "gemini-2.5-flash",
     "AWS_REGION": "eu-central-1",
     "AWS_ENDPOINT_URL_S3": "https://br-frosty-band-b195s0t1.storage.c-5.eu-central-1.aws.neon.tech"
