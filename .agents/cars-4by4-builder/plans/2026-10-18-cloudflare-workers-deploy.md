@@ -664,3 +664,44 @@ $14 invoice and the IPN watch were offered and deliberately not picked.)
 credits path (postponed 2026-10-22). The Google console redirect URI was registered and
 `AUTH_GOOGLE_ENABLED` flipped to `"true"` on 2026-10-22 (version `ded87cbb`) — the button
 now reaches Google's account chooser with no `redirect_uri_mismatch`.
+
+---
+
+## Task 11: Coming-soon gate (2026-10-22)
+
+User asked for the site to be deactivated until it is fully ready, with a coming-soon
+notice instead. Done as a config flag at the Worker entry rather than by removing the
+custom domain or deleting the Worker, so the domain still answers politely in one request.
+
+- [x] **Step 1: Gate before the app.** `src/server/coming-soon.ts` holds the page and
+      `comingSoon()`; `src/server.ts`'s `fetch` returns `comingSoonResponse()` when
+      `COMING_SOON === "true"`, otherwise hands off to TanStack exactly as before. Because
+      the check is in the Worker entry, it covers every path — routes, server functions,
+      `/api/auth/*`, `/go/<part>`, `/sitemap.xml`, `robots.txt` — including POSTs. The
+      `queue()` and `scheduled()` handlers are untouched, so the render queue and the
+      hourly cleanup keep working internally.
+- [x] **Step 2: Search engines.** 503 + `Retry-After: 3600` (temporary unavailable, so
+      crawlers keep the URL instead of indexing a placeholder as the site), plus
+      `X-Robots-Tag: noindex, nofollow` and `Cache-Control: no-store` so a visitor cannot
+      get a cached coming-soon page after launch.
+- [x] **Step 3: The page.** Self-contained HTML — no app CSS/JS, no network requests, so it
+      renders even if the app bundle is broken. Dark theme, brand, "Coming soon", one line
+      about what is being finished, the product hook, and the domain.
+- [x] **Step 4: Config.** `COMING_SOON: "true"` in `wrangler.jsonc` vars, and
+      `COMING_SOON` added to `turbo.json` `globalEnv`. Deliberately **not** added to
+      `scripts/dev-vars.ts`, so local dev never inherits the gate.
+- [x] **Step 5: Verify (version `4cf82c99`).** 503 on `/` (with the page, 2 580 bytes, no
+      `/assets/` reference), `/build`, `/sign-in`, `/credits`, `/projects`,
+      `/builds/land-cruiser-overlander`, `/go/arb-summit-bullbar`, `/sitemap.xml`,
+      `/robots.txt`, `/api/auth/session`, `POST /api/auth/sign-in/email` and
+      `POST /api/render`. `type-check` clean, `lint` 0 errors (the 2 warnings are the
+      pre-existing unused eslint-disable comments in the generated
+      `worker-configuration.d.ts`).
+- [x] **Step 6: Launch path.** Flip `COMING_SOON` to `"false"` and redeploy; nothing else
+      changes.
+
+**Known nuance:** `/assets/*` keeps being served by Cloudflare's static asset handler —
+those requests never reach the Worker, so they cannot be gated. The files are inert
+without the HTML that references them; if that ever needs closing, it is an
+`assets.run_worker_first` decision, which would have to be re-verified against asset
+serving at launch.

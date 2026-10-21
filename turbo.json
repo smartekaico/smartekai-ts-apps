@@ -22,7 +22,8 @@
     "NOWPAYMENTS_IPN_SECRET",
     "NOWPAYMENTS_ENV",
     "NOWPAYMENTS_IPN_IPS",
-    "AUTH_GOOGLE_ENABLED"
+    "AUTH_GOOGLE_ENABLED",
+    "COMING_SOON"
   ],
   "tasks": {
     "build": {

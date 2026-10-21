@@ -1,5 +1,6 @@
 import handler from "@tanstack/react-start/server-entry";
 import { runCleanup } from "@/server/cleanup";
+import { comingSoon, comingSoonResponse } from "@/server/coming-soon";
 import { runGeneration } from "@/server/generate";
 import type { RenderMessage } from "@/server/render-queue";
 
@@ -11,7 +12,10 @@ import type { RenderMessage } from "@/server/render-queue";
 // populates from wrangler vars + secrets.
 // Task 5 adds the cleanup cron.
 export default {
-  fetch: (request: Request) => handler.fetch(request),
+  // Pre-launch gate: while COMING_SOON is "true" nothing above this line runs —
+  // no route, auth endpoint, affiliate redirect or checkout is reachable, and
+  // the queue/cron below stay internal. Flip the var to go live.
+  fetch: (request: Request) => (comingSoon() ? comingSoonResponse() : handler.fetch(request)),
   // max_retries 0 (wrangler.jsonc): runGeneration never rejects and already
   // fails + refunds; a retry would re-bill Gemini.
   async queue(batch: MessageBatch<unknown>) {

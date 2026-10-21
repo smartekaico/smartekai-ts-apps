@@ -491,3 +491,29 @@ backend hands out a real auth URL again instead of `PROVIDER_NOT_FOUND`.
 `scripts/parts-links.template.csv`, blank rows skipped), one settled $14 payment
 (postponed 2026-10-22), a confirmed first `:17` cron run, and the
 PBKDF2-vs-Durable-Object hash decision.
+
+## Coming-soon gate (2026-10-22)
+
+The user asked for the live site to be deactivated until it is fully ready. The domain was
+not pointed away and the Worker was not deleted; instead the Worker entry short-circuits —
+`COMING_SOON="true"` makes `src/server.ts` return a self-contained coming-soon page for
+every request before TanStack runs. That is one deploy to launch later (flip the var), and
+it covers the paths a route-level gate would miss: `/api/auth/*`, `/go/<part>`,
+`/sitemap.xml` and POSTs. `queue()`/`scheduled()` are untouched, so the render queue and
+the hourly cleanup keep working internally.
+
+Status is **503 + `Retry-After: 3600`** rather than 200, so crawlers read it as temporarily
+unavailable and keep the URL without indexing a placeholder as the site's content;
+`X-Robots-Tag: noindex, nofollow` and `Cache-Control: no-store` back that up. The page is
+one self-contained HTML string (no app CSS/JS, no network), so it renders even if the app
+bundle is broken.
+
+Verified on version `4cf82c99`: 503 on `/`, `/build`, `/sign-in`, `/credits`, `/projects`,
+`/builds/land-cruiser-overlander`, `/go/arb-summit-bullbar`, `/sitemap.xml`, `/robots.txt`,
+`/api/auth/session`, and on `POST /api/auth/sign-in/email` and `POST /api/render`; the home
+body is the page with no `/assets/` reference.
+
+Nuance: `/assets/*` is served by Cloudflare's static asset handler, so those requests never
+reach the Worker and old JS/CSS bundles stay downloadable. They are inert without the HTML
+that references them; gating them would mean `assets.run_worker_first`, which needs its own
+verification at launch.

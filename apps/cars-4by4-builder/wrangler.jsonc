@@ -20,6 +20,10 @@
   "triggers": { "crons": ["17 * * * *"] },
   // Non-secret values only. Secrets go in with `wrangler secret put` (§5 of the spec).
   "vars": {
+    // Pre-launch gate. While "true", src/server.ts answers every request with the
+    // coming-soon page and the app below it is unreachable. Set to "false" and
+    // redeploy to launch.
+    "COMING_SOON": "true",
     "BETTER_AUTH_URL": "https://cars.smartekai.com",
     "PUBLIC_SITE_URL": "https://cars.smartekai.com",
     "NOWPAYMENTS_ENV": "live",
