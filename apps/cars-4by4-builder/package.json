@@ -16,6 +16,7 @@
     "stock:upload": "tsx --env-file=../../.env.local scripts/upload-stock.ts",
     "stock:generate": "tsx --env-file=../../.env.local scripts/generate-stock.ts",
     "gallery:render": "tsx --env-file=../../.env.local scripts/render-gallery.ts",
+    "parts:links": "tsx --env-file=../../.env.local scripts/parts-links.ts",
     "cleanup": "tsx --env-file=../../.env.local scripts/cleanup.ts"
   },
   "dependencies": {
