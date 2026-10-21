@@ -247,3 +247,12 @@ export type Build = typeof builds.$inferSelect;
 export type CreditLedgerEntry = typeof creditLedger.$inferSelect;
 export type CreditPurchase = typeof creditPurchases.$inferSelect;
 export type NewCreditPurchase = typeof creditPurchases.$inferInsert;
+
+/** Coming-soon page email capture (pre-launch only). Lowercased before insert. */
+export const waitlistSignups = pgTable("waitlist_signups", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type WaitlistSignup = typeof waitlistSignups.$inferSelect;

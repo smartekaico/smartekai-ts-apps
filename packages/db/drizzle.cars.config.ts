@@ -32,5 +32,6 @@ export default defineConfig({
     "cars_account",
     "cars_verification",
     "rate_limits",
+    "waitlist_signups",
   ],
 });

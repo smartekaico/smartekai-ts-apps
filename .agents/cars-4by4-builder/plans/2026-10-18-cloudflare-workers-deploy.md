@@ -705,3 +705,68 @@ those requests never reach the Worker, so they cannot be gated. The files are in
 without the HTML that references them; if that ever needs closing, it is an
 `assets.run_worker_first` decision, which would have to be re-verified against asset
 serving at launch.
+
+## Task 12: Preview bypass, waitlist and launch QA (2026-10-22)
+
+**Why:** the gate made two things impossible — verifying the real app (every path answered
+503, so a change could only be checked by flipping the flag and flipping it back) and
+doing anything useful with the visitors who did arrive. This task adds both without
+opening the site.
+
+- [x] **Step 1: Preview bypass (no new secret).** `src/server/coming-soon.ts` derives the
+      token as `base64url(HMAC-SHA256(BETTER_AUTH_SECRET, "cars-preview-gate"))[0..32)`. A
+      request to `?preview=<token>` is answered with **303 to the same URL with the parameter
+      removed** plus `cars_preview=<token>` (`HttpOnly; Secure; SameSite=Lax; Max-Age=604800`),
+      so the token does not linger in the address bar, history or a `Referer`; requests that
+      already carry the cookie go straight to `handler.fetch`. Comparison is constant-time,
+      and a wrong token falls through to the page with no hint that the mechanism exists.
+      Rotating `BETTER_AUTH_SECRET` invalidates every preview link. Nothing is set as a
+      secret and nothing is committed.
+- [x] **Step 2: Waitlist.** `POST /api/waitlist` (handled in the Worker entry, before the
+      gate) takes the page's plain HTML form: `email` + a hidden `website` honeypot, no JS.
+      The address is trimmed, lowercased, length-capped at 254 and checked with a loose
+      regex; the provider is the real validator. `waitlist_signups` has a unique `email`, and
+      the insert is `onConflictDoNothing`, so a repeat sign-up is silent — the page must not
+      reveal whether an address is already on the list. Rate limit is 5/hour/IP through the
+      existing DB-backed `tryConsume` (`waitlist:h:<ip>`, `cf-connecting-ip` read directly
+      because TanStack's request context does not exist this early). Responses are
+      post/redirect/get: 303 to `/?joined=1`, or `/?error=invalid|slow|unavailable`; the page
+      renders the notice and hides the form once joined.
+- [x] **Step 3: Schema.** `waitlistSignups` in `packages/db/src/cars/schema.ts`, `"waitlist_signups"`
+      added to `drizzle.cars.config.ts` `tablesFilter`, and the additive DDL written to
+      `.agents/cars-4by4-builder/specs/2026-10-22-waitlist.sql` and applied by hand to the
+      branch and production databases (`db:push:cars` must never run against production).
+      `@smartekai/db` rebuilt so the committed `dist/` matches `src/`.
+- [x] **Step 4: Verify the gate still holds (version `1be126ea`).** Anonymous `/` and
+      `/build` → 503; a wrong `?preview=` → 503 with no hint; the right one → 303 +
+      `Set-Cookie`; with the cookie `/` 200, `/build` 200, `/sitemap.xml` 200, `/sign-in` 307
+      (auth redirect), and the home body is the real app markup. `POST /api/waitlist`: valid
+      → 303 `/?joined=1` and one row; duplicate in different case → 303 and still one row;
+      invalid → 303 `/?error=invalid` and no row; honeypot filled → 303 `/?joined=1` and no
+      row; the limiter refused the request that made five in the hour for that IP. The page
+      renders "You're on the list — we'll email you the moment it opens." with zero email
+      inputs after joining, and the invalid-email text for the error state.
+- [x] **Step 5: Full QA pass under the preview cookie.** Home renders 9 curated cards;
+      `/builds/land-cruiser-overlander` renders with **0 buy links and no "Link coming soon"**
+      (the affiliate gap is invisible rather than broken) and the "Full build report" CTA;
+      `/credits` → `/sign-in?next=%2Fcredits`; the configurator Toyota → 3 parts →
+      "3 parts · est. $5,350" (2 450 + 1 150 + 1 050 + 7 h × $100 — the pricing math is
+      right) → studio photo → build `c7cbae96-…` → queue render completed in ~25 s with the
+      before/after slider, the shop list, "Estimated total $5,350", the report gate and
+      "Full-size image ↗"; "Unlock full report" → `/sign-in?next=…%2Freport`.
+- [x] **Step 6: Clean up the QA artifacts.** Deleted build `c7cbae96-…`, the anonymous user
+      it created, `renders/c7cbae96-….jpeg` from `cars-renders`, and the `free:d`/`render:d`/
+      `render:h` counter rows; production is back to 3 users, 9 curated builds, 0 purchases,
+      0 ledger rows, 0 waitlist rows, 0 rate-limit rows, and the build URL 404s.
+- [x] **Step 7: Confirm the cron.** Cloudflare's Workers Observability telemetry query API
+      returned three `origin: scheduled` events for `2026-10-21T23:17:27Z` — trigger
+      `17 * * * *`, `outcome: ok`, 192 ms wall / 18 ms CPU — logging
+      `cleanup: removed 0 builds, 0 stale guests, 1 rate-limit windows` and
+      `cleanup: timed out and refunded 0 stuck renders`. That closes the "first cron run"
+      open item from Task 9; the command is recorded in the log.
+
+**Launch checklist (what is left):** the 21 affiliate URLs (`0 of 21` — fill
+`apps/cars-4by4-builder/scripts/parts-links.template.csv` and run `npm run parts:links`);
+one settled $14 payment (`confirmed`/`finished` → `credited` still never observed, postponed
+by the user); the PBKDF2-vs-Durable-Object-vs-Paid hash decision. Then flip `COMING_SOON` to
+`"false"` and redeploy. The 3 anonymous users and the AI studio stock shots are not blockers.

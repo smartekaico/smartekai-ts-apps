@@ -517,3 +517,105 @@ Nuance: `/assets/*` is served by Cloudflare's static asset handler, so those req
 reach the Worker and old JS/CSS bundles stay downloadable. They are inert without the HTML
 that references them; gating them would mean `assets.run_worker_first`, which needs its own
 verification at launch.
+
+## Preview bypass, waitlist and launch QA (2026-10-22)
+
+The gate worked, which created two new problems: **the real app could no longer be
+verified** (every path answered 503, so a change meant flipping the flag, checking, and
+flipping it back — two deploys and a live window each time), and **the visitors who did
+arrive hit a dead end**. Both are solved without opening the site.
+
+**Preview bypass.** Rather than set a new secret, the token is derived from the existing
+one:
+
+```
+token = base64url(HMAC-SHA256(BETTER_AUTH_SECRET, "cars-preview-gate")).slice(0, 32)
+```
+
+`GET ...?preview=<token>` answers **303** to the same URL with the parameter stripped and
+sets `cars_preview=<token>; HttpOnly; Secure; SameSite=Lax; Max-Age=604800`. The redirect is
+the point: the token never stays in the address bar, history, or a `Referer` header sent to
+a third party. Requests that already carry the cookie go straight to `handler.fetch`;
+anonymous ones still get the page. Comparison is constant-time and a wrong token returns the
+page unchanged — no oracle. Because it is derived, there is nothing to set or commit, and
+rotating `BETTER_AUTH_SECRET` invalidates every preview link (which is the intended
+kill switch).
+
+**Waitlist.** The page now carries a real `<form method="post" action="/api/waitlist">` —
+no JS, so it works even if the bundle fails, matching the gate's self-contained premise.
+The Worker handles it before the gate. Guards, in order: hidden `website` honeypot (bots
+fill it → a fake `/?joined=1`, nothing written), length cap 254 + a deliberately loose
+regex, lowercase+trim, `INSERT … ON CONFLICT DO NOTHING` on a unique `email` (a repeat
+sign-up is silent, so the page never reveals whether an address is known), and 5/hour/IP via
+the existing Postgres-backed `tryConsume` — `cf-connecting-ip` is read from the header
+directly because TanStack's request context does not exist this early in the pipeline.
+Post/redirect/get keeps refresh from re-submitting.
+
+DDL is one additive statement in `.agents/cars-4by4-builder/specs/2026-10-22-waitlist.sql`,
+applied by hand to the branch and production databases (`CREATE TABLE IF NOT EXISTS`), with
+`waitlist_signups` added to the drizzle `tablesFilter` so a future push treats it as ours and
+never offers to drop it.
+
+**Verified on version `1be126ea`:**
+
+| Check | Result |
+|---|---|
+| anonymous `/`, `/build` | 503 (page) |
+| `?preview=wrong` | 503, no hint |
+| `?preview=<token>` | 303 → clean URL + `Set-Cookie cars_preview=…` |
+| with cookie: `/`, `/build`, `/sitemap.xml` | 200 (real app markup) |
+| with cookie: `/sign-in` | 307 (auth redirect, not the gate) |
+| valid signup | 303 `/?joined=1`, 1 row |
+| duplicate, different case | 303 `/?joined=1`, still 1 row |
+| invalid email | 303 `/?error=invalid`, 0 rows |
+| honeypot filled | 303 `/?joined=1`, 0 rows |
+| 5/hour/IP | refused on the request that made five |
+| after joining | confirmation text, 0 email inputs |
+
+**Full QA pass under the preview cookie.** Home: 9 curated cards. `/builds/land-cruiser-overlander`:
+0 buy links, no "Link coming soon" (the missing affiliate URLs are invisible rather than
+broken), "Full build report" gate present. `/credits` → `/sign-in?next=%2Fcredits`.
+Configurator: Toyota → 3 parts → **"3 parts · est. $5,350"** (2 450 + 1 150 + 1 050 parts,
+plus 7 h × $100 labor) → studio photo → build `c7cbae96-…` → queue render completed in ~25 s
+with before/after slider, shop list, "Estimated total $5,350", report gate and
+"Full-size image ↗". "Unlock full report" → `/sign-in?next=…%2Freport`. Everything behaved;
+nothing needed a code change.
+
+**Cleanup.** Deleted the QA build, the anonymous user it created, its render object
+(`cars-renders/renders/c7cbae96-….jpeg`) and the `free:d`/`render:d`/`render:h` counter rows.
+Production: 3 anonymous users, 9 curated builds, 0 purchases, 0 ledger rows, 0 waitlist rows,
+0 rate-limit rows; the build URL 404s.
+
+**Cron confirmed (closes the Task 9 open item).** Workers Logs retains events, so the
+scheduled run can be read back instead of waiting on a live tail. With the Workers
+Observability query API (`POST /accounts/{id}/workers/observability/telemetry/query`):
+
+```json
+{
+  "queryId": "cars-cron-scheduled",
+  "timeframe": { "from": <ms>, "to": <ms> },
+  "parameters": {
+    "datasets": ["cloudflare-workers"],
+    "filters": [
+      { "key": "$metadata.service", "operation": "eq", "type": "string", "value": "cars-4by4-builder" },
+      { "key": "$workers.eventType", "operation": "eq", "type": "string", "value": "scheduled" }
+    ],
+    "limit": 10
+  },
+  "view": "events"
+}
+```
+
+Result: three events at `2026-10-21T23:17:27Z` — `origin: scheduled`, `trigger: 17 * * * *`,
+`outcome: ok`, 192 ms wall / 18 ms CPU — logging
+`cleanup: removed 0 builds, 0 stale guests, 1 rate-limit windows` and
+`cleanup: timed out and refunded 0 stuck renders`. The cron is alive on Free.
+
+**Two gotchas worth keeping:**
+
+- A client that *sends* a `cf-connecting-ip` header is rejected by Cloudflare with **403**.
+  My first waitlist test looked like a broken endpoint for exactly this reason; it is
+  anti-spoofing, and the header must only ever be read, never written.
+- In zsh, `for path in …` **overwrites `PATH`** (`path` is a special array tied to it). A
+  verification script that used `path` as a loop variable made `curl`/`psql` "vanish"
+  mid-run and looked like a network failure. Use another name (`chk`).
