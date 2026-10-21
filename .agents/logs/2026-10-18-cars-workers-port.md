@@ -441,3 +441,46 @@ guest build `bbf01940-…` and its `renders/` object.
   `/sign-in` renders the button either way.
 - Five unconsumed invoices are still unpaid (`5869119746`, `5683911791`, `5102802102`,
   `5899540544`, `5055666156`) — do not pay them; the paid round-trip needs a fresh one.
+
+## Launch gaps closed (2026-10-22)
+
+The site went live with two dead paths and an unlinked catalog. Both dead paths were
+config-gated rather than removed, so turning them on later is a var flip.
+
+**Google.** The credentials were in production but the OAuth client has no
+`https://cars.smartekai.com/api/auth/callback/google`, so the button could only produce
+`redirect_uri_mismatch`. Presence-of-secrets was therefore the wrong signal; the honest
+one is an explicit switch. `src/server/social-auth.ts` now owns `googleProvider()`:
+`AUTH_GOOGLE_ENABLED === "true"` **and** both secrets, else `null`. `auth.ts` consumes it
+for `socialProviders`, and a new `getAuthOptions()` server fn feeds `/sign-in`'s loader so
+the button and "or" divider only render when the server would actually accept the flow.
+Verified live: 0 occurrences on `/sign-in`, email sign-in unchanged, and
+`POST /api/auth/sign-in/social` now answers `404 PROVIDER_NOT_FOUND` — Better Auth refuses
+before Google is ever contacted.
+
+**Shop list.** `ShopList` rendered "Link coming soon" whenever `storeOf(affiliateUrl)` was
+null, i.e. for all 21 parts. The schema comment already described the intended behaviour
+(null = Buy stays hidden), so the placeholder was removed rather than replaced. Parts keep
+their name, brand, price and fitment badge; no CTA until a link exists.
+
+**Affiliate import.** `scripts/parts-links.ts` (`npm run parts:links -- <csv>`) takes
+`partId,https://…` rows and validates all of them before writing: unknown id, non-`https:`
+URL, or duplicate id aborts with nothing written; Amazon URLs without `tag=` warn (the
+commission may not attribute); syntax errors name the offending line. Writes are
+sequential — neon-http has no transactions — so a dropped connection can leave a partial
+run, but re-running the same file is safe. Tested only against the branch DB; production
+stays at 0 links until the user supplies real URLs.
+
+**Cleanup.** Production had the smoke-test account, its guest build, and four orphan
+objects in a bucket that branch-era testing had written to (object storage is not
+branch-scoped — see above). Both buckets were enumerated with `ListObjectsV2` and compared
+against every `render_key` / `original_image_key` / `stock_image_key` in the DB, which is
+the only reliable way to find orphans without a list API in `@smartekai/storage`. The
+`cars-uploads` "orphan" mentioned earlier no longer existed (already gone), so the four
+deletions were renders: `3f16b342…`, `a9e88303…`, `e1156aa6…` and the guest build's
+`bbf01940…`. Production now holds 9 curated builds, 3 anonymous users, 9 renders + 3
+`stock/*` bases, and 0 purchases/ledger rows.
+
+**Open after this work:** the Google console redirect URI, the 21 affiliate URLs, one
+settled $14 payment, a confirmed first `:17` cron run, and the PBKDF2-vs-Durable-Object
+hash decision.

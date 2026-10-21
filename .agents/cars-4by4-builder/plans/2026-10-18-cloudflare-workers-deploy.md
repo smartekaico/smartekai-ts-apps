@@ -597,7 +597,8 @@ Smoke test, all against production:
       `5899540544`, `5055666156`).
 - [ ] Confirm the first cron run in the logs (`:17`).
 
-Finally, ask the user before merging `feat/cars-cloudflare` into `main`.
+Finally, ask the user before merging `feat/cars-cloudflare` into `main`. **Asked and
+approved on 2026-10-22** — merged fast-forward after the launch-gap work below.
 
 **Operational notes from the cutover**
 
@@ -606,5 +607,57 @@ Finally, ask the user before merging `feat/cars-cloudflare` into `main`.
   `gemini-3.1-flash-image` (the same model the preview used).
 - `NOWPAYMENTS_IPN_IPS` is unset. The IPN handler still verifies the HMAC signature and
   re-fetches the payment from the API, so the allowlist is defense-in-depth only.
-- Test artifacts left in production: user `smoke-test-1021@smartekai.com` and guest build
-  `bbf01940-…` plus its `renders/` object. Remove when they are no longer useful.
+- Test artifacts **removed 2026-10-22**: user `smoke-test-1021@smartekai.com` (its
+  `cars_account`/`cars_session` rows cascaded), guest build `bbf01940-…` plus its
+  `renders/` object, and the three unreferenced branch-era renders — see the launch-gap
+  section below.
+
+---
+
+## Task 10: Launch gaps (2026-10-22)
+
+Go-live left two visible dead ends and no way to fill the catalog. Scope picked by the
+user: hide the dead ends, add affiliate-link import, merge to `main`, clean up. (A fresh
+$14 invoice and the IPN watch were offered and deliberately not picked.)
+
+- [x] **Step 1: Gate Google on both sides.** Credentials alone were not enough — the
+      OAuth client still lacks `https://cars.smartekai.com/api/auth/callback/google`, so
+      the button existed only to fail. New `src/server/social-auth.ts` exports
+      `googleProvider()`, the single source of truth: returns the config only when
+      `AUTH_GOOGLE_ENABLED === "true"` **and** both secrets are set. `src/lib/auth.ts`
+      uses it for `socialProviders`, and `src/lib/auth-options.ts` (a `createServerFn`)
+      reports `{ google: boolean }` to `/sign-in`'s loader, which now renders the button
+      and its "or" divider only when true. `AUTH_GOOGLE_ENABLED: "false"` added to
+      `wrangler.jsonc` vars, `turbo.json` `globalEnv`, and `scripts/dev-vars.ts` keys.
+      **Flip to `"true"` after the console fix — one var, no code change.**
+- [x] **Step 2: Drop the "Link coming soon" placeholder** in `ShopList.tsx`. The schema
+      comment already said `null = no partner link yet (Buy stays hidden)`; the UI
+      contradicted it. Parts still list with their prices; only the dead CTA is gone.
+- [x] **Step 3: `scripts/parts-links.ts` + `parts:links` script.** Reads `partId,url`
+      rows (header optional, `#` comments, blank lines skipped), then validates every
+      row before writing: known part id, parseable `https:` URL, no duplicate ids — and
+      warns when an Amazon host has no `tag=` parameter. Problems print with line numbers
+      and exit 1 with nothing written. Writes sequentially because neon-http has no
+      transactions; re-running the same CSV is safe. Documented as
+      `npm run parts:links -- <file.csv>`.
+- [x] **Step 4: Verify.** Scoped `type-check` + `lint` + `build` green. Import script
+      exercised against the **branch** DB only: bad file (unknown id, duplicate, `http:`,
+      no-comma row) → 4 problems listed, exit 1, `0 parts with a link`; good file →
+      2 parts linked, then reverted to null. Production deploy → version `97027b9e`;
+      `/sign-in` has 0 Google buttons and still renders the email form; a build page has
+      0 "Link coming soon" and still renders "Shop this build"; `POST
+      /api/auth/sign-in/social` → 404 `PROVIDER_NOT_FOUND`; Playwright email sign-in still
+      lands signed in with the credits header.
+- [x] **Step 5: Production cleanup.** Deleted guest build `bbf01940-…` and user
+      `smoke-test-1021@…` in one transaction (`cars_account`/`cars_session` cascade;
+      `builds.user_id` is `SET NULL` so the build went first). Enumerated both buckets
+      with `ListObjectsV2` and compared keys against `builds.render_key` /
+      `original_image_key` / `vehicles.stock_image_key`: 3 branch-era renders were
+      unreferenced, and the deleted guest build's render became the 4th. All 4 deleted;
+      the 9 live renders and 3 `stock/*` bases still return 200, the 4 deleted keys 404.
+      Final production state: 3 anonymous users, 9 curated builds, 0 accounts,
+      0 purchases, `cars-uploads` empty.
+- [x] **Step 6: Merge.** `feat/cars-cloudflare` fast-forwards `main` (user approved).
+
+**Left for the user:** the Google console redirect URI (`AUTH_GOOGLE_ENABLED="true"`
+afterwards), 21 affiliate URLs as a CSV, and one real payment for the credits path.
