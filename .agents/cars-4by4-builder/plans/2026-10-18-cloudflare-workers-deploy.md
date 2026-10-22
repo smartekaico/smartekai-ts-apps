@@ -770,3 +770,56 @@ opening the site.
 one settled $14 payment (`confirmed`/`finished` → `credited` still never observed, postponed
 by the user); the PBKDF2-vs-Durable-Object-vs-Paid hash decision. Then flip `COMING_SOON` to
 `"false"` and redeploy. The 3 anonymous users and the AI studio stock shots are not blockers.
+
+## Task 13: Hostname rename to overlander.smartekai.com (2026-10-23)
+
+**Why:** the product is an overland build configurator; the public host now matches
+("overlander", not "cars"). Scope was deliberately **hostname only** — the UI still says
+"4x4 Builder" — with the old host kept as a permanent redirect.
+
+- [x] **Step 1: Two custom domains.** `wrangler.jsonc` lists
+      `overlander.smartekai.com` first (canonical, serves) and `cars.smartekai.com` second
+      (kept only so the Worker can hand visitors over). Both are Workers custom domains, so
+      Cloudflare creates the proxied `AAAA 100::` records and certificates itself; both
+      records now exist.
+- [x] **Step 2: The redirect.** `src/server.ts` compares the request host before anything
+      else: **GET/HEAD** on the legacy host gets a **301 to the same path and query** on the
+      canonical host, and every other method is left alone. Two reasons for that shape —
+      `?preview=` must survive the hop (otherwise existing preview links break), and a
+      webhook posted to the old host must not be answered with a redirect it may refuse to
+      follow. The check runs before the gate, so it applies whether `COMING_SOON` is on or
+      off.
+- [x] **Step 3: Everything that carries a URL.** `BETTER_AUTH_URL` and `PUBLIC_SITE_URL` are
+      the new host (auth `baseURL` + callbacks, sitemap, new NOWPayments invoices);
+      `trustedOrigins` in `src/lib/auth.ts` follows; the gate page's footer host was
+      hard-coded and now reads `overlander.smartekai.com`; the one literal host in the
+      tracked `worker-configuration.d.ts` was patched to match (the file was not regenerated
+      wholesale — `wrangler types` with a local `.dev.vars` also rewrites every var to
+      `string` and adds the secret names, which is unrelated churn).
+- [x] **Step 4: Google OAuth (user action).** The client needed
+      `https://overlander.smartekai.com/api/auth/callback/google`; the user added it before
+      the cutover, and the switch was sequenced behind that.
+- [x] **Step 5: Deploy and verify (version `803df561`).** First attempt died with
+      `fetch failed` during the upload after 162 s — a network error, nothing published;
+      the retry deployed cleanly. Verified: new host 503 with the gate page (footer names
+      the new host, waitlist form present, zero mentions of the old one); TLS verified;
+      `?preview=` unlock 303 → cookie → real app 200; old host 301 on `/`, `/build?parts=…`,
+      `/builds/<slug>`, `/sitemap.xml` and `/?preview=…` with path+query intact; `POST`
+      is **not** redirected (303 from the handler, 0 redirects); sitemap emits
+      `https://overlander.smartekai.com/…`; Better Auth returns a Google URL whose
+      `redirect_uri` is the new callback, and a real click reaches Google's account chooser
+      with no `redirect_uri_mismatch`. Queue consumer and the `17 * * * *` cron were listed
+      in the deploy output, so they are untouched.
+- [x] **Step 6: Cleanup.** The POST-on-legacy-host test wrote one waitlist row
+      (`nobody@example.com`); it and its rate-limit rows were deleted. Production is back to
+      0 waitlist rows.
+
+**Known nuances:** `/assets/*` on the legacy host is answered by Cloudflare's static asset
+handler before the Worker runs, so those requests do not redirect — inert files without the
+HTML that references them. And the preview cookie is host-scoped, which is why the redirect
+preserves `?preview=`: the browser lands on the new host, redeems the token and gets a
+cookie for the new host.
+
+**To retire the old host completely:** delete the second `routes` entry and the
+`cars.smartekai.com` DNS record, and drop the redirect block in `src/server.ts`; one deploy.
+Nothing else depends on it.

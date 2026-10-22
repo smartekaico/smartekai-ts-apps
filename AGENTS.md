@@ -86,7 +86,8 @@ Beyond the skill's defaults:
 - **Deployment:** `apps/cars-4by4-builder` goes to Cloudflare Workers —
   `npm run deploy -w cars-4by4-builder` (`vite build && wrangler deploy`),
   config in `apps/cars-4by4-builder/wrangler.jsonc` (custom domain
-  cars.smartekai.com, a `cars-render` Queue consumer, an hourly cron).
+  overlander.smartekai.com — cars.smartekai.com is kept only to 301 GET/HEAD
+  there; a `cars-render` Queue consumer, an hourly cron).
   Everything else (legal-os, medical-os) stays on Dokploy on a self-managed
   VPS, no remote git configured from this machine: one Dokploy application per
   app, built via `turbo prune <app> --docker` + a per-app `Dockerfile`.

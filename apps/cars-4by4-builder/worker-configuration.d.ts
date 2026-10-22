@@ -3,7 +3,7 @@
 // Runtime types generated with workerd@1.20261012.1 2026-10-18 nodejs_compat
 interface __BaseEnv_Env {
 	RENDER_QUEUE: Queue;
-	PUBLIC_SITE_URL: "https://cars.smartekai.com";
+	PUBLIC_SITE_URL: "https://overlander.smartekai.com";
 	NOWPAYMENTS_ENV: "live";
 	CARS_DAILY_RENDER_CAP: "200";
 	GOOGLE_AI_MODEL: "gemini-2.5-flash";
