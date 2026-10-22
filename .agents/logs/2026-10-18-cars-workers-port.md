@@ -619,3 +619,59 @@ Result: three events at `2026-10-21T23:17:27Z` — `origin: scheduled`, `trigger
 - In zsh, `for path in …` **overwrites `PATH`** (`path` is a special array tied to it). A
   verification script that used `path` as a loop variable made `curl`/`psql` "vanish"
   mid-run and looked like a network failure. Use another name (`chk`).
+
+## Hostname rename: cars.smartekai.com → overlander.smartekai.com (2026-10-23)
+
+The app is served at **https://overlander.smartekai.com** from version `803df561`. Scope was
+the hostname only — the UI still says "4x4 Builder" — and the old host was kept as a
+permanent redirect rather than deleted.
+
+**What moved.** `wrangler.jsonc` lists two custom domains: the canonical host serves, and
+`cars.smartekai.com` stays attached purely so the Worker can hand visitors over. Both are
+Workers custom domains, so the proxied `AAAA 100::` records and the certificates are created
+by Cloudflare (both records verified present). `BETTER_AUTH_URL` and `PUBLIC_SITE_URL` point
+at the new host, which covers auth `baseURL`/callbacks, the sitemap and **new** NOWPayments
+invoices; `trustedOrigins` in `src/lib/auth.ts` follows; the gate page's footer host was
+hard-coded and now reads the new one. The tracked `worker-configuration.d.ts` had exactly one
+literal host, patched in place — regenerating it with `wrangler types` locally would also
+have rewritten every var to `string` and added the secret names, which is unrelated churn
+caused by `.dev.vars` existing on this machine.
+
+**The redirect.** `src/server.ts` checks the host before the gate:
+
+- **GET/HEAD** → `301` to the same path **and query** on the canonical host.
+- every other method → left alone.
+
+The query matters: the preview cookie is host-scoped, so `https://cars.smartekai.com/?preview=<token>`
+has to arrive at the new host with its token to redeem it there (verified 303 → cookie → app
+200). Leaving POSTs alone matters for the opposite reason: a payment webhook aimed at the old
+host must not be answered with a redirect it may decline to follow.
+
+**Deploy hiccup.** The first `npm run deploy` failed after 162 s with `fetch failed` during
+the upload — plain network trouble, nothing was published (the site kept serving the previous
+version). Connectivity checks passed immediately after, and the retry uploaded and deployed
+cleanly (`803df561`). Worth remembering that a failed deploy is a no-op here, not a partial
+state.
+
+**Verified on `803df561`:**
+
+| Check | Result |
+|---|---|
+| `overlander.smartekai.com/` | 503 gate page; footer names the new host; waitlist form present; 0 mentions of the old host |
+| TLS | verified (`ssl_verify_result 0`) |
+| `?preview=<token>` on the new host | 303 → `/build`, cookie set, real app 200 |
+| old `/`, `/build?parts=…`, `/builds/<slug>`, `/sitemap.xml` | 301 with path + query intact |
+| old `/?preview=<token>` | 301 preserving the token |
+| old `POST /api/waitlist` | 303 from the handler, `redirects=0` (not redirected) |
+| `sitemap.xml` | `https://overlander.smartekai.com/…` |
+| Better Auth social sign-in | `redirect_uri=https://overlander.smartekai.com/api/auth/callback/google`; a real click reaches Google's account chooser, no `redirect_uri_mismatch` |
+| queue consumer / cron | both listed in the deploy output — untouched |
+
+**Cleanup.** The POST-on-legacy-host test created a waitlist row (`nobody@example.com`); it
+and its `waitlist:*` rate-limit rows were deleted (0 rows).
+
+**Nuance:** `/assets/*` on the legacy host is served by Cloudflare's static asset handler
+before the Worker, so it does not redirect. Inert without the HTML.
+
+**To remove the old host entirely later:** drop the second `routes` entry and the
+`cars.smartekai.com` DNS record, delete the redirect block in `src/server.ts`, deploy.
