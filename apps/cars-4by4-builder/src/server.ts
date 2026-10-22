@@ -17,6 +17,9 @@ import type { RenderMessage } from "@/server/render-queue";
 // src/server/render-queue.ts); the app reads process.env, which nodejs_compat
 // populates from wrangler vars + secrets.
 // Task 5 adds the cleanup cron.
+const CANONICAL_HOST = "overlander.smartekai.com";
+const LEGACY_HOST = "cars.smartekai.com";
+
 export default {
   // Pre-launch gate: while COMING_SOON is "true" nothing above this line runs —
   // no route, auth endpoint, affiliate redirect or checkout is reachable, and
@@ -24,9 +27,20 @@ export default {
   // signup the page posts to, and the preview cookie that lets one browser
   // through for launch QA. Flip the var to go live.
   async fetch(request: Request) {
+    const url = new URL(request.url);
+
+    // The app moved from cars.smartekai.com to overlander.smartekai.com. The old
+    // host keeps its custom domain only to hand visitors over, so GET/HEAD get a
+    // real 301 (path and query — including `?preview=` — preserved) while other
+    // methods are left alone: a webhook posted to the old host must not be
+    // answered with a redirect it may refuse to follow.
+    if (url.hostname === LEGACY_HOST && (request.method === "GET" || request.method === "HEAD")) {
+      url.hostname = CANONICAL_HOST;
+      return Response.redirect(url.toString(), 301);
+    }
+
     if (!comingSoon()) return handler.fetch(request);
 
-    const url = new URL(request.url);
     if (request.method === "POST" && url.pathname === "/api/waitlist") return handleWaitlist(request);
 
     const unlocked = await previewUnlock(url);

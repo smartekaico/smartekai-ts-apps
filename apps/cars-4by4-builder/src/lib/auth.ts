@@ -8,7 +8,7 @@ const google = googleProvider();
 
 export const auth = createAuth({
   baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3002",
-  trustedOrigins: ["https://cars.smartekai.com", "http://cars.smartekai.com", process.env.BETTER_AUTH_URL ?? ""].filter(
+  trustedOrigins: ["https://overlander.smartekai.com", "http://overlander.smartekai.com", process.env.BETTER_AUTH_URL ?? ""].filter(
     Boolean,
   ),
   db: getDbCars(),

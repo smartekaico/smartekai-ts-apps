@@ -224,7 +224,7 @@ function page(notice: Notice): string {
   <p class="hook">See a real off-road build on your own truck before you buy.</p>
   ${message}
   ${form}
-  <small>cars.smartekai.com</small>
+  <small>overlander.smartekai.com</small>
 </main>
 </body>
 </html>

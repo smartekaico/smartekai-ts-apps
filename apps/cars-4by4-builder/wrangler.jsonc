@@ -10,7 +10,13 @@
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },
   "upload_source_maps": true,
-  "routes": [{ "pattern": "cars.smartekai.com", "custom_domain": true }],
+  // Canonical host first. The old host keeps its custom domain so the Worker can
+  // 301 every GET/HEAD to the new one (see src/server.ts); drop the second entry
+  // once nothing needs to reach it any more.
+  "routes": [
+    { "pattern": "overlander.smartekai.com", "custom_domain": true },
+    { "pattern": "cars.smartekai.com", "custom_domain": true }
+  ],
   "queues": {
     "producers": [{ "binding": "RENDER_QUEUE", "queue": "cars-render" }],
     // max_retries 0: runGeneration never rejects and already fails + refunds a
@@ -24,14 +30,14 @@
     // coming-soon page and the app below it is unreachable. Set to "false" and
     // redeploy to launch.
     "COMING_SOON": "true",
-    "BETTER_AUTH_URL": "https://cars.smartekai.com",
-    "PUBLIC_SITE_URL": "https://cars.smartekai.com",
+    "BETTER_AUTH_URL": "https://overlander.smartekai.com",
+    "PUBLIC_SITE_URL": "https://overlander.smartekai.com",
     "NOWPAYMENTS_ENV": "live",
     "CARS_DAILY_RENDER_CAP": "200",
     // Google is registered by Better Auth and shown on /sign-in only while this
-    // is "true" AND the secrets exist. It was held "false" until the OAuth client
-    // had https://cars.smartekai.com/api/auth/callback/google registered; that is
-    // now done, so Google sign-in is live.
+    // is "true" AND the secrets exist. The OAuth client must also have
+    // https://overlander.smartekai.com/api/auth/callback/google registered,
+    // otherwise Google answers redirect_uri_mismatch.
     "AUTH_GOOGLE_ENABLED": "true",
     "GOOGLE_AI_MODEL": "gemini-2.5-flash",
     "AWS_REGION": "eu-central-1",
