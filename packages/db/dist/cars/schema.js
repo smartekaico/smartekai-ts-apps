@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.rateLimits = exports.outboundClicks = exports.creditPurchases = exports.creditLedger = exports.builds = exports.presets = exports.parts = exports.vehicles = exports.carsVerifications = exports.carsAccounts = exports.carsSessions = exports.carsUsers = void 0;
+exports.waitlistSignups = exports.rateLimits = exports.outboundClicks = exports.creditPurchases = exports.creditLedger = exports.builds = exports.presets = exports.parts = exports.vehicles = exports.carsVerifications = exports.carsAccounts = exports.carsSessions = exports.carsUsers = void 0;
 const pg_core_1 = require("drizzle-orm/pg-core");
 // Better Auth tables (guests via the anonymous plugin, accounts via email or Google).
 exports.carsUsers = (0, pg_core_1.pgTable)("cars_user", {
@@ -166,3 +166,9 @@ exports.rateLimits = (0, pg_core_1.pgTable)("rate_limits", {
     pk: (0, pg_core_1.primaryKey)({ columns: [table.key, table.windowStart] }),
     expiresAtIdx: (0, pg_core_1.index)("rate_limits_expires_at_idx").on(table.expiresAt),
 }));
+/** Coming-soon page email capture (pre-launch only). Lowercased before insert. */
+exports.waitlistSignups = (0, pg_core_1.pgTable)("waitlist_signups", {
+    id: (0, pg_core_1.text)("id").primaryKey(),
+    email: (0, pg_core_1.text)("email").notNull().unique(),
+    createdAt: (0, pg_core_1.timestamp)("created_at").defaultNow().notNull(),
+});

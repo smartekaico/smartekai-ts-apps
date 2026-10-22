@@ -1,6 +1,12 @@
 import handler from "@tanstack/react-start/server-entry";
 import { runCleanup } from "@/server/cleanup";
-import { comingSoon, comingSoonResponse } from "@/server/coming-soon";
+import {
+  comingSoon,
+  comingSoonResponse,
+  handleWaitlist,
+  isPreviewRequest,
+  previewUnlock,
+} from "@/server/coming-soon";
 import { runGeneration } from "@/server/generate";
 import type { RenderMessage } from "@/server/render-queue";
 
@@ -14,8 +20,20 @@ import type { RenderMessage } from "@/server/render-queue";
 export default {
   // Pre-launch gate: while COMING_SOON is "true" nothing above this line runs —
   // no route, auth endpoint, affiliate redirect or checkout is reachable, and
-  // the queue/cron below stay internal. Flip the var to go live.
-  fetch: (request: Request) => (comingSoon() ? comingSoonResponse() : handler.fetch(request)),
+  // the queue/cron below stay internal. The two exceptions are the waitlist
+  // signup the page posts to, and the preview cookie that lets one browser
+  // through for launch QA. Flip the var to go live.
+  async fetch(request: Request) {
+    if (!comingSoon()) return handler.fetch(request);
+
+    const url = new URL(request.url);
+    if (request.method === "POST" && url.pathname === "/api/waitlist") return handleWaitlist(request);
+
+    const unlocked = await previewUnlock(url);
+    if (unlocked) return unlocked;
+    if (await isPreviewRequest(request)) return handler.fetch(request);
+    return comingSoonResponse(url);
+  },
   // max_retries 0 (wrangler.jsonc): runGeneration never rejects and already
   // fails + refunds; a retry would re-bill Gemini.
   async queue(batch: MessageBatch<unknown>) {
