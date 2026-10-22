@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { eq } from "drizzle-orm";
 import { getDbCars, outboundClicks, parts } from "@smartekai/db/cars";
+import { withSubId } from "@/lib/subid";
 
 export const Route = createFileRoute("/go/$partId")({
   server: {
@@ -19,7 +20,8 @@ export const Route = createFileRoute("/go/$partId")({
           partId: params.partId,
           buildId: buildId ? buildId.slice(0, 64) : null,
         });
-        return Response.redirect(target, 302);
+        // Tag the outbound link with the build id so the network reports it back.
+        return Response.redirect(withSubId(target, buildId), 302);
       },
     },
   },

@@ -111,7 +111,7 @@ export const carsVerifications = pgTable("cars_verification", {
 });
 
 export const vehicles = pgTable("vehicles", {
-  id: text("id").primaryKey(), // "lc300" | "patrol-y62" | "wrangler-jl"
+  id: text("id").primaryKey(), // "lc300" | "patrol-y62" | "wrangler-jl" | "f150" | "silverado-1500" | "sierra-1500"
   name: text("name").notNull(),
   yearRange: text("year_range").notNull(),
   stockImageKey: text("stock_image_key"), // "stock/<id>.<ext>" in cars-renders; null until uploaded

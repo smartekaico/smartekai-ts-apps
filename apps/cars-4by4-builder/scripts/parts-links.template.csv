@@ -3,6 +3,11 @@
 #
 #   npm run parts:links -- ./scripts/parts-links.template.csv
 #
+# To inspect the file without writing anything (shows the store, host and HTTP
+# status of every link, and flags anything missing or broken):
+#
+#   npm run links:check -- ./scripts/parts-links.template.csv
+#
 # Rules enforced by the importer: https only, one row per part, no duplicate ids,
 # and every row is checked before anything is written. Amazon links must carry
 # tag=<your-associate-id>; without it the importer warns and the commission will
@@ -60,3 +65,11 @@ nitto-ridge-grappler-35,
 fuel-vector-wheels,
 # Method 701 Beadlock Wheels — Method
 method-beadlock-701,
+
+# ── Pickup trucks ───────────────────────────────────────────────────────────────
+# Leitner ACS Forged Bed Rack — Leitner Designs
+leitner-acs-forged,
+# BAKFlip MX4 Tonneau Cover — BAK (a RealTruck brand)
+bakflip-mx4,
+# Rough Country 6" Lift Kit — Rough Country
+rough-country-6in-lift,
