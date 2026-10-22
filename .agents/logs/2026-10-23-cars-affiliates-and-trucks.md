@@ -109,3 +109,46 @@ the branch: the branch is back to **0 links, 0 clicks**, with 6 vehicles /
   the production seed and 9 gallery renders (12 Gemini calls).
 - The site is still gated (`COMING_SOON: "true"`); the live version is
   `803df561` and does not contain any of this work.
+
+---
+
+## Merge, production seed and truck stock photos (2026-10-23, later)
+
+The user merged `feat/cars-affiliates` into `main` (merge commit `1a96d60`) and
+approved **Task G step 7a**: the three stock photos and the production seed —
+**3 Gemini calls**, no gallery renders.
+
+**Order matters.** The trucks had to exist in production before their photos
+could be attached, because `stock:generate` looks the vehicle up in the database
+to set `vehicles.stockImageKey`. So: production seed first, then the photos.
+
+**Production seed.** `npm run db:seed -w cars-4by4-builder` with the production
+URL. Production went from 3 vehicles / 21 parts / 9 presets to **6 / 24 / 18**.
+Nothing else moved: 0 affiliate links before and after (the seed sets
+`affiliate_url` to null, so it would have wiped links — there were none), 0 part
+images, 9 builds untouched. The vehicles upsert sets only name, year range and
+sort order, so the three existing stock photos survived — confirmed by reading
+`vehicles.stock_image_key` back.
+
+**Stock photos.** `npm run stock:generate -w cars-4by4-builder -- f150
+silverado-1500 sierra-1500` → 3 Gemini calls, 3 uploads to `cars-renders` at
+`stock/<id>.jpeg`, and the three new `vehicles.stock_image_key` values set. All
+six stock images now answer `200 image/jpeg` (~600 KB each) from the public
+bucket URL.
+
+**The AI images are the same kind as the three already live.** They carry the
+brand badge — the F-150 shows the Ford oval, the Silverado a Chevrolet bowtie
+and a misspelled "SILVERADUO" badge, the Land Cruiser that has been live since
+October shows a Toyota badge too. Consistent with what the site already serves,
+but if that matters for launch, the fix is a licensed photo or a re-roll, not a
+different generator.
+
+**Live check (browser, preview cookie).** The deployed worker is still
+`803df561` — it predates this branch — but the catalogue lives in the database,
+so the live site already shows the new data: the picker lists 6 vehicles, the
+F-150 lists exactly **14** parts (including the three truck-only ones and none
+of the SUV-only armour), and the Land Cruiser lists 21 with no truck-only parts.
+
+**What is *not* live yet:** the merged code — the ten store labels, the
+sub-ID tagging and `links:check` — is on `main` but not deployed. The live
+worker still has the old three-value `Store` type.
