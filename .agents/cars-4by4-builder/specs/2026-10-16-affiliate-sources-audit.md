@@ -129,8 +129,12 @@ gains an "ARB" / "Tire Rack" case.
       and a disclosure sits above the shop list. *(`src/lib/store.ts`,
       `ShopList.tsx`; merged with Spec 2.)*
 - [x] Prices read "Est. price". *(`ShopList.tsx`, `PartCard.tsx`.)*
-- [ ] Click-through: Buy → `/go/$partId` → one `outbound_clicks` row → store page
-      with the affiliate tag intact.
+- [x] Click-through: Buy → `/go/$partId` → one `outbound_clicks` row → store page
+      with the affiliate tag intact. *Verified on the Neon branch with temporary
+      links on 2026-10-23 (there are still no real links — Task D is open): the
+      button named the store ("Buy at ARB", "Buy on Amazon"), the redirect kept
+      the tag, one click row was written per click, and the network links
+      carried their sub-ID. The temporary links were deleted afterwards.*
 
 
 ## 7. More programs (added 2026-10-18)
@@ -199,6 +203,13 @@ Amazon requires the button to name it (§3). The fix is to store it:
   `ALTER TABLE parts ADD COLUMN affiliate_store text;`. Apply it to the
   branch; production only on approval.
 
+**Status (2026-10-23): skipped.** The links being supplied are Amazon, eBay and
+merchant-direct, so no link needs a *declared* store: the merchant is either
+visible in the host (Task B rule 3) or is Amazon/eBay (rule 1). No column, no
+DDL, and `storeOf(url)` keeps its one-argument signature — a declared store
+would be an argument with nothing to pass it. If an AvantLink/CJ/Impact link
+ever shows up, this task is where the column comes back.
+
 ### Task B — store registry and labels
 
 `src/lib/store.ts`:
@@ -224,6 +235,18 @@ Amazon requires the button to name it (§3). The fix is to store it:
   including `amazon.com.evil.com` → `other`, and an AvantLink URL with
   declared `arb` → `arb`.
 
+**Status (2026-10-23): shipped, minus the `declared` parameter.** `Store` has
+all ten values, `BUY_LABEL` names each of them, and `storeOf(url)` detects the
+merchant's own domain — exact host or a real subdomain, so `amazon.com.evil.com`
+and `arbusa.com.evil.com` both land on `other`. Two corrections to the text
+above: the RealTruck domain is **realtruck.com**, not `realtrack.com`, and
+rule 2 has no implementation because nothing declares a store (Task A was
+skipped). Spot-checked with `npx tsx -e` over 21 URLs (Amazon short links,
+Amazon country domains, eBay country domains, every merchant domain and two
+look-alikes, plus the network hosts, which are `other` by design). In the
+browser on the branch, a temporary `arbusa.com` link rendered as "Buy at ARB"
+and an `amazon.com` link as "Buy on Amazon".
+
 ### Task C — links data file and checker
 
 - New `src/seed/affiliate-links.ts`:
@@ -244,6 +267,20 @@ Amazon requires the button to name it (§3). The fix is to store it:
   any status ≥ 400. It exits non-zero only on malformed entries, not on
   missing ones.
 
+**Status (2026-10-23): implemented as a `--check` mode on the existing
+importer, not as a second mechanism.** The spreadsheet
+(`scripts/parts-links.template.csv`) is the single source of truth for affiliate
+URLs, so a separate `AFFILIATE_LINKS` map and a separate `scripts/check-links.ts`
+would be a second place to keep in sync. Instead `scripts/parts-links.ts`
+gained `--check` (run as `npm run links:check -- <file.csv>`): it validates
+without writing and prints one row per part with the store, the host, the HTTP
+status and where the URL came from (csv/db/missing); malformed rows (unknown
+part id, duplicate id, non-URL, non-https) exit non-zero, missing links and
+failing statuses do not. It reads the database rather than only the map,
+because the part list and the currently linked URLs live there. The CSV path
+resolves against the directory npm ran in, the current directory or the app, so
+the same command works from the repo root and from inside the app.
+
 ### Task D — apply links (needs the user's links)
 
 - The user provides the URLs; paste them into `AFFILIATE_LINKS`.
@@ -253,6 +290,12 @@ Amazon requires the button to name it (§3). The fix is to store it:
 - Seeding upserts whole part rows. That's fine today because parts are
   seed-owned, but confirm nothing edits parts outside the seed before
   running it on production.
+
+**Status (2026-10-23): blocked on the user — 0 of 24 links.** The catalogue grew
+from 21 to 24 parts with the pickups, so three more rows are owed on top of the
+original 21. The template lists every part id with a blank URL column. Paste a
+link after the comma and run `npm run parts:links -- ./scripts/parts-links.template.csv`
+on the branch first; production needs approval.
 
 ### Task E — sub-ID tagging in `/go/$partId`
 
@@ -272,6 +315,16 @@ the network's own parameter. Detect the network by host:
   overwrite a parameter that's already set.
 - Spot-check every row with `npx tsx -e`.
 
+**Status (2026-10-23): done.** `src/lib/subid.ts` holds the pure helper
+(`withSubId(url, buildId)`) and `src/routes/go/$partId.ts` applies it to the
+redirect target. A build id must match `^[A-Za-z0-9_-]{1,64}$` — anything else
+leaves the URL untouched, so a hand-crafted query string cannot be smuggled into
+a merchant link. Spot-checked over every row of the table above plus the
+negative cases (Amazon, a direct merchant, an existing `ctc`/`customid`, a
+missing id, a malformed id, a malformed URL), and verified end to end through
+`/go/<partId>?build=…` on the branch: `ctc`, `sid`, `subId1` and `customid` were
+appended to the matching networks and nothing else was touched.
+
 ### Task F — verification (closes §6)
 
 On the Neon branch with at least one Amazon link and one network link:
@@ -285,6 +338,18 @@ On the Neon branch with at least one Amazon link and one network link:
 5. The gate passes.
 
 Tick §6.
+
+**Status (2026-10-23): verified as far as zero real links allow.** The gate
+passes. The rest was checked on the Neon branch with *temporary* affiliate URLs
+(ARB, Amazon, an AvantLink link, a CJ link, an Impact link and an eBay link),
+all deleted afterwards — the branch and production are both back to 0 linked
+parts. What was observed: the Buy button names the store, carries
+`rel="sponsored nofollow noopener noreferrer"` and points at
+`/go/<id>?build=<buildId>`; the disclosure sits above the list; each click
+wrote exactly one `outbound_clicks` row; the redirect kept the affiliate tag
+and added the network's sub-ID. What could **not** be verified: a real merchant
+landing page (no product links exist yet) and the Amazon Associates tag on a
+live URL. §6's click-through box is ticked on that basis.
 
 ### Later (not now)
 

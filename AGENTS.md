@@ -18,6 +18,10 @@ gate:       ./scripts/gate.sh
 
 Per-app extras: `apps/legal-os` also has `db:push` / `db:studio` (Drizzle) and
 `security:report` (Trivy scan). `packages/db` has `db:generate` / `db:push`.
+`apps/cars-4by4-builder` has `db:seed`, `parts:links` / `links:check`
+(affiliate URLs from a CSV — `scripts/parts-links.template.csv`), `stock:generate`
+and `gallery:render` (both spend Gemini credits and write production storage,
+so they need the user's go-ahead).
 
 ## Never touch
 
