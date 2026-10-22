@@ -48,7 +48,7 @@ user and built:
 | E | `src/lib/subid.ts` + wiring in `/go/$partId` | as planned | — |
 | F | verify on the branch | done as far as zero real links allow: the store labels, the disclosure, the `rel` attributes, the redirect, the sub-IDs and the `outbound_clicks` row were all exercised with **temporary** branch links, which were deleted afterwards | — |
 | G steps 1–6 | seed data + branch verification | done | — |
-| G step 7 | stock photos, production seed, 9 gallery renders | **waiting on the user** — spends Gemini credits and writes production | — |
+| G step 7 | stock photos, production seed, 9 gallery renders | **stock photos + production seed done** (3 Gemini calls, on the user's go-ahead); the 9 gallery renders wait for another go-ahead | — |
 
 Two more deviations worth remembering:
 
@@ -152,12 +152,17 @@ const TRUCK_PRESET_PARTS = {
     - Starting a build with an SUV-only part on a truck is refused.
   - Run the gate.
 
-- [ ] **Step 7: Ask first, because it spends Gemini credits and writes production.** These steps:
-  - generate stock photos for the 3 trucks (`npm run stock:generate -w cars-4by4-builder -- f150 silverado-1500 sierra-1500`);
-  - run the production seed;
-  - render the 9 new gallery presets (`npm run gallery:render`).
-
-  Each needs the user's go-ahead. Give the expected Gemini call count: 3 stock images plus 9 renders.
+- [x] **Step 7a: stock photos for the 3 trucks + the production seed.** Run on
+  2026-10-23 with the user's go-ahead (3 Gemini calls):
+  `npm run stock:generate -w cars-4by4-builder -- f150 silverado-1500 sierra-1500`
+  and then `npm run db:seed -w cars-4by4-builder` against **production**.
+  Production is now **6 vehicles / 24 parts / 18 presets**, and all six vehicles
+  have a stock photo at `stock/<id>.jpeg` in `cars-renders`. The seed does **not**
+  overwrite `vehicles.stockImageKey`, so the three original SUV photos survived
+  untouched — which is also why the stock photos had to come *after* the seed
+  (the trucks had to exist before their photos could be attached).
+- [ ] **Step 7b: the 9 gallery renders for the new truck presets.** Still waiting
+  on the user's go-ahead (9 Gemini calls).
 
 - [ ] **Step 8: Commit.** Use the message `feat(cars): add Ford F-150, Silverado 1500 and Sierra 1500 with truck fitment and presets`.
 
@@ -169,7 +174,8 @@ const TRUCK_PRESET_PARTS = {
 - [x] Task F verified as far as the links allow — with temporary branch links
       (since deleted): store labels, disclosure, `rel` attributes, the redirect,
       the sub-IDs and one `outbound_clicks` row per click.
-- [x] Task G Steps 1–6 done; **Step 7 waits on the user** (3 stock images, the
-      production seed and 9 gallery renders).
+- [x] Task G Steps 1–6 done; **Step 7a done** (3 stock photos + the production
+  seed, on the user's go-ahead), **Step 7b waits on the user** (9 gallery
+  renders for the new truck presets).
 - [x] The gate passes, and the spec's §6 boxes are ticked where verified.
 - [x] Current-work line added to `.agents/cars-4by4-builder/plans/active.md`.
