@@ -7,6 +7,9 @@ const SUBJECTS: Record<string, string> = {
   lc300: "Toyota Land Cruiser 300 (LC300) SUV",
   "patrol-y62": "Nissan Patrol Y62 SUV",
   "wrangler-jl": "Jeep Wrangler JL 4-door",
+  f150: "Ford F-150 (14th generation) SuperCrew pickup truck",
+  "silverado-1500": "Chevrolet Silverado 1500 crew cab pickup truck",
+  "sierra-1500": "GMC Sierra 1500 crew cab pickup truck",
 };
 
 // Mints a rights-clean AI "studio shot" per vehicle when no licensed photo is

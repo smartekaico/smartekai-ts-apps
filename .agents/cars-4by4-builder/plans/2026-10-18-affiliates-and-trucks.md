@@ -34,6 +34,45 @@ Commit after each task, using `feat(cars): …` or `docs(cars): …`.
 
 ---
 
+## What actually shipped (2026-10-23)
+
+The user chose a smaller shape than the plan's Tasks A/B/C, so the plan text
+above is the design that was **not** followed verbatim. What was decided with the
+user and built:
+
+| Task | Plan said | Shipped | Why |
+|---|---|---|---|
+| A | add `parts.affiliate_store` column + DDL | **skipped** | The user's links are Amazon/eBay/merchant-direct, so no link needs a *declared* store. No schema change, no DDL. |
+| B | `Store` registry, `storeOf(url, declared?)`, 10 labels | registry + labels + **merchant-domain detection** shipped; the `declared` parameter and the `affiliateStore` column behind it were dropped with Task A | Without a declared store there is nothing to pass, so the parameter would be dead code. |
+| C | new `src/seed/affiliate-links.ts` map + `scripts/check-links.ts` | **no second mechanism** — the existing `scripts/parts-links.ts` gained a `--check` mode (and `npm run links:check`) | One place that owns affiliate URLs: the CSV the user fills in. A second map would be a second source of truth. `--check` needs the database (the part list and the currently linked URLs live there), where the plan's version read only the map. |
+| E | `src/lib/subid.ts` + wiring in `/go/$partId` | as planned | — |
+| F | verify on the branch | done as far as zero real links allow: the store labels, the disclosure, the `rel` attributes, the redirect, the sub-IDs and the `outbound_clicks` row were all exercised with **temporary** branch links, which were deleted afterwards | — |
+| G steps 1–6 | seed data + branch verification | done | — |
+| G step 7 | stock photos, production seed, 9 gallery renders | **waiting on the user** — spends Gemini credits and writes production | — |
+
+Two more deviations worth remembering:
+
+- **The truck part count is 14, not 12.** The plan's prose says "the 9 shared
+  parts plus the 3 truck parts", but its own list of shared parts has **11**
+  entries (4 wheels, 2 suspension, 3 lighting, 2 rooftop tents). The explicit
+  list wins: a pickup shows 11 shared + 3 truck-only = 14 parts, an SUV shows
+  21.
+- **`RealTruck` is `realtruck.com`.** The plan (and the spec) wrote
+  `realtrack.com`; the live domain is `realtruck.com`, so that is what the
+  merchant list uses.
+
+### Task D — still blocked on the user
+
+**0 of 24** affiliate URLs are in place (the catalogue grew from 21 to 24 parts
+with the trucks, so three more rows are owed). The template
+`apps/cars-4by4-builder/scripts/parts-links.template.csv` lists every part id
+with a blank URL column; paste a link after the comma and run
+`npm run parts:links -- ./scripts/parts-links.template.csv` (or
+`npm run links:check -- …` first, which writes nothing and reports the store,
+host and HTTP status of every row). Amazon links need `tag=<associate-id>`.
+
+---
+
 ### Task G: Pickup trucks (F-150, Silverado 1500, Sierra 1500)
 
 Today's catalogue has three SUVs, and every part fits all three (`vehicleIds: ALL`). The build page already filters parts by `vehicleIds` (`src/routes/build.tsx:41`), and `startBuild` rejects parts that don't fit (`src/lib/builds.ts:166`). The vehicle detector already accepts pickups. So this task is mostly seed data.
@@ -45,7 +84,7 @@ Today's catalogue has three SUVs, and every part fits all three (`vehicleIds: AL
 - `scripts/generate-stock.ts` (`SUBJECTS`)
 - `packages/db/src/cars/schema.ts`: update the comment on `vehicles.id` only. No schema change.
 
-- [ ] **Step 1: Vehicles.** Append to `seedVehicles`:
+- [x] **Step 1: Vehicles.** Append to `seedVehicles`:
 
 ```ts
   { id: "f150", name: "Ford F-150", yearRange: "2021–2026", sortOrder: 4 },
@@ -53,7 +92,7 @@ Today's catalogue has three SUVs, and every part fits all three (`vehicleIds: AL
   { id: "sierra-1500", name: "GMC Sierra 1500", yearRange: "2019–2026", sortOrder: 6 },
 ```
 
-- [ ] **Step 2: Fitment per part.** In `src/seed/parts.ts`:
+- [x] **Step 2: Fitment per part.** In `src/seed/parts.ts`:
   - Replace the single `ALL` with `SUVS = ["lc300", "patrol-y62", "wrangler-jl"]` and `TRUCKS = ["f150", "silverado-1500", "sierra-1500"]`.
   - Add an optional `vehicleIds?: string[]` to `SeedPart`.
   - Parts default to `SUVS`.
@@ -64,7 +103,7 @@ Today's catalogue has three SUVs, and every part fits all three (`vehicleIds: AL
     - Rooftop tents, which mount on a bed rack: `arb-esperance-tent`, `ironman-hardshell-tent`.
   - All other parts stay SUV-only. The ARB and Ironman armour, OME, the Ironman snorkel, Smittybilt and Front Runner are body-specific to the SUVs.
 
-- [ ] **Step 3: Truck-only parts.** Add these three parts with `vehicleIds: TRUCKS`.
+- [x] **Step 3: Truck-only parts.** Add these three parts with `vehicleIds: TRUCKS`.
 
   **Proposed names and prices.** These are catalogue estimates shown as "Est.". If the user changes them at plan review, use theirs.
 
@@ -80,7 +119,7 @@ Today's catalogue has three SUVs, and every part fits all three (`vehicleIds: AL
   - Keep the placeholder comment accurate.
   - BAK is a RealTruck brand, so it goes on RealTruck/Impact links later (Spec 1 §7).
 
-- [ ] **Step 4: Presets per vehicle group.** In `src/seed/presets.ts`:
+- [x] **Step 4: Presets per vehicle group.** In `src/seed/presets.ts`:
   - Split `PRESET_PARTS` into `SUV_PRESET_PARTS` (today's object, unchanged) and `TRUCK_PRESET_PARTS`:
 
 ```ts
@@ -95,7 +134,7 @@ const TRUCK_PRESET_PARTS = {
   - Pick the parts map by whether the vehicle id is in the truck list. The preset ids and slugs keep the existing `${vehicleId}-${key}` and `${vehicleSlug}-${key}` patterns.
   - Every preset part must fit its vehicle. Assert this in the seed script before writing: throw if any preset part's `vehicleIds` doesn't include the preset's vehicle.
 
-- [ ] **Step 5: Stock-photo subjects.** In `scripts/generate-stock.ts`, add to `SUBJECTS`:
+- [x] **Step 5: Stock-photo subjects.** In `scripts/generate-stock.ts`, add to `SUBJECTS`:
 
 ```ts
   f150: "Ford F-150 (14th generation) SuperCrew pickup truck",
@@ -103,7 +142,7 @@ const TRUCK_PRESET_PARTS = {
   "sierra-1500": "GMC Sierra 1500 crew cab pickup truck",
 ```
 
-- [ ] **Step 6: Verify on the branch.**
+- [x] **Step 6: Verify on the branch.**
   - Seed the branch: `DATABASE_NEONDB_SMARTEKAI="<branch pooled url>" npm run db:seed -w cars-4by4-builder`.
   - Expect 6 vehicles, 24 parts and 18 presets.
   - Click through on the branch:
@@ -124,9 +163,13 @@ const TRUCK_PRESET_PARTS = {
 
 ### Done when
 
-- Spec 1 §8 Tasks A, B, C and E are done.
-- Task D is done, or reported as blocked on the user's links.
-- Task F is verified as far as the links allow.
-- Task G Steps 1–6 are done; Step 7 waits on the user.
-- The gate passes, and the spec's §6 boxes are ticked where verified.
-- Add a current-work line to `.agents/cars-4by4-builder/plans/active.md`.
+- [x] Spec 1 §8 Task B (minus the `declared` parameter), Task C (as the
+      importer's `--check` mode) and Task E are done.
+- [ ] Task D — **blocked on the user's links**: 0 of 24 are in place.
+- [x] Task F verified as far as the links allow — with temporary branch links
+      (since deleted): store labels, disclosure, `rel` attributes, the redirect,
+      the sub-IDs and one `outbound_clicks` row per click.
+- [x] Task G Steps 1–6 done; **Step 7 waits on the user** (3 stock images, the
+      production seed and 9 gallery renders).
+- [x] The gate passes, and the spec's §6 boxes are ticked where verified.
+- [x] Current-work line added to `.agents/cars-4by4-builder/plans/active.md`.

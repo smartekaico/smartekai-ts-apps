@@ -62,7 +62,7 @@ exports.carsVerifications = (0, pg_core_1.pgTable)("cars_verification", {
     updatedAt: (0, pg_core_1.timestamp)("updated_at").notNull(),
 });
 exports.vehicles = (0, pg_core_1.pgTable)("vehicles", {
-    id: (0, pg_core_1.text)("id").primaryKey(), // "lc300" | "patrol-y62" | "wrangler-jl"
+    id: (0, pg_core_1.text)("id").primaryKey(), // "lc300" | "patrol-y62" | "wrangler-jl" | "f150" | "silverado-1500" | "sierra-1500"
     name: (0, pg_core_1.text)("name").notNull(),
     yearRange: (0, pg_core_1.text)("year_range").notNull(),
     stockImageKey: (0, pg_core_1.text)("stock_image_key"), // "stock/<id>.<ext>" in cars-renders; null until uploaded

@@ -17,6 +17,7 @@
     "stock:generate": "tsx --env-file=../../.env.local scripts/generate-stock.ts",
     "gallery:render": "tsx --env-file=../../.env.local scripts/render-gallery.ts",
     "parts:links": "tsx --env-file=../../.env.local scripts/parts-links.ts",
+    "links:check": "tsx --env-file=../../.env.local scripts/parts-links.ts --check",
     "cleanup": "tsx --env-file=../../.env.local scripts/cleanup.ts"
   },
   "dependencies": {
