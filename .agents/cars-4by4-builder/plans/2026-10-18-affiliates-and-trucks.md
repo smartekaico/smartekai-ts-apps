@@ -224,9 +224,11 @@ answers an unknown vehicle id with a hint to quote a URL that contains a comma
 ### Task H — done when
 
 - [ ] H1: the user has filled the truck rows (or left them blank on purpose).
-- [ ] H2 merged and its DDL applied in production (with approval). *The code
-      and the branch DDL are done; the merge and the production DDL are pending
-      the user's OK.*
+- [x] H2 merged and its DDL applied in production (with approval). *Merged into
+      `main` as `0036779`; the production `create table` was applied over the
+      direct URL with `psql -1` on the user's OK. Production data was not
+      touched: 6 vehicles / 24 parts / 18 presets, 0 links, 0 rows in the new
+      table.*
 - [ ] `npm run links:check` shows every filled row with HTTP 200 and store "amazon".
 
 ---

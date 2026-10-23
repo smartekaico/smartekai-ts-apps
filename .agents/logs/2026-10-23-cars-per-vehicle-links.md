@@ -122,3 +122,23 @@ merge into `main` can happen first; the deploy cannot.
 - **H1**: the user still has to pick the actual Amazon listings (per-vehicle
   Ford/GM rows for the six vehicle-specific parts). The template
   `scripts/parts-links.template.csv` has the example rows ready.
+
+---
+
+## Closing it out
+
+With the user's OK:
+
+- **Production DDL applied.** One `create table` over the direct URL
+  (`ep-winter-frost-b1drw3en.c-5.eu-central-1.aws.neon.tech`) with `psql -1`.
+  Both foreign keys and the composite primary key confirmed in
+  `information_schema`. Production data untouched: 6 vehicles / 24 parts /
+  18 presets, 0 affiliate links, 0 rows in the new table, 9 builds, 0 waitlist
+  signups.
+- **Merged into `main`** as `0036779` (branch `feat/cars-per-vehicle-links`,
+  commit `c226605`).
+
+The site is still gated on worker version `803df561`, so none of this is live
+yet. The next deploy is now unblocked on the schema side — the DDL is in place
+— but it also carries the store labels, the sub-ID tagging and the pickup
+catalogue that are still waiting for the user's deploy go-ahead.
