@@ -675,3 +675,30 @@ before the Worker, so it does not redirect. Inert without the HTML.
 
 **To remove the old host entirely later:** drop the second `routes` entry and the
 `cars.smartekai.com` DNS record, delete the redirect block in `src/server.ts`, deploy.
+
+## §7.1 revisited — the hash decision, settled (2026-10-23)
+
+The three options §7.1 left open (PBKDF2 as shipped / scrypt in a Durable Object / Workers
+Paid) are now decided: **stay on PBKDF2 at the 100 000-iteration ceiling.**
+
+What settled it, checked today rather than argued:
+
+- **There is no hash to protect.** Production `cars_account` has **0 rows**; of the 3
+  `cars_user` rows, all 3 are `is_anonymous`. The weakness in PBKDF2-SHA256 (6× below
+  OWASP's cost, not memory-hard) only matters for stored hashes, and there are none.
+- **The cap is not biting.** Sign-up/sign-in measured 18–22 ms CPU against a 10 ms Free-plan
+  HTTP budget, and a 25/25 burst of 84 ms sign-ups (the pre-PBKDF2 scrypt code) all
+  returned 200 with no `exceededCpu` — so there is no functional pressure to move the work
+  off the request.
+- **A Durable Object would be the app's first.** `wrangler.jsonc` has no `durable_objects`
+  binding and no `migrations` block, and `src/` has no DO class. Adding one means a new
+  class, a binding, a migration and a new way for a deploy to fail — to protect zero hashes.
+- **Reverse it cheaply later.** `pbkdf2Password.verify` (`packages/auth/src/factory.ts`)
+  delegates any hash without the `pbkdf2-sha256$` prefix to `verifyPassword` from
+  `better-auth/crypto`, so existing rows keep verifying if the scheme changes; nothing is
+  locked in. The fallback direction (new hashes PBKDF2, old rows scrypt) is already live.
+
+**Trigger to revisit:** the first real credential account, or the decision to adopt Workers
+Paid. At that point scrypt-in-a-DO is the Free-compatible answer (30 s CPU budget inside the
+DO, wall time only on the request) and Paid removes the question. Neither is a launch
+blocker, and this is recorded so it is not re-litigated from scratch.

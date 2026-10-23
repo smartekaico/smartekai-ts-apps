@@ -321,8 +321,13 @@ const TRUCK_PRESET_PARTS = {
   overwrite `vehicles.stockImageKey`, so the three original SUV photos survived
   untouched — which is also why the stock photos had to come *after* the seed
   (the trucks had to exist before their photos could be attached).
-- [ ] **Step 7b: the 9 gallery renders for the new truck presets.** Still waiting
-  on the user's go-ahead (9 Gemini calls).
+- [x] **Step 7b: the 9 gallery renders for the new truck presets.** Done 2026-10-23
+  on the user's go-ahead: `npm run gallery:render -w cars-4by4-builder`, 9 Gemini
+  calls (the 9 SUV presets skipped as already rendered). Production is now **18
+  completed curated builds — all 18 presets have a render** — and the gallery serves
+  18 cards with all seven filter buttons (`All` + 6 vehicles). Every new render and
+  every `stock/*` before-image returns 200 `image/jpeg`. The home hero is unchanged:
+  the gallery sorts by vehicle then preset, so the trucks land last.
 
 - [x] **Step 8: Commit.** Landed as `a597ebb` ("feat(cars): affiliate store labels,
       link checking, sub-ID tagging and three pickups") — the trucks shared a
@@ -337,7 +342,18 @@ const TRUCK_PRESET_PARTS = {
       (since deleted): store labels, disclosure, `rel` attributes, the redirect,
       the sub-IDs and one `outbound_clicks` row per click.
 - [x] Task G Steps 1–6 done; **Step 7a done** (3 stock photos + the production
-  seed, on the user's go-ahead), **Step 7b waits on the user** (9 gallery
-  renders for the new truck presets).
+  seed, on the user's go-ahead) and **Step 7b done** (2026-10-23: the 9 truck
+  gallery renders, so production is 18 presets / 18 completed builds).
 - [x] The gate passes, and the spec's §6 boxes are ticked where verified.
 - [x] Current-work line added to `.agents/cars-4by4-builder/plans/active.md`.
+
+**Deployed 2026-10-23 as version `f1606d4c-2a2e-44ee-809d-71bf2923fb41`** on the user's
+go-ahead — the first deploy carrying the affiliate store labels, the sub-ID tagging, the
+three pickups and the per-vehicle link resolution. The site is still gated
+(`COMING_SOON="true"`, 503 + waitlist), the legacy host still 301s, and the queue
+producer/consumer and `:17 * * * *` cron re-attached unchanged. Because production still
+holds **0 affiliate links**, the store labels, sub-ID tags and per-vehicle fallbacks cannot
+be exercised live yet — what *is* verified live is that the new `/go` coalesce query runs
+cleanly against the production schema (clean 404 with and without `?build=`, no 500) and
+that all 18 truck/SUV build pages render. Details in
+`.agents/logs/2026-10-23-cars-deploy-and-gallery.md`.
