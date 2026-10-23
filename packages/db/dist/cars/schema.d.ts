@@ -999,6 +999,64 @@ export declare const parts: import("drizzle-orm/pg-core").PgTableWithColumns<{
     };
     dialect: "pg";
 }>;
+export declare const partVehicleLinks: import("drizzle-orm/pg-core").PgTableWithColumns<{
+    name: "part_vehicle_links";
+    schema: undefined;
+    columns: {
+        partId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "part_id";
+            tableName: "part_vehicle_links";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        vehicleId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "vehicle_id";
+            tableName: "part_vehicle_links";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        url: import("drizzle-orm/pg-core").PgColumn<{
+            name: "url";
+            tableName: "part_vehicle_links";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+    };
+    dialect: "pg";
+}>;
 export declare const presets: import("drizzle-orm/pg-core").PgTableWithColumns<{
     name: "presets";
     schema: undefined;
@@ -1904,6 +1962,7 @@ export declare const rateLimits: import("drizzle-orm/pg-core").PgTableWithColumn
     dialect: "pg";
 }>;
 export type RateLimit = typeof rateLimits.$inferSelect;
+export type PartVehicleLink = typeof partVehicleLinks.$inferSelect;
 export type Vehicle = typeof vehicles.$inferSelect;
 export type Part = typeof parts.$inferSelect;
 export type Preset = typeof presets.$inferSelect;

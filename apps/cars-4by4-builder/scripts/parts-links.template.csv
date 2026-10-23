@@ -12,7 +12,18 @@
 # and every row is checked before anything is written. Amazon links must carry
 # tag=<your-associate-id>; without it the importer warns and the commission will
 # not attribute. Rows left blank are simply "no link yet" (no buy button shows).
-partId,url
+#
+# Third column (optional): a "|"-separated list of vehicle ids that the link
+# applies to — the product is sold as a different listing per vehicle, so
+# shocks, lift kits, wheels and tonneau covers need one link per vehicle family.
+# That link beats the part's default link for those vehicles only; vehicles
+# without their own row keep the default. Example:
+#
+#   bilstein-5100-shocks,https://www.amazon.com/dp/B000000000?tag=your-id-20,f150
+#   bilstein-5100-shocks,https://www.amazon.com/dp/B111111111?tag=your-id-20,silverado-1500|sierra-1500
+#
+# A URL containing a comma must be quoted ("https://…?a=1,2").
+partId,url[,vehicleIds]
 
 # ── Armor ───────────────────────────────────────────────────────────────────────
 # ARB StealthBar — ARB
@@ -73,3 +84,25 @@ leitner-acs-forged,
 bakflip-mx4,
 # Rough Country 6" Lift Kit — Rough Country
 rough-country-6in-lift,
+
+# ── Per-vehicle links (Ford vs GM) ──────────────────────────────────────────────
+# The parts below are sold as a different listing per truck family: Ford and GM
+# differ in bolt pattern, shock and lift-kit fitment, and bed length. Silverado
+# 1500 and Sierra 1500 share the GM platform, so one GM link covers both — that
+# is why the vehicle column takes several ids.
+#
+# Uncomment and paste the links. A part keeps its default link above for every
+# vehicle that has no row here.
+#
+# bilstein-5100-shocks,<ford link>,f150
+# bilstein-5100-shocks,<gm link>,silverado-1500|sierra-1500
+# rough-country-lift-kit,<ford link>,f150
+# rough-country-lift-kit,<gm link>,silverado-1500|sierra-1500
+# rough-country-6in-lift,<ford link>,f150
+# rough-country-6in-lift,<gm link>,silverado-1500|sierra-1500
+# fuel-vector-wheels,<ford link>,f150
+# fuel-vector-wheels,<gm link>,silverado-1500|sierra-1500
+# method-beadlock-701,<ford link>,f150
+# method-beadlock-701,<gm link>,silverado-1500|sierra-1500
+# bakflip-mx4,<ford link>,f150
+# bakflip-mx4,<gm link>,silverado-1500|sierra-1500

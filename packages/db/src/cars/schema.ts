@@ -132,6 +132,24 @@ export const parts = pgTable("parts", {
   affiliateUrl: text("affiliate_url"), // null = no partner link yet (Buy stays hidden)
 });
 
+// One affiliate URL per (part, vehicle) where the product differs by vehicle
+// (shocks, lift kits, wheels, tonneau covers). Falls back to parts.affiliate_url.
+export const partVehicleLinks = pgTable(
+  "part_vehicle_links",
+  {
+    partId: text("part_id")
+      .notNull()
+      .references(() => parts.id, { onDelete: "cascade" }),
+    vehicleId: text("vehicle_id")
+      .notNull()
+      .references(() => vehicles.id, { onDelete: "cascade" }),
+    url: text("url").notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.partId, table.vehicleId] }),
+  }),
+);
+
 export const presets = pgTable("presets", {
   id: text("id").primaryKey(),
   slug: text("slug").notNull().unique(), // also the curated build's slug
@@ -240,6 +258,7 @@ export const rateLimits = pgTable(
 );
 
 export type RateLimit = typeof rateLimits.$inferSelect;
+export type PartVehicleLink = typeof partVehicleLinks.$inferSelect;
 export type Vehicle = typeof vehicles.$inferSelect;
 export type Part = typeof parts.$inferSelect;
 export type Preset = typeof presets.$inferSelect;

@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { notFound, redirect } from "@tanstack/react-router";
 import { and, asc, count, desc, eq, gte, inArray, isNull, ne, or } from "drizzle-orm";
-import { builds, getDbCars, parts, presets, vehicles } from "@smartekai/db/cars";
+import { builds, getDbCars, partVehicleLinks, parts, presets, vehicles } from "@smartekai/db/cars";
 import type { DetectedVehicle, Part } from "@smartekai/db/cars";
 import { detectVehicle } from "@smartekai/ai";
 import { BUCKETS, deleteObject, getPresignedReadUrl, uploadObject } from "@smartekai/storage";
@@ -40,7 +40,7 @@ export type PublicPart = {
 /** What a guest sees on the public build page — no per-part price, labor or fitment. */
 export type TeaserPart = Pick<PublicPart, "id" | "name" | "brand" | "category" | "imageUrl" | "store">;
 
-function toPublicPart(p: Part): PublicPart {
+function toPublicPart(p: Part, vehicleUrl?: string): PublicPart {
   return {
     id: p.id,
     name: p.name,
@@ -50,18 +50,20 @@ function toPublicPart(p: Part): PublicPart {
     laborHoursEst: p.laborHoursEst,
     fitmentDifficulty: p.fitmentDifficulty,
     imageUrl: p.imageUrl,
-    store: storeOf(p.affiliateUrl),
+    // The store is read off the link /go will actually use: a vehicle-specific
+    // link (shocks, lift kits, wheels, tonneau covers) beats the default one.
+    store: storeOf(vehicleUrl ?? p.affiliateUrl),
   };
 }
 
-function toTeaserPart(p: Part): TeaserPart {
+function toTeaserPart(p: Part, vehicleUrl?: string): TeaserPart {
   return {
     id: p.id,
     name: p.name,
     brand: p.brand,
     category: p.category,
     imageUrl: p.imageUrl,
-    store: storeOf(p.affiliateUrl),
+    store: storeOf(vehicleUrl ?? p.affiliateUrl),
   };
 }
 
@@ -304,10 +306,25 @@ async function loadBuild(slugOrId: string) {
   const buildParts = build.selectedPartIds.length
     ? await db.select().from(parts).where(inArray(parts.id, build.selectedPartIds))
     : [];
+  // Vehicle-specific affiliate links (Task H2): a part that is sold as a
+  // different listing per truck family has its own link for this vehicle.
+  const vehicleLinks = build.selectedPartIds.length
+    ? await db
+        .select({ partId: partVehicleLinks.partId, url: partVehicleLinks.url })
+        .from(partVehicleLinks)
+        .where(
+          and(
+            eq(partVehicleLinks.vehicleId, build.vehicleId),
+            inArray(partVehicleLinks.partId, build.selectedPartIds),
+          ),
+        )
+    : [];
+  const linkByPart = new Map(vehicleLinks.map((link) => [link.partId, link.url] as const));
 
   return {
     build,
     parts: buildParts,
+    linkByPart,
     view: {
       id: build.id,
       slug: build.slug,
@@ -328,10 +345,10 @@ async function loadBuild(slugOrId: string) {
 export const getBuild = createServerFn({ method: "GET" })
   .validator(validateSlugOrId)
   .handler(async ({ data: slugOrId }) => {
-    const { view, parts: buildParts } = await loadBuild(slugOrId);
+    const { view, parts: buildParts, linkByPart } = await loadBuild(slugOrId);
     return {
       ...view,
-      parts: buildParts.map(toTeaserPart),
+      parts: buildParts.map((p) => toTeaserPart(p, linkByPart.get(p.id))),
       estimatedTotalUsd: summarize(buildParts).totalUsd,
     };
   });
@@ -343,12 +360,12 @@ export const getReport = createServerFn({ method: "GET" })
     const user = await accountUser();
     if (!user) throw redirect({ to: "/sign-in", search: { next: `/builds/${slugOrId}/report` } });
 
-    const { build, view, parts: buildParts } = await loadBuild(slugOrId);
+    const { build, view, parts: buildParts, linkByPart } = await loadBuild(slugOrId);
     if (!build.isCurated && build.userId !== user.id) throw notFound(); // don't reveal it exists
     if (view.status === "processing") throw redirect({ to: "/builds/$slug", params: { slug: slugOrId } });
     if (view.status !== "completed" || !view.afterUrl) throw notFound();
 
-    return { ...view, afterUrl: view.afterUrl, parts: buildParts.map(toPublicPart) };
+    return { ...view, afterUrl: view.afterUrl, parts: buildParts.map((p) => toPublicPart(p, linkByPart.get(p.id))) };
   });
 
 export const getGallery = createServerFn({ method: "GET" }).handler(async () => {

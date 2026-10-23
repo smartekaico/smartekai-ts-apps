@@ -2,24 +2,68 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { eq } from "drizzle-orm";
-import { getDbCars, parts } from "@smartekai/db/cars";
+import { getDbCars, partVehicleLinks, parts, vehicles } from "@smartekai/db/cars";
 import { storeOf } from "../src/lib/store";
 
-// Fills parts.affiliate_url from a CSV of `partId,url` — one row per part, header
-// row optional, `#` comments and blank lines ignored. Every row is validated
-// before anything is written, so a typo cannot half-link the catalog. Re-running
-// the same file is safe (it just rewrites the same URLs).
+// Fills affiliate URLs from a CSV of `partId,url[,vehicleIds]` — one row per
+// part, header row optional, `#` comments and blank lines ignored.
 //
-// `--check` does the same validation without writing: it prints one row per
-// part with the store the link resolves to, the host and the HTTP status, so a
-// dead or mistyped link is visible before it ships. Missing links are reported
-// but do not fail the run (the catalog can be linked in batches); malformed
-// rows do.
+// The optional third column is a `|`-separated list of vehicle ids
+// (`silverado-1500|sierra-1500`): that link is used for those vehicles only,
+// and it beats the part's default `parts.affiliate_url`. Without the third
+// column the row is the part's default link (today's behaviour). A URL that
+// contains a comma has to be quoted ("https://…?a=1,2"), otherwise the row
+// would look like a three-column row.
+//
+// Every row is validated before anything is written, so a typo cannot half-link
+// the catalogue. Re-running the same file is safe (it just rewrites the same
+// URLs).
+//
+// `--check` does the same validation without writing: one line per (part,
+// vehicle) with the store the link resolves to, the host and the HTTP status,
+// so a dead or mistyped link is visible before it ships. Missing links are
+// reported but do not fail the run (the catalogue can be linked in batches);
+// malformed rows do.
 //
 // neon-http has no transactions, so the writes below are sequential rather than
 // atomic. That is acceptable here: the only realistic failure is a dropped
 // connection, and re-running the CSV fixes it.
-type Row = { id: string; url: string; line: number };
+type Row = { id: string; url: string; vehicleIds: string[]; line: number };
+
+/** A vehicle-id list: `f150` or `silverado-1500|sierra-1500`. */
+const VEHICLE_LIST = /^[a-z0-9|-]+$/i;
+
+/** Splits one row into fields, honouring double quotes (a quoted URL may contain commas). */
+function splitFields(line: string): string[] {
+  const fields: string[] = [];
+  let current = "";
+  let quoted = false;
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (quoted) {
+      if (char === '"') {
+        if (line[i + 1] === '"') {
+          current += '"';
+          i++;
+        } else quoted = false;
+      } else current += char;
+      continue;
+    }
+    if (char === '"' && current.trim() === "") {
+      quoted = true;
+      current = "";
+    } else if (char === ",") {
+      fields.push(current.trim());
+      current = "";
+    } else current += char;
+  }
+  fields.push(current.trim());
+  return fields;
+}
+
+function stripQuotes(value: string): string {
+  return value.replace(/^["']|["']$/g, "").trim();
+}
 
 function parseCsv(text: string): Row[] {
   const rows: Row[] = [];
@@ -27,12 +71,24 @@ function parseCsv(text: string): Row[] {
     const line = index + 1;
     const trimmed = raw.trim();
     if (!trimmed || trimmed.startsWith("#")) return;
-    const comma = trimmed.indexOf(",");
-    if (comma === -1) throw new Error(`line ${line}: expected "partId,url"`);
-    const id = trimmed.slice(0, comma).trim().replace(/^["']|["']$/g, "");
-    const url = trimmed.slice(comma + 1).trim().replace(/^["']|["']$/g, "");
+    const fields = splitFields(trimmed);
+    const id = stripQuotes(fields[0] ?? "");
     if (id.toLowerCase() === "partid") return; // header row
-    rows.push({ id, url, line }); // blank url = "not linked yet" — the template ships with these
+    if (fields.length < 2) throw new Error(`line ${line}: expected "partId,url[,vehicleIds]"`);
+
+    let url = stripQuotes(fields[1]);
+    let vehicleIds: string[] = [];
+    if (fields.length > 2) {
+      // Three columns: the last one is the vehicle list, the middle is the URL
+      // (joined back together so a quoted URL may still contain commas).
+      const last = stripQuotes(fields[fields.length - 1]);
+      if (!VEHICLE_LIST.test(last)) {
+        throw new Error(`line ${line}: expected "partId,url[,vehicleIds]" — quote a URL that contains a comma`);
+      }
+      vehicleIds = last.split("|").map((vehicle) => vehicle.trim()).filter(Boolean);
+      url = stripQuotes(fields.slice(1, -1).join(","));
+    }
+    rows.push({ id, url, vehicleIds, line });
   });
   return rows;
 }
@@ -78,41 +134,61 @@ async function httpStatus(url: string): Promise<string> {
   }
 }
 
-async function main() {
-  const args = process.argv.slice(2);
-  const checkOnly = args.includes("--check");
-  const file = args.find((arg) => !arg.startsWith("--"));
-  if (!file) {
-    throw new Error(
-      checkOnly
-        ? "usage: npm run links:check -- <file.csv>    (writes nothing)"
-        : 'usage: npm run parts:links -- <file.csv>    rows: "partId,https://…"',
-    );
-  }
+type State = {
+  parts: Map<string, { vehicleIds: string[]; url: string | null }>;
+  vehicleIds: Set<string>;
+  links: Map<string, string>; // "<partId>|<vehicleId>" → url
+};
 
-  const csv = readCsv(file);
+async function loadState(): Promise<State> {
   const db = getDbCars();
-  const existing = new Map(
-    (await db.select({ id: parts.id, url: parts.affiliateUrl }).from(parts)).map((p) => [p.id, p.url] as const),
-  );
+  const [partRows, vehicleRows, linkRows] = await Promise.all([
+    db.select({ id: parts.id, vehicleIds: parts.vehicleIds, url: parts.affiliateUrl }).from(parts),
+    db.select({ id: vehicles.id }).from(vehicles),
+    db.select({ partId: partVehicleLinks.partId, vehicleId: partVehicleLinks.vehicleId, url: partVehicleLinks.url }).from(partVehicleLinks),
+  ]);
+  return {
+    parts: new Map(partRows.map((part) => [part.id, { vehicleIds: part.vehicleIds, url: part.url }] as const)),
+    vehicleIds: new Set(vehicleRows.map((vehicle) => vehicle.id)),
+    links: new Map(linkRows.map((link) => [`${link.partId}|${link.vehicleId}`, link.url] as const)),
+  };
+}
 
+function validate(rows: Row[], state: State): { problems: string[]; notes: string[] } {
   const problems: string[] = [];
   const notes: string[] = [];
-  const seen = new Set<string>();
+  const seenDefault = new Set<string>();
+  const seenPair = new Set<string>();
 
-  // Validate first: a malformed row must not reach the writes below.
-  for (const row of csv) {
-    if (!existing.has(row.id)) {
+  for (const row of rows) {
+    const part = state.parts.get(row.id);
+    if (!part) {
       problems.push(`line ${row.line}: unknown part id "${row.id}"`);
       continue;
     }
-    if (seen.has(row.id)) {
-      problems.push(`line ${row.line}: duplicate part id "${row.id}"`);
+
+    if (row.vehicleIds.length === 0) {
+      if (seenDefault.has(row.id)) problems.push(`line ${row.line}: duplicate part id "${row.id}"`);
+      seenDefault.add(row.id);
+      if (row.url === "") continue;
+      let parsed: URL;
+      try {
+        parsed = new URL(row.url);
+      } catch {
+        problems.push(`line ${row.line}: not a URL: ${row.url}`);
+        continue;
+      }
+      if (parsed.protocol !== "https:") problems.push(`line ${row.line}: must be https — ${row.url}`);
+      if (storeOf(row.url) === "amazon" && !parsed.searchParams.has("tag")) {
+        notes.push(`${row.id}: amazon link without tag= — the commission may not attribute`);
+      }
       continue;
     }
-    seen.add(row.id);
-    if (row.url === "") continue;
 
+    if (row.url === "") {
+      problems.push(`line ${row.line}: a vehicle-specific row needs a URL`);
+      continue;
+    }
     let parsed: URL;
     try {
       parsed = new URL(row.url);
@@ -124,7 +200,40 @@ async function main() {
     if (storeOf(row.url) === "amazon" && !parsed.searchParams.has("tag")) {
       notes.push(`${row.id}: amazon link without tag= — the commission may not attribute`);
     }
+
+    for (const vehicleId of row.vehicleIds) {
+      if (!state.vehicleIds.has(vehicleId)) {
+        problems.push(`line ${row.line}: unknown vehicle id "${vehicleId}" — if the url contains a comma, quote it`);
+        continue;
+      }
+      if (!part.vehicleIds.includes(vehicleId)) {
+        problems.push(`line ${row.line}: "${row.id}" does not fit ${vehicleId}`);
+      }
+      const key = `${row.id}|${vehicleId}`;
+      if (seenPair.has(key)) problems.push(`line ${row.line}: duplicate link for ${row.id} on ${vehicleId}`);
+      seenPair.add(key);
+    }
   }
+
+  return { problems, notes };
+}
+
+async function main() {
+  const args = process.argv.slice(2);
+  const checkOnly = args.includes("--check");
+  const file = args.find((arg) => !arg.startsWith("--"));
+  if (!file) {
+    throw new Error(
+      checkOnly
+        ? "usage: npm run links:check -- <file.csv>    (writes nothing)"
+        : 'usage: npm run parts:links -- <file.csv>    rows: "partId,https://…[,vehicleId|vehicleId]"',
+    );
+  }
+
+  const rows = readCsv(file);
+  const db = getDbCars();
+  const state = await loadState();
+  const { problems, notes } = validate(rows, state);
 
   if (problems.length > 0) {
     console.error(`Refusing to ${checkOnly ? "check" : "write"} — ${problems.length} problem${problems.length === 1 ? "" : "s"}:`);
@@ -133,67 +242,108 @@ async function main() {
   }
 
   if (!checkOnly) {
-    const rows = csv.filter((row) => row.url !== "");
-    if (rows.length === 0) throw new Error("no links to write — every row was blank (fill in the url column first)");
-    for (const row of rows) {
-      await db.update(parts).set({ affiliateUrl: row.url }).where(eq(parts.id, row.id));
-      console.log(`  ${row.id} → ${row.url}`);
+    const linked = rows.filter((row) => row.url !== "");
+    if (linked.length === 0) throw new Error("no links to write — every row was blank (fill in the url column first)");
+    for (const row of linked) {
+      if (row.vehicleIds.length === 0) {
+        await db.update(parts).set({ affiliateUrl: row.url }).where(eq(parts.id, row.id));
+        console.log(`  ${row.id} → ${row.url}`);
+        continue;
+      }
+      for (const vehicleId of row.vehicleIds) {
+        await db
+          .insert(partVehicleLinks)
+          .values({ partId: row.id, vehicleId, url: row.url })
+          .onConflictDoUpdate({
+            target: [partVehicleLinks.partId, partVehicleLinks.vehicleId],
+            set: { url: row.url },
+          });
+        console.log(`  ${row.id} → ${row.url}  (${vehicleId})`);
+      }
     }
-    console.log(`Linked ${rows.length} part${rows.length === 1 ? "" : "s"}.`);
+    console.log(`Linked ${linked.length} row${linked.length === 1 ? "" : "s"}.`);
     return;
   }
 
-  // Check mode: one line per catalog part, CSV order first, then parts the CSV
-  // does not mention. A blank row keeps whatever the database already has.
-  const targets = csv.map((row) => {
-    const url = row.url !== "" ? row.url : (existing.get(row.id) ?? null);
-    return { id: row.id, url, fromCsv: row.url !== "" };
-  });
-  for (const [id, url] of existing) {
-    if (!seen.has(id)) targets.push({ id, url: url ?? null, fromCsv: false });
+  // Check mode: one line per (part, vehicle). A part's default link is the
+  // row with no vehicle; a vehicle-specific link is its own row.
+  type Target = { partId: string; vehicleId: string | null; url: string | null; source: string };
+  const targets: Target[] = [];
+  const covered = new Set<string>();
+
+  for (const row of rows) {
+    if (row.vehicleIds.length === 0) {
+      const current = state.parts.get(row.id)?.url ?? null;
+      targets.push({
+        partId: row.id,
+        vehicleId: null,
+        url: row.url !== "" ? row.url : current,
+        source: row.url !== "" ? "csv" : current ? "db" : "missing",
+      });
+      covered.add(`${row.id}|`);
+      continue;
+    }
+    for (const vehicleId of row.vehicleIds) {
+      targets.push({ partId: row.id, vehicleId, url: row.url, source: "csv" });
+      covered.add(`${row.id}|${vehicleId}`);
+    }
   }
 
-  const statuses = new Map<string, string>();
-  const queue = targets.filter((target) => target.url !== null);
+  // Links already in the database that the CSV does not mention.
+  for (const [key, url] of state.links) {
+    if (covered.has(key)) continue;
+    const [partId, vehicleId] = key.split("|");
+    targets.push({ partId, vehicleId, url, source: "db" });
+  }
+  for (const [partId, part] of state.parts) {
+    if (covered.has(`${partId}|`) || !part.url) continue;
+    targets.push({ partId, vehicleId: null, url: part.url, source: "db" });
+  }
+
+  // One request per distinct URL (the GM link serves two vehicles).
+  const statusByUrl = new Map<string, string>();
+  const urls = [...new Set(targets.map((target) => target.url).filter((url): url is string => url !== null))];
   let cursor = 0;
   await Promise.all(
-    Array.from({ length: Math.min(6, queue.length) }, async () => {
-      while (cursor < queue.length) {
-        const target = queue[cursor++];
-        statuses.set(target.id, await httpStatus(target.url as string));
+    Array.from({ length: Math.min(6, urls.length) }, async () => {
+      while (cursor < urls.length) {
+        const url = urls[cursor++];
+        statusByUrl.set(url, await httpStatus(url));
       }
     }),
   );
 
   const table = targets.map((target) => ({
-    id: target.id,
+    part: target.partId,
+    vehicle: target.vehicleId ?? "default",
     store: target.url ? (storeOf(target.url) ?? "—") : "—",
-    status: target.url ? (statuses.get(target.id) ?? "?") : "—",
+    status: target.url ? (statusByUrl.get(target.url) ?? "?") : "—",
     host: target.url ? hostOf(target.url) : "—",
-    source: target.url ? (target.fromCsv ? "csv" : "db") : "missing",
+    source: target.source,
   }));
 
   const width = {
-    id: Math.max(4, ...table.map((row) => row.id.length)),
+    part: Math.max(4, ...table.map((row) => row.part.length)),
+    vehicle: Math.max(7, ...table.map((row) => row.vehicle.length)),
     store: Math.max(5, ...table.map((row) => row.store.length)),
     status: 6,
     host: Math.max(4, ...table.map((row) => row.host.length)),
   };
   const pad = (value: string, size: number) => value.padEnd(size);
 
-  console.log(`${pad("part", width.id)}  ${pad("store", width.store)}  ${pad("status", width.status)}  ${pad("host", width.host)}  source`);
+  console.log(`${pad("part", width.part)}  ${pad("vehicle", width.vehicle)}  ${pad("store", width.store)}  ${pad("status", width.status)}  ${pad("host", width.host)}  source`);
   for (const row of table) {
     console.log(
-      `${pad(row.id, width.id)}  ${pad(row.store, width.store)}  ${pad(row.status, width.status)}  ${pad(row.host, width.host)}  ${row.source}`,
+      `${pad(row.part, width.part)}  ${pad(row.vehicle, width.vehicle)}  ${pad(row.store, width.store)}  ${pad(row.status, width.status)}  ${pad(row.host, width.host)}  ${row.source}`,
     );
   }
 
   const missing = table.filter((row) => row.source === "missing").length;
   const linked = table.length - missing;
   const flagged = table.filter((row) => row.status !== "—" && (row.status === "ERR" || Number(row.status) >= 400));
-  console.log(`\n${table.length} part${table.length === 1 ? "" : "s"} · ${linked} linked · ${missing} missing · ${flagged.length} flagged`);
+  console.log(`\n${table.length} link${table.length === 1 ? "" : "s"} · ${linked} linked · ${missing} missing · ${flagged.length} flagged`);
 
-  for (const row of flagged) console.log(`  flag ${row.id}: ${row.status} from ${row.host}`);
+  for (const row of flagged) console.log(`  flag ${row.part} (${row.vehicle}): ${row.status} from ${row.host}`);
   for (const note of notes) console.log(`  note ${note}`);
   if (flagged.length > 0) console.log("\nFlagged links are reported, not fatal — the store may simply be blocking bots.");
 }

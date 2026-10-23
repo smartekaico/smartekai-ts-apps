@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.waitlistSignups = exports.rateLimits = exports.outboundClicks = exports.creditPurchases = exports.creditLedger = exports.builds = exports.presets = exports.parts = exports.vehicles = exports.carsVerifications = exports.carsAccounts = exports.carsSessions = exports.carsUsers = void 0;
+exports.waitlistSignups = exports.rateLimits = exports.outboundClicks = exports.creditPurchases = exports.creditLedger = exports.builds = exports.presets = exports.partVehicleLinks = exports.parts = exports.vehicles = exports.carsVerifications = exports.carsAccounts = exports.carsSessions = exports.carsUsers = void 0;
 const pg_core_1 = require("drizzle-orm/pg-core");
 // Better Auth tables (guests via the anonymous plugin, accounts via email or Google).
 exports.carsUsers = (0, pg_core_1.pgTable)("cars_user", {
@@ -81,6 +81,19 @@ exports.parts = (0, pg_core_1.pgTable)("parts", {
     vehicleIds: (0, pg_core_1.text)("vehicle_ids").array().notNull(),
     affiliateUrl: (0, pg_core_1.text)("affiliate_url"), // null = no partner link yet (Buy stays hidden)
 });
+// One affiliate URL per (part, vehicle) where the product differs by vehicle
+// (shocks, lift kits, wheels, tonneau covers). Falls back to parts.affiliate_url.
+exports.partVehicleLinks = (0, pg_core_1.pgTable)("part_vehicle_links", {
+    partId: (0, pg_core_1.text)("part_id")
+        .notNull()
+        .references(() => exports.parts.id, { onDelete: "cascade" }),
+    vehicleId: (0, pg_core_1.text)("vehicle_id")
+        .notNull()
+        .references(() => exports.vehicles.id, { onDelete: "cascade" }),
+    url: (0, pg_core_1.text)("url").notNull(),
+}, (table) => ({
+    pk: (0, pg_core_1.primaryKey)({ columns: [table.partId, table.vehicleId] }),
+}));
 exports.presets = (0, pg_core_1.pgTable)("presets", {
     id: (0, pg_core_1.text)("id").primaryKey(),
     slug: (0, pg_core_1.text)("slug").notNull().unique(), // also the curated build's slug
