@@ -138,7 +138,7 @@ Rules while picking:
 feeds `ShopList` (whatever builds the report's part rows; find it from
 `src/components/ShopList.tsx`), `drizzle.cars.config.ts` (`tablesFilter`).
 
-- [ ] **Step 1: Table.** Add `partVehicleLinks`:
+- [x] **Step 1: Table.** Add `partVehicleLinks`:
 
 ```ts
 // One affiliate URL per (part, vehicle) where the product differs by vehicle
@@ -166,7 +166,7 @@ create table if not exists part_vehicle_links (
 );
 ```
 
-- [ ] **Step 2: CSV gets an optional third column.** `partId,url[,vehicleIds]`.
+- [x] **Step 2: CSV gets an optional third column.** `partId,url[,vehicleIds]`.
   `vehicleIds` is `|`-separated (`silverado-1500|sierra-1500`), so the GM link is
   one row. No third column = the part's default link (`parts.affiliate_url`,
   today's behaviour). Validation adds: every vehicle id exists, the part fits
@@ -175,33 +175,58 @@ create table if not exists part_vehicle_links (
   Parse quoted URLs carefully: URLs may contain commas only if quoted; keep the
   existing first-comma split for the 2-column form and split from the **right**
   for the 3-column form only when the last field matches `^[a-z0-9|-]+$`.
-- [ ] **Step 3: Template.** Under each Ford/GM part in
+- [x] **Step 3: Template.** Under each Ford/GM part in
   `parts-links.template.csv`, add commented example rows:
   `# bilstein-5100-shocks,<ford link>,f150` and
   `# bilstein-5100-shocks,<gm link>,silverado-1500|sierra-1500`. Keep the header
   comment explaining the third column.
-- [ ] **Step 4: `/go/$partId`.** When `?build=` is present, read the build's
+- [x] **Step 4: `/go/$partId`.** When `?build=` is present, read the build's
   `vehicle_id` and use `part_vehicle_links.url` for that vehicle if there is one,
   else `parts.affiliate_url`. One query: left join `builds` →
   `part_vehicle_links` on part id + vehicle id, plus `parts`. 404 only if both
   are null. `withSubId` and the `outbound_clicks` insert are unchanged.
-- [ ] **Step 5: Buy button visibility.** The report's shopping list must show
+- [x] **Step 5: Buy button visibility.** The report's shopping list must show
   "Buy on …" when **either** link exists for the build's vehicle, and the store
   label (`storeOf`) must come from the URL that `/go` will actually use. Do the
   same coalesce in the loader.
-- [ ] **Step 6: Verify on `cars-credits`** with temporary links (delete after):
+- [x] **Step 6: Verify on `cars-credits`** with temporary links (delete after):
   - a Ford-only link: an F-150 report shows the button and `/go` lands on the
     Ford URL; a Silverado report with no GM link and no default shows no button;
   - a default + GM link: Silverado and Sierra get the GM URL, F-150 the default;
   - an SUV build is unaffected;
   - `outbound_clicks` gets one row per click; `links:check` lists per-vehicle rows;
   - the gate passes.
-- [ ] **Step 7: Commit** `feat(cars): per-vehicle affiliate links for vehicle-specific parts`.
+- [x] **Step 7: Commit** `feat(cars): per-vehicle affiliate links for vehicle-specific parts`.
+
+**Status (2026-10-23): H2 is built and verified on the branch.** What landed:
+
+- `packages/db/src/cars/schema.ts`: the `partVehicleLinks` table, and
+  `part_vehicle_links` added to `tablesFilter` in `drizzle.cars.config.ts`.
+  `packages/db/dist` was rebuilt (it is tracked).
+- DDL in `.agents/cars-4by4-builder/specs/2026-10-23-part-vehicle-links.sql`,
+  applied to the branch over the **direct** URL with `psql -1`. **Production DDL
+  is not applied yet — it needs the user's OK**, and until it is, the deploy
+  must not happen (the code reads the table).
+- `scripts/parts-links.ts`: the third column, quote-aware parsing, the new
+  validations (unknown vehicle, part does not fit that vehicle, duplicate
+  (part, vehicle), a vehicle row without a URL) and an upsert on the primary
+  key. `--check` prints one line per (part, vehicle).
+- `src/routes/go/$partId.ts`: one query resolves the vehicle-specific link and
+  the default one; the vehicle-specific link wins, 404 only when both are null.
+- `src/lib/builds.ts`: the report and the public build page coalesce the same
+  way, so the Buy button appears (and is labelled) from the URL `/go` will use.
+
+Two deviations from the text above, both small: the DDL file is named
+`2026-10-23-part-vehicle-links.sql` (not `2026-10-18-…`), and the importer
+answers an unknown vehicle id with a hint to quote a URL that contains a comma
+— the common cause of a row that looks like a vehicle list.
 
 ### Task H — done when
 
 - [ ] H1: the user has filled the truck rows (or left them blank on purpose).
-- [ ] H2 merged and its DDL applied in production (with approval).
+- [ ] H2 merged and its DDL applied in production (with approval). *The code
+      and the branch DDL are done; the merge and the production DDL are pending
+      the user's OK.*
 - [ ] `npm run links:check` shows every filled row with HTTP 200 and store "amazon".
 
 ---
@@ -297,7 +322,9 @@ const TRUCK_PRESET_PARTS = {
 - [ ] **Step 7b: the 9 gallery renders for the new truck presets.** Still waiting
   on the user's go-ahead (9 Gemini calls).
 
-- [ ] **Step 8: Commit.** Use the message `feat(cars): add Ford F-150, Silverado 1500 and Sierra 1500 with truck fitment and presets`.
+- [x] **Step 8: Commit.** Landed as `a597ebb` ("feat(cars): affiliate store labels,
+      link checking, sub-ID tagging and three pickups") — the trucks shared a
+      commit with the affiliate work rather than getting a commit of their own.
 
 ### Done when
 

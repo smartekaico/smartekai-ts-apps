@@ -22,6 +22,7 @@ export default defineConfig({
   tablesFilter: [
     "vehicles",
     "parts",
+    "part_vehicle_links",
     "presets",
     "builds",
     "outbound_clicks",
