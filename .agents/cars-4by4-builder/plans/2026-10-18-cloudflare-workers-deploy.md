@@ -765,11 +765,23 @@ opening the site.
       `cleanup: timed out and refunded 0 stuck renders`. That closes the "first cron run"
       open item from Task 9; the command is recorded in the log.
 
-**Launch checklist (what is left):** the 21 affiliate URLs (`0 of 21` — fill
-`apps/cars-4by4-builder/scripts/parts-links.template.csv` and run `npm run parts:links`);
-one settled $14 payment (`confirmed`/`finished` → `credited` still never observed, postponed
-by the user); the PBKDF2-vs-Durable-Object-vs-Paid hash decision. Then flip `COMING_SOON` to
-`"false"` and redeploy. The 3 anonymous users and the AI studio stock shots are not blockers.
+**Launch checklist (what is left):** the 24 affiliate URLs (`0 of 24` — fill
+`apps/cars-4by4-builder/scripts/parts-links.template.csv` and run `npm run parts:links`,
+**seed first, links second**); one settled $14 payment (`confirmed`/`finished` → `credited`
+still never observed, postponed by the user). Then flip `COMING_SOON` to `"false"` and
+redeploy. The 3 anonymous users and the AI studio stock shots are not blockers.
+
+**The PBKDF2-vs-Durable-Object-vs-Paid hash decision is settled (2026-10-23): stay on
+PBKDF2.** Production holds **zero password hashes** — `cars_account` is empty and all 3
+`cars_user` rows are `is_anonymous` — so there is nothing to strengthen today, and the
+100 000-iteration ceiling costs ~20 ms on sign-up/sign-in, which has never returned anything
+but 200. A Durable Object would be this app's **first** (no binding, no class, no
+`migrations` block exists today), adding a new deploy-time failure mode in exchange for
+protecting nothing. The trigger to revisit is the **first real credential account** (or
+adopting Workers Paid), at which point the choice is concrete and the migration is cheap:
+`pbkdf2Password.verify` already hands any hash without the `pbkdf2-sha256$` prefix to Better
+Auth's scrypt verifier, so old rows keep verifying across the switch. Reasoning recorded in
+`.agents/logs/2026-10-18-cars-workers-port.md`.
 
 ## Task 13: Hostname rename to overlander.smartekai.com (2026-10-23)
 
