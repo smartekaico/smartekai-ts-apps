@@ -41,17 +41,17 @@ smittybilt-src,
 # Ironman 4x4 Snorkel — Ironman 4x4
 ironman-snorkel,
 # KC HiLiTES Cube LED Pods — KC HiLiTES
-kc-hilites-cube,
+kc-hilites-cube,https://www.amazon.com/dp/B0DXH6812H?tag=smartekaiover-20
 # Rigid 40" LED Light Bar — Rigid Industries
-rigid-led-lightbar,
+rigid-led-lightbar,https://www.amazon.com/dp/B0C2FLCW1K?tag=smartekaiover-20
 # Warn VR EVO 10-S Winch — Warn
-warn-vr-evo-10s,
+warn-vr-evo-10s,https://www.amazon.com/dp/B07SJHVQTJ?tag=smartekaiover-20
 
 # ── Overland ────────────────────────────────────────────────────────────────────
 # ARB 270° Awning — ARB
 arb-270-awning,
 # ARB Esperance Rooftop Tent — ARB
-arb-esperance-tent,
+arb-esperance-tent,https://www.amazon.com/dp/B0BMFN23FZ?tag=smartekaiover-20
 # Front Runner Slimline II Roof Rack — Front Runner
 frontrunner-slimline-ii,
 # Ironman 4x4 Hardshell Rooftop Tent — Ironman 4x4
@@ -69,9 +69,9 @@ rough-country-lift-kit,
 
 # ── Wheels & tires ──────────────────────────────────────────────────────────────
 # 33" BFGoodrich KM3 Mud-Terrain Tires — BFGoodrich
-bfg-km3-33,
+bfg-km3-33,https://www.amazon.com/dp/B07MH9JVLW?tag=smartekaiover-20
 # 35" Nitto Ridge Grappler Tires — Nitto
-nitto-ridge-grappler-35,
+nitto-ridge-grappler-35,https://www.amazon.com/dp/B01MAXN5R6?tag=smartekaiover-20
 # Fuel Vector Wheels — Fuel
 fuel-vector-wheels,
 # Method 701 Beadlock Wheels — Method
@@ -94,15 +94,29 @@ rough-country-6in-lift,
 # Uncomment and paste the links. A part keeps its default link above for every
 # vehicle that has no row here.
 #
-# bilstein-5100-shocks,<ford link>,f150
-# bilstein-5100-shocks,<gm link>,silverado-1500|sierra-1500
-# rough-country-lift-kit,<ford link>,f150
-# rough-country-lift-kit,<gm link>,silverado-1500|sierra-1500
-# rough-country-6in-lift,<ford link>,f150
-# rough-country-6in-lift,<gm link>,silverado-1500|sierra-1500
-# fuel-vector-wheels,<ford link>,f150
-# fuel-vector-wheels,<gm link>,silverado-1500|sierra-1500
-# method-beadlock-701,<ford link>,f150
-# method-beadlock-701,<gm link>,silverado-1500|sierra-1500
-# bakflip-mx4,<ford link>,f150
-# bakflip-mx4,<gm link>,silverado-1500|sierra-1500
+# front 24-323680, 2021+ 4WD, no CCD
+bilstein-5100-shocks,https://www.amazon.com/dp/B09Y8LX13D?tag=smartekaiover-20,f150
+# front pair 2019+, no Adaptive Ride, excl. Trail Boss
+bilstein-5100-shocks,https://www.amazon.com/dp/B0GF9Z6Y4V?tag=smartekaiover-20,silverado-1500|sierra-1500
+# 2" kit 58600, 2021-24, no CCD
+rough-country-lift-kit,https://www.amazon.com/dp/B092JPR9XX?tag=smartekaiover-20,f150
+# 2" leveling 1323, 2019-24; excl. AT4/Trail Boss/ZR2/diesel
+rough-country-lift-kit,https://www.amazon.com/dp/B0851QQVMK?tag=smartekaiover-20,silverado-1500|sierra-1500
+# 6" N3, 2021-24 4WD
+rough-country-6in-lift,https://www.amazon.com/dp/B0DDLKC82L?tag=smartekaiover-20,f150
+# 6" N3 struts 21732
+rough-country-6in-lift,https://www.amazon.com/dp/B07ZQQZPQQ?tag=smartekaiover-20,silverado-1500
+# 6" N3 struts 22932; excl. AT4/Denali ARC
+rough-country-6in-lift,https://www.amazon.com/dp/B08DDH3BZV?tag=smartekaiover-20,sierra-1500
+# D579 17x9 6x135 -12, per wheel
+fuel-vector-wheels,https://www.amazon.com/dp/B079DGSF8T?tag=smartekaiover-20,f150
+# D579 17x9 6x5.5 -12, per wheel
+fuel-vector-wheels,https://www.amazon.com/dp/B01N1518J2?tag=smartekaiover-20,silverado-1500|sierra-1500
+# MR701 17x8.5 6x135 0mm (no 17x9 6x135 found)
+method-beadlock-701,https://www.amazon.com/dp/B07HFKGQNM?tag=smartekaiover-20,f150
+# MR701 17x9 6x5.5 -12
+method-beadlock-701,https://www.amazon.com/dp/B07XVQD6BG?tag=smartekaiover-20,silverado-1500|sierra-1500
+# 448339, 2021+ 5'7" bed
+bakflip-mx4,https://www.amazon.com/dp/B08L44X6NZ?tag=smartekaiover-20,f150
+# 448130, 2019+ 5'10" bed, no Carbon Pro
+bakflip-mx4,https://www.amazon.com/dp/B07GNLG19C?tag=smartekaiover-20,silverado-1500|sierra-1500
