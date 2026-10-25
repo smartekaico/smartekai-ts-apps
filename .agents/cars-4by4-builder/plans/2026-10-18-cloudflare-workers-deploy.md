@@ -765,11 +765,20 @@ opening the site.
       `cleanup: timed out and refunded 0 stuck renders`. That closes the "first cron run"
       open item from Task 9; the command is recorded in the log.
 
-**Launch checklist (what is left):** the 24 affiliate URLs (`0 of 24` — fill
-`apps/cars-4by4-builder/scripts/parts-links.template.csv` and run `npm run parts:links`,
-**seed first, links second**); one settled $14 payment (`confirmed`/`finished` → `credited`
-still never observed, postponed by the user). Then flip `COMING_SOON` to `"false"` and
-redeploy. The 3 anonymous users and the AI studio stock shots are not blockers.
+**LAUNCHED 2026-10-26.** `COMING_SOON` is `"false"` and the site is public — worker version
+`907678fb-b622-465d-abac-741e9a0fcdde`. The preview bypass and waitlist are now inert (the
+gate never runs); the legacy host still 301s. The links landed first: **6 default + 18
+per-vehicle rows, all tagged `smartekaiover-20`, every one `links:check` 200 / store
+`amazon`**. A real click on `/builds/f-150-dune` reaches
+`amazon.com/dp/B01MAXN5R6?tag=smartekaiover-20`, and the same part sends the F-150 and the
+Silverado to different ASINs.
+
+**Still open after launch:** 12 of 24 parts have no link (so no Buy button) — the trucks are
+4–5 of 5 buyable per preset, the SUVs only 2 of 5–6, including the featured Land Cruiser
+hero. One settled $14 payment (`confirmed`/`finished` → `credited`) was **dropped on the
+user's instruction**; `NOWPAYMENTS_ENV` is `live` and that transition remains unobserved.
+The 3 anonymous users and the AI studio stock shots are not blockers. Record:
+`.agents/logs/2026-10-26-cars-launch.md`.
 
 **The PBKDF2-vs-Durable-Object-vs-Paid hash decision is settled (2026-10-23): stay on
 PBKDF2.** Production holds **zero password hashes** — `cars_account` is empty and all 3
