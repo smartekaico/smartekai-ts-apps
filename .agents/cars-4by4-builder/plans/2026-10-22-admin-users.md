@@ -18,7 +18,8 @@ ledger must stay consistent).
 
 ## Prerequisites
 
-- Start after `feat/cars-cloudflare` is merged and cars is live. Rebase on `main`.
+- Met (2026-10-26): cars is live on **overlander.smartekai.com** (cars.smartekai.com
+  only 301s there). Start after the patch-dependency task has merged. Rebase on `main`.
 - If the patch-dependency task (`.agents/monorepo/plans/2026-10-22-patch-dependency-updates.md`)
   has landed, Better Auth is 1.7.12; check the admin plugin docs for that version.
 
@@ -194,7 +195,7 @@ same `.validator()` style as `src/lib/credits.ts`.
   columns for every session.
 - [ ] Set the admin role for the user's own account (ask which email).
 - [ ] `npm run deploy -w cars-4by4-builder`, then check `/admin` on
-  cars.smartekai.com and run `wrangler tail` for one `/admin` load to confirm the
+  overlander.smartekai.com and run `wrangler tail` for one `/admin` load to confirm the
   CPU time stays under the Free limit.
 - [ ] Add a current-work line to `.agents/cars-4by4-builder/plans/active.md`.
 
