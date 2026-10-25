@@ -29,7 +29,7 @@
     // Pre-launch gate. While "true", src/server.ts answers every request with the
     // coming-soon page and the app below it is unreachable. Set to "false" and
     // redeploy to launch.
-    "COMING_SOON": "true",
+    "COMING_SOON": "false",
     "BETTER_AUTH_URL": "https://overlander.smartekai.com",
     "PUBLIC_SITE_URL": "https://overlander.smartekai.com",
     "NOWPAYMENTS_ENV": "live",

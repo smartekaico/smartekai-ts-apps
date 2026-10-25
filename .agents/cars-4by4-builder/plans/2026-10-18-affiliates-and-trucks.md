@@ -337,7 +337,13 @@ const TRUCK_PRESET_PARTS = {
 
 - [x] Spec 1 §8 Task B (minus the `declared` parameter), Task C (as the
       importer's `--check` mode) and Task E are done.
-- [ ] Task D — **blocked on the user's links**: 0 of 24 are in place.
+- [x] Task D — the Buy button is **live**: 6 parts carry a default Amazon link and 6 carry
+      per-vehicle links (all six truck-specific parts, per vehicle), verified by a real click
+      from `/builds/f-150-dune` to `amazon.com/dp/B01MAXN5R6?tag=smartekaiover-20`. **12 of 24
+      parts still have no link** and render no button (ARB armour trio, Ironman sliders /
+      snorkel / both tents, Smittybilt sliders, Front Runner rack, OME shocks, Leitner rack).
+      Trucks are 4–5 of 5 buyable per preset; the SUVs are 2 of 5–6 — and the featured hero is
+      the Land Cruiser, so filling the SUV rows is the highest-value follow-up.
 - [x] Task F verified as far as the links allow — with temporary branch links
       (since deleted): store labels, disclosure, `rel` attributes, the redirect,
       the sub-IDs and one `outbound_clicks` row per click.
