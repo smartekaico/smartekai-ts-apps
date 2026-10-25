@@ -21,8 +21,8 @@ Already current, no action: `turbo` 2.11.10, `@neondatabase/serverless` 1.2.0,
 
 ## Prerequisite
 
-Start only after `feat/cars-cloudflare` is merged into `main` and cars is live on
-cars.smartekai.com. Don't update in the middle of the go-live: the build and the
+Met (2026-10-26): cars is live on **overlander.smartekai.com** (cars.smartekai.com
+only 301s there). Originally: don't update in the middle of the go-live: the build and the
 CPU measurement were done on the current versions.
 
 ## Ground rules
@@ -69,7 +69,7 @@ CPU measurement were done on the current versions.
   Report the gate result versus the baseline and the click-through results. Then
   ask the user before merging and before the cars production deploy
   (`npm run deploy -w cars-4by4-builder`). After that deploy, check sign-in on
-  cars.smartekai.com and run `wrangler tail` for one sign-in, to confirm the CPU
+  overlander.smartekai.com (Google and email) and run `wrangler tail` for one sign-in, to confirm the CPU
   time is still under the Free limit.
 
 ## If something breaks
