@@ -79,3 +79,22 @@ the single highest-value follow-up.
   dev shows no Buy buttons. Re-running `parts:links` against the branch is a two-minute
   fix if that becomes annoying.
 - The site is now **publicly indexable**; the legacy host keeps its 301.
+
+## Follow-ups the user approved ("ok go")
+
+**The rehearsal branch DB now matches production.** `npm run parts:links` against the
+`cars-credits` branch (`ep-wild-bar-b1pi4db8`) wrote the same CSV: **6 default links + 18
+per-vehicle rows, 12 parts still unlinked** — identical to production. Before this the branch
+had 0 links, so local dev showed no Buy buttons at all. Production was not touched by this run.
+
+**`git push` no longer needs a prompt.** Added to the global OpenCode config
+(`~/.config/opencode/opencode.json`), in the V2 `permissions` array:
+
+```json
+{ "action": "shell", "resource": "git push *", "effect": "allow" }
+```
+
+The rule is narrow — `git push`, `git push origin main`, `git push --force-with-lease` match,
+nothing else does — and the pre-edit file is kept as `opencode.json.bak-20261026-021908`.
+Config reloads without a restart. No repository file changed, so this is a local preference
+rather than something the other agents inherit from the repo.
