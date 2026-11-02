@@ -1,6 +1,6 @@
 import { and, eq, gte, ne, sql } from "drizzle-orm";
 import { carsUsers, creditLedger, creditPurchases, getDbCars } from "@smartekai/db/cars";
-import type { BuildCharge, CreditPurchase, CreditPurchaseStatus } from "@smartekai/db/cars";
+import type { BuildCharge, CreditPurchase, CreditPurchaseStatus, RateLimitRef } from "@smartekai/db/cars";
 import { RENDER_COST } from "@/lib/credit-packs";
 import type { CreditBlock, CreditPack, CreditState } from "@/lib/credit-packs";
 import { freeRenderRules, tryConsume } from "@/server/rate-limit";
@@ -52,7 +52,7 @@ export async function spendCredits(userId: string, buildId: string): Promise<boo
   return true;
 }
 
-export type RenderCharge = { ok: true; charge: BuildCharge } | { ok: false; error: string; action: CreditBlock };
+export type RenderCharge = { ok: true; charge: BuildCharge; refs: RateLimitRef[] } | { ok: false; error: string; action: CreditBlock };
 
 /**
  * Spec 3 §3 steps 2–5: free render, else (accounts only) RENDER_COST credits, else refuse.
@@ -67,7 +67,8 @@ export async function chargeRender(
   options: { allowCredits?: boolean } = {},
 ): Promise<RenderCharge> {
   if (await claimFreeRender(user.id)) {
-    if (await tryConsume(freeRenderRules(ip))) return { ok: true, charge: "free" };
+    const freeRefs = await tryConsume(freeRenderRules(ip));
+    if (freeRefs) return { ok: true, charge: "free", refs: freeRefs };
     await releaseFreeRender(user.id); // this network's free renders are used up today
     if (user.isAnonymous) return { ok: false, error: "Sign in to keep building.", action: "sign-in" };
     if (!options.allowCredits) {
@@ -79,7 +80,7 @@ export async function chargeRender(
     }
   }
   if (user.isAnonymous) return { ok: false, error: "Sign in to keep building.", action: "sign-in" };
-  if (await spendCredits(user.id, buildId)) return { ok: true, charge: "credit" };
+  if (await spendCredits(user.id, buildId)) return { ok: true, charge: "credit", refs: [] };
   return { ok: false, error: "You're out of credits.", action: "buy-credits" };
 }
 

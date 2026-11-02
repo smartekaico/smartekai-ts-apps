@@ -2,8 +2,8 @@ import { and, eq, inArray, lt, notExists } from "drizzle-orm";
 import { builds, carsUsers, getDbCars } from "@smartekai/db/cars";
 import { BUCKETS, deleteObject } from "@smartekai/storage";
 import { refundFailedBuild } from "./credits";
+import { giveBack, pruneRateLimits } from "./rate-limit";
 import { STALE_PROCESSING_MS, TIMED_OUT_MESSAGE } from "./generate";
-import { pruneRateLimits } from "./rate-limit";
 
 const DAY = 86_400_000;
 
@@ -33,9 +33,12 @@ export async function runCleanup(caps: CleanupCaps = {}): Promise<void> {
       .update(builds)
       .set({ status: "failed", errorMessage: TIMED_OUT_MESSAGE, updatedAt: new Date() })
       .where(and(inArray(builds.id, stuck.map((b) => b.id)), stuckWhere))
-      .returning({ id: builds.id })
+      .returning({ id: builds.id, rateLimitRefs: builds.rateLimitRefs })
     : [];
-  for (const b of timedOut) await refundFailedBuild(b.id);
+  for (const b of timedOut) {
+    await refundFailedBuild(b.id);
+    await giveBack(b.rateLimitRefs);
+  }
   console.log(`cleanup: timed out and refunded ${timedOut.length} stuck renders`);
 
   const draftsQuery = db

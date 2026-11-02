@@ -14,7 +14,7 @@ import { chargeRender, refundRender } from "@/server/credits";
 import { STALE_PROCESSING_MS, TIMED_OUT_MESSAGE, failProcessingBuild } from "@/server/generate";
 import { originalImageUrl, publicImageUrl } from "@/server/images";
 import { enqueueRender } from "@/server/render-queue";
-import { photoRules, renderRules, tryConsume } from "@/server/rate-limit";
+import { photoRules, renderRules, tryConsume, giveBack } from "@/server/rate-limit";
 import { requestIp } from "@/server/request";
 import { accountUser, currentUser } from "@/server/session";
 
@@ -171,22 +171,28 @@ export const startBuild = createServerFn({ method: "POST" })
     }
 
     const ip = requestIp();
-    if (!(await tryConsume(renderRules(ip)))) return fail("You've hit the render limit for now — try again in an hour.");
+    const renderRefs = await tryConsume(renderRules(ip));
+    if (!renderRefs) return fail("You've hit the render limit for now — try again in an hour.");
+
+    const refuse = async (message: string, action?: CreditBlock) => {
+      await giveBack(renderRefs);
+      return fail(message, action);
+    };
 
     const startOfDay = new Date();
     startOfDay.setUTCHours(0, 0, 0, 0);
     const [{ value: rendersToday }] = await db
       .select({ value: count() })
       .from(builds)
-      .where(and(gte(builds.createdAt, startOfDay), eq(builds.isCurated, false), ne(builds.status, "draft")));
+      .where(and(gte(builds.createdAt, startOfDay), eq(builds.isCurated, false), inArray(builds.status, ["processing", "completed"])));
     if (rendersToday >= DAILY_RENDER_CAP) {
-      return fail("We're at capacity today — browse the gallery and check back tomorrow.");
+      return refuse("We're at capacity today — browse the gallery and check back tomorrow.");
     }
 
     // Spec 3 §3: every render is charged to a session user — a guest or an account.
     // PhotoStep creates a guest session first, so this is rare.
     const user = await currentUser();
-    if (!user) return fail("Sign in to keep building.", "sign-in");
+    if (!user) return refuse("Sign in to keep building.", "sign-in");
 
     // Resolve what to render before charging, so a bad request costs nothing.
     let target: { kind: "draft"; id: string } | { kind: "stock"; id: string; imageKey: string };
@@ -199,16 +205,19 @@ export const startBuild = createServerFn({ method: "POST" })
       ).at(0);
       // Renders cost credits: only the caller's own draft (or an unowned one) may be started.
       if (!draft || (draft.userId !== null && draft.userId !== user.id)) {
-        return fail("That photo expired — upload it again.");
+        return refuse("That photo expired — upload it again.");
       }
       target = { kind: "draft", id: data.buildId };
     } else {
-      if (!vehicle.stockImageKey) return fail("No studio photo for this vehicle yet — upload your own.");
+      if (!vehicle.stockImageKey) return refuse("No studio photo for this vehicle yet — upload your own.");
       target = { kind: "stock", id: crypto.randomUUID(), imageKey: vehicle.stockImageKey };
     }
 
     const gate = await chargeRender(user, target.id, ip, { allowCredits: data.allowCredits });
-    if (!gate.ok) return fail(gate.error, gate.action);
+    if (!gate.ok) {
+      await giveBack(renderRefs);
+      return fail(gate.error, gate.action);
+    }
 
     try {
       if (target.kind === "draft") {
@@ -218,6 +227,7 @@ export const startBuild = createServerFn({ method: "POST" })
             status: "processing",
             userId: user.id,
             charge: gate.charge,
+            rateLimitRefs: [...renderRefs, ...gate.refs],
             vehicleId: vehicle.id,
             selectedPartIds: data.partIds,
             updatedAt: new Date(),
@@ -232,6 +242,8 @@ export const startBuild = createServerFn({ method: "POST" })
           .returning({ id: builds.id });
         if (updated.length === 0) {
           await refundRender(user.id, gate.charge, target.id); // lost a race (double click, cleanup)
+          await giveBack(renderRefs);
+          await giveBack(gate.refs);
           return fail("That photo expired — upload it again.");
         }
       } else {
@@ -239,6 +251,7 @@ export const startBuild = createServerFn({ method: "POST" })
           id: target.id,
           userId: user.id,
           charge: gate.charge,
+          rateLimitRefs: [...renderRefs, ...gate.refs],
           vehicleId: vehicle.id,
           originalImageKey: target.imageKey,
           status: "processing",
@@ -255,6 +268,8 @@ export const startBuild = createServerFn({ method: "POST" })
       try {
         if (!(await failProcessingBuild(target.id, "Generation failed — try again."))) {
           await refundRender(user.id, gate.charge, target.id);
+          await giveBack(renderRefs);
+          await giveBack(gate.refs);
         }
       } catch (refundErr) {
         console.error(
