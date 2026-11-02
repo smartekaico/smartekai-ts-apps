@@ -10,6 +10,7 @@ const SUBJECTS: Record<string, string> = {
   f150: "Ford F-150 (14th generation) SuperCrew pickup truck",
   "silverado-1500": "Chevrolet Silverado 1500 crew cab pickup truck",
   "sierra-1500": "GMC Sierra 1500 crew cab pickup truck",
+  "tacoma-3g": "Toyota Tacoma (3rd generation, 2016-2023) double cab pickup truck",
 };
 
 // Mints a rights-clean AI "studio shot" per vehicle when no licensed photo is
