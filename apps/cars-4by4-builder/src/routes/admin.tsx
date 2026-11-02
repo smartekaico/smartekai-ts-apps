@@ -20,7 +20,10 @@ export const Route = createFileRoute("/admin")({
     return {
       q: typeof search.q === "string" && search.q.trim() ? search.q.trim() : undefined,
       page: Number.isInteger(page) && page > 1 ? page : undefined,
-      guests: search.guests === true || search.guests === "1" || search.guests === "true" ? true : undefined,
+      guests:
+        search.guests === true || search.guests === 1 || search.guests === "1" || search.guests === "true"
+          ? true
+          : undefined,
       user: typeof search.user === "string" && search.user.length >= 8 ? search.user : undefined,
     };
   },
