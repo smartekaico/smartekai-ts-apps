@@ -1,7 +1,7 @@
 import { getRequest } from "@tanstack/react-start/server";
 import { auth } from "@/lib/auth";
 
-export type SessionUser = { id: string; isAnonymous?: boolean | null };
+export type SessionUser = { id: string; isAnonymous?: boolean | null; role?: string | null };
 
 /**
  * The request's user — a guest (anonymous plugin) or an account — or null.
@@ -21,4 +21,10 @@ export async function currentUser(): Promise<SessionUser | null> {
 export async function accountUser(): Promise<SessionUser | null> {
   const user = await currentUser();
   return user && !user.isAnonymous ? user : null;
+}
+
+/** A real account whose cars_user.role is "admin" (Better Auth admin plugin). */
+export async function adminUser(): Promise<SessionUser | null> {
+  const user = await accountUser();
+  return user?.role === "admin" ? user : null;
 }
