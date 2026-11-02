@@ -174,8 +174,36 @@ export async function refundFailedBuild(buildId: string): Promise<void> {
   }
 }
 
-// ── Purchases (Spec 3 §1/§5) ────────────────────────────────────────────────
+/**
+ * Admin credit grant (or negative correction). ONE statement, a data-modifying
+ * CTE, so the balance change and its `grant` ledger row commit together. The
+ * update only matches while the balance can absorb `delta` (never below zero),
+ * and the ledger row is inserted only for the row that matched. A refused
+ * correction or unknown user writes nothing and returns the current balance.
+ */
+export async function grantCredits(userId: string, delta: number): Promise<{ ok: boolean; balance: number }> {
+  const db = getDbCars();
+  const { rows } = await db.execute(sql`
+    WITH u AS (
+      UPDATE cars_user SET credit_balance = credit_balance + ${delta}::integer
+      WHERE id = ${userId} AND credit_balance + ${delta}::integer >= 0
+      RETURNING id, credit_balance
+    ), l AS (
+      INSERT INTO credit_ledger (id, user_id, delta, reason)
+      SELECT ${crypto.randomUUID()}::text, u.id, ${delta}::integer, 'grant' FROM u
+      RETURNING id
+    )
+    SELECT (SELECT count(*) FROM u) AS matched, (SELECT credit_balance FROM u) AS balance
+  `);
+  const row = rows[0] ?? {};
+  if (Number(row.matched ?? 0) > 0) return { ok: true, balance: Number(row.balance ?? 0) };
+  const current = (
+    await db.select({ balance: carsUsers.creditBalance }).from(carsUsers).where(eq(carsUsers.id, userId))
+  ).at(0);
+  return { ok: false, balance: current?.balance ?? 0 };
+}
 
+// ── Purchases (Spec 3 §1/§5) ────────────────────────────────────────────────
 const PAYMENT_REF_UNIQUE = "credit_ledger_payment_ref_unique";
 
 /** Only a duplicate ledger payment_ref counts; any other unique violation is a real error. */

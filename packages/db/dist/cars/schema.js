@@ -10,6 +10,11 @@ exports.carsUsers = (0, pg_core_1.pgTable)("cars_user", {
     emailVerified: (0, pg_core_1.boolean)("email_verified").notNull(),
     image: (0, pg_core_1.text)("image"),
     isAnonymous: (0, pg_core_1.boolean)("is_anonymous").default(false),
+    // Better Auth admin plugin. role "admin" unlocks /admin; banned users can't sign in.
+    role: (0, pg_core_1.text)("role").default("user"),
+    banned: (0, pg_core_1.boolean)("banned").default(false),
+    banReason: (0, pg_core_1.text)("ban_reason"),
+    banExpires: (0, pg_core_1.timestamp)("ban_expires"),
     // Spec 3 §1. Guests never hold credits; every user (guest or account) gets
     // one free render. Better Auth never writes these — the defaults apply.
     creditBalance: (0, pg_core_1.integer)("credit_balance").notNull().default(0),
@@ -26,6 +31,8 @@ exports.carsSessions = (0, pg_core_1.pgTable)("cars_session", {
     expiresAt: (0, pg_core_1.timestamp)("expires_at").notNull(),
     ipAddress: (0, pg_core_1.text)("ip_address"),
     userAgent: (0, pg_core_1.text)("user_agent"),
+    // Written by the Better Auth admin plugin (impersonation); kept nullable.
+    impersonatedBy: (0, pg_core_1.text)("impersonated_by"),
     createdAt: (0, pg_core_1.timestamp)("created_at").notNull(),
     updatedAt: (0, pg_core_1.timestamp)("updated_at").notNull(),
 }, (table) => ({
