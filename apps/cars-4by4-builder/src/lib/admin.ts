@@ -151,8 +151,8 @@ function toUserRow(row: UserRow): AdminUserRow {
     freeRenderUsed: row.freeRenderUsed === true,
     isGuest: row.isGuest === true,
     providers: row.providers ? row.providers.split(",") : [],
-    builds: Number(row.builds ?? 0),
-    paidUsd: Number(row.paidUsd ?? 0),
+    builds: Number(row.builds),
+    paidUsd: Number(row.paidUsd),
   };
 }
 
@@ -199,7 +199,7 @@ export const getAdminUsers = createServerFn({ method: "GET" })
     ]);
 
     return {
-      rows: rows.map((row) => toUserRow(row as UserRow)),
+      rows: rows.map((row) => toUserRow(row)),
       page: data.page,
       pageSize: ADMIN_PAGE_SIZE,
       total: Number(totals[0]?.n ?? 0),
@@ -251,7 +251,7 @@ export const getAdminUser = createServerFn({ method: "GET" })
     ]);
 
     return {
-      user: toUserRow(row as UserRow),
+      user: toUserRow(row),
       ledger: ledger.map((l) => ({ ...l, createdAt: l.createdAt.toISOString() })),
       purchases: purchases.map((p) => ({ ...p, createdAt: p.createdAt.toISOString() })),
     };
@@ -275,8 +275,8 @@ export const adminBanUser = createServerFn({ method: "POST" })
   .validator((input: { userId: string; reason: string; days?: number }) => {
     const reason = typeof input.reason === "string" ? input.reason.trim().slice(0, 500) : "";
     if (!reason) throw new Error("a ban reason is required");
-    const days = input.days === undefined || input.days === null ? undefined : intIn(input.days, 1, MAX_BAN_DAYS);
-    if (input.days !== undefined && input.days !== null && days === null) throw new Error("days must be between 1 and 3650");
+    const days = input.days === undefined ? undefined : intIn(input.days, 1, MAX_BAN_DAYS);
+    if (input.days !== undefined && days === null) throw new Error("days must be between 1 and 3650");
     if (typeof input.userId !== "string" || input.userId.length < 8) throw new Error("invalid user id");
     return { userId: input.userId, reason, days };
   })
