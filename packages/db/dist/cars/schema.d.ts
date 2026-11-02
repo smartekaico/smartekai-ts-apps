@@ -4,6 +4,10 @@ export type DetectedVehicle = {
     color: string | null;
 };
 export type BuildStatus = "draft" | "processing" | "completed" | "failed";
+export type RateLimitRef = {
+    key: string;
+    windowStart: string;
+};
 /** What a render used, so a failure can give back the right thing. null = curated, pre-credits, or already refunded. */
 export type BuildCharge = "free" | "credit";
 export type CreditReason = "purchase" | "render" | "refund" | "grant";
@@ -1533,6 +1537,25 @@ export declare const builds: import("drizzle-orm/pg-core").PgTableWithColumns<{
             generated: undefined;
         }, {}, {
             $type: DetectedVehicle;
+        }>;
+        rateLimitRefs: import("drizzle-orm/pg-core").PgColumn<{
+            name: "rate_limit_refs";
+            tableName: "builds";
+            dataType: "json";
+            columnType: "PgJsonb";
+            data: RateLimitRef[];
+            driverParam: unknown;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            $type: RateLimitRef[];
         }>;
         createdAt: import("drizzle-orm/pg-core").PgColumn<{
             name: "created_at";
