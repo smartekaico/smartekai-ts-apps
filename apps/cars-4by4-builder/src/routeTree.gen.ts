@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as BuildRouteImport } from './routes/build'
 import { Route as CreditsRouteImport } from './routes/credits'
 import { Route as ProjectsRouteImport } from './routes/projects'
@@ -24,6 +25,11 @@ import { Route as BuildsSlugReportRouteImport } from './routes/builds/$slug_.rep
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BuildRoute = BuildRouteImport.update({
@@ -79,6 +85,7 @@ const BuildsSlugReportRoute = BuildsSlugReportRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/build': typeof BuildRoute
   '/credits': typeof CreditsRoute
   '/projects': typeof ProjectsRoute
@@ -92,6 +99,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/build': typeof BuildRoute
   '/credits': typeof CreditsRoute
   '/projects': typeof ProjectsRoute
@@ -106,6 +114,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/build': typeof BuildRoute
   '/credits': typeof CreditsRoute
   '/projects': typeof ProjectsRoute
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/build'
     | '/credits'
     | '/projects'
@@ -134,6 +144,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin'
     | '/build'
     | '/credits'
     | '/projects'
@@ -147,6 +158,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/build'
     | '/credits'
     | '/projects'
@@ -161,6 +173,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
   BuildRoute: typeof BuildRoute
   CreditsRoute: typeof CreditsRoute
   ProjectsRoute: typeof ProjectsRoute
@@ -180,6 +193,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/build': {
@@ -257,6 +277,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
   BuildRoute: BuildRoute,
   CreditsRoute: CreditsRoute,
   ProjectsRoute: ProjectsRoute,
