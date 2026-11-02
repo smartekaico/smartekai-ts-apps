@@ -47,6 +47,11 @@ export const carsUsers = pgTable("cars_user", {
   emailVerified: boolean("email_verified").notNull(),
   image: text("image"),
   isAnonymous: boolean("is_anonymous").default(false),
+  // Better Auth admin plugin. role "admin" unlocks /admin; banned users can't sign in.
+  role: text("role").default("user"),
+  banned: boolean("banned").default(false),
+  banReason: text("ban_reason"),
+  banExpires: timestamp("ban_expires"),
   // Spec 3 §1. Guests never hold credits; every user (guest or account) gets
   // one free render. Better Auth never writes these — the defaults apply.
   creditBalance: integer("credit_balance").notNull().default(0),
@@ -66,6 +71,8 @@ export const carsSessions = pgTable(
     expiresAt: timestamp("expires_at").notNull(),
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
+    // Written by the Better Auth admin plugin (impersonation); kept nullable.
+    impersonatedBy: text("impersonated_by"),
     createdAt: timestamp("created_at").notNull(),
     updatedAt: timestamp("updated_at").notNull(),
   },
