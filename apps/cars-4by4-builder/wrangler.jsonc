@@ -34,6 +34,11 @@
     "PUBLIC_SITE_URL": "https://overlander.smartekai.com",
     "NOWPAYMENTS_ENV": "live",
     "CARS_DAILY_RENDER_CAP": "200",
+    // The first-admin bootstrap in src/lib/auth.ts: this email is inserted as
+    // role "admin" while no admin exists. Not a secret (nobody can sign up with
+    // it without also knowing the password), but remove or change it once the
+    // admin account exists.
+    "ADMIN_BOOTSTRAP_EMAIL": "smartekaico@gmail.com",
     // Google is registered by Better Auth and shown on /sign-in only while this
     // is "true" AND the secrets exist. The OAuth client must also have
     // https://overlander.smartekai.com/api/auth/callback/google registered,
