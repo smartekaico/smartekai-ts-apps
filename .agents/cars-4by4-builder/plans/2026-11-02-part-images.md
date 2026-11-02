@@ -80,6 +80,12 @@ for the "seed before links" rule.
 
 ### 3. Serve keys as URLs, label, fallback
 
+> **Decided 2026-11-02: category icons, not the generic placeholder.** Commit
+> `636d863` (on `main`) replaced a category-icon tile in `PartImage` with one
+> "photo coming soon" SVG. Reverse that part: the fallback is a per-category
+> icon. `git show 636d863` shows the earlier tile code, which may be reusable;
+> keep `/part-placeholder.svg` only as the last fallback for an unknown category.
+
 - [ ] `builds.ts` `toPublicPart` / `toTeaserPart` (and any other place that
   returns `parts.imageUrl`): if the value starts with `parts/`, return
   `publicImageUrl(value)`; otherwise return it unchanged (lets a future real
