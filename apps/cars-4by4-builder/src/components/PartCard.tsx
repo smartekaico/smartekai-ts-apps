@@ -9,11 +9,13 @@ export function PartCard({
   selected,
   disabled,
   onToggle,
+  reason,
 }: {
   part: PublicPart;
   selected: boolean;
   disabled: boolean;
   onToggle: () => void;
+  reason?: string;
 }) {
   return (
     <button
@@ -31,6 +33,9 @@ export function PartCard({
       <div className="flex flex-1 flex-col gap-1 p-3">
         <p className="text-sm font-semibold leading-tight">{part.name}</p>
         <p className="text-xs text-muted-foreground">{part.brand}</p>
+        {selected && reason && (
+          <p className="text-xs text-primary">Why: {reason}</p>
+        )}
         <div className="mt-auto flex items-center justify-between gap-2 pt-2">
           <span className="text-sm font-bold">
             <span className="text-xs font-normal text-muted-foreground">Est. </span>
