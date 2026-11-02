@@ -58,4 +58,32 @@ export const auth = createAuth({
     // column stays the single source of truth.
     admin(),
   ],
+  // First-admin bootstrap: the account whose email matches ADMIN_BOOTSTRAP_EMAIL
+  // is inserted with role "admin" while no admin exists yet. It is the operator's
+  // own sign-up on an empty install, so no manual UPDATE is needed.
+  //
+  // - Before insert, not after: the session created in this same sign-up then
+  //   carries role "admin". A post-insert UPDATE would leave the 5-minute cookie
+  //   cache saying "user", and /admin would 404 until it refreshed.
+  // - Email, not "first row wins", because the site is public: otherwise any
+  //   visitor could claim admin. Email is unverified at sign-up, so this only
+  //   gates the bootstrap while zero admins exist.
+  // - Guests are created by the first page visit and must not count.
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user) => {
+          const bootstrapEmail = process.env.ADMIN_BOOTSTRAP_EMAIL?.trim().toLowerCase();
+          if (!bootstrapEmail || user.isAnonymous) return;
+          if (user.email.trim().toLowerCase() !== bootstrapEmail) return;
+          const db = getDbCars();
+          const existingAdmin = (
+            await db.select({ id: carsUsers.id }).from(carsUsers).where(eq(carsUsers.role, "admin")).limit(1)
+          ).at(0);
+          if (existingAdmin) return;
+          return { data: { ...user, role: "admin" } };
+        },
+      },
+    },
+  },
 });
