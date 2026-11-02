@@ -5,6 +5,7 @@ import { MAX_PARTS } from "@/lib/catalog";
 import type { Category } from "@/lib/catalog";
 import { summarize } from "@/lib/pricing";
 import { BuildFooter } from "@/components/BuildFooter";
+import { BuildPreview3D } from "@/components/BuildPreview3D";
 import { CategoryTabs } from "@/components/CategoryTabs";
 import { PartCard } from "@/components/PartCard";
 import { PhotoStep } from "@/components/PhotoStep";
@@ -79,27 +80,32 @@ function Configurator() {
                 Change truck
               </button>
             </div>
-            <div className="mt-4 flex flex-col gap-4">
-              <PresetPills
-                presets={data.presets.filter((p) => p.vehicleId === vehicle.id)}
-                activeSlug={search.preset}
-                onPick={(p) => update({ preset: p.slug, parts: p.partIds }, true)}
-              />
-              <CategoryTabs active={category} onChange={setCategory} />
-            </div>
-            {selected.length >= MAX_PARTS && (
-              <p className="mt-3 text-sm text-muted-foreground">That's the max of {MAX_PARTS} upgrades per build.</p>
-            )}
-            <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-              {visible.map((part) => (
-                <PartCard
-                  key={part.id}
-                  part={part}
-                  selected={selected.includes(part.id)}
-                  disabled={selected.length >= MAX_PARTS}
-                  onToggle={() => toggle(part.id)}
+            <div className="mt-4 flex flex-col gap-4 lg:flex-row">
+              <div className="order-2 flex flex-col gap-4 lg:order-1 lg:w-2/3">
+                <PresetPills
+                  presets={data.presets.filter((p) => p.vehicleId === vehicle.id)}
+                  activeSlug={search.preset}
+                  onPick={(p) => update({ preset: p.slug, parts: p.partIds }, true)}
                 />
-              ))}
+                <CategoryTabs active={category} onChange={setCategory} />
+                {selected.length >= MAX_PARTS && (
+                  <p className="text-sm text-muted-foreground">That's the max of {MAX_PARTS} upgrades per build.</p>
+                )}
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                  {visible.map((part) => (
+                    <PartCard
+                      key={part.id}
+                      part={part}
+                      selected={selected.includes(part.id)}
+                      disabled={selected.length >= MAX_PARTS}
+                      onToggle={() => toggle(part.id)}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div className="order-1 lg:order-2 lg:w-1/3 lg:sticky lg:top-4 lg:self-start">
+                <BuildPreview3D vehicleId={vehicle.id} partIds={selected} className="h-[260px] w-full rounded-lg lg:h-[400px]" />
+              </div>
             </div>
           </>
         )}
