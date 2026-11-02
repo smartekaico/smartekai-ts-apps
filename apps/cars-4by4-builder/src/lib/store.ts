@@ -20,10 +20,8 @@ const EBAY_HOST = new RegExp(String.raw`(^|\.)ebay\.` + SUFFIX);
 
 /**
  * Merchants whose own domain names them (spec 1 §8 Task B, rule 3). Network
- * links are the exception: AvantLink, CJ and Impact hide the merchant in the
- * host, which is why those need a *declared* store. Nothing uses them yet, so
- * there is no column and no declaration to read — an unknown network link is
- * labelled "other" rather than guessed.
+ * links (AvantLink, CJ, Impact) hide the merchant in the host, so those are
+ * unwrapped in storeOf and classified by their destination URL instead.
  */
 const MERCHANT_HOSTS: Array<[Store, string]> = [
   ["arb", "arbusa.com"],
@@ -49,6 +47,26 @@ export function isEbayHost(host: string): boolean {
   return EBAY_HOST.test(host.toLowerCase());
 }
 
+const CJ_HOSTS = new Set(["anrdoezrs.net", "jdoqocy.com", "tkqlhce.com", "dpbolvw.net", "kqzyfj.com"]);
+
+function networkKind(host: string): "avantlink" | "cj" | "impact" | null {
+  const h = host.toLowerCase();
+  if (h === "avantlink.com" || h.endsWith(".avantlink.com")) return "avantlink";
+  if (CJ_HOSTS.has(h)) return "cj";
+  if (h === "sjv.io" || h.endsWith(".sjv.io") || h === "pxf.io" || h.endsWith(".pxf.io")) return "impact";
+  return null;
+}
+
+function classifyHost(host: string): Store {
+  const lower = host.toLowerCase();
+  if (isAmazonHost(lower)) return "amazon";
+  if (isEbayHost(lower)) return "ebay";
+  for (const [store, domain] of MERCHANT_HOSTS) {
+    if (onDomain(lower, domain)) return store;
+  }
+  return "other";
+}
+
 /** Which store an affiliate URL leads to — Amazon requires the button to say so. */
 export function storeOf(url: string | null): Store | null {
   if (!url) return null;
@@ -60,12 +78,24 @@ export function storeOf(url: string | null): Store | null {
   }
   if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return null;
   const host = parsed.hostname.toLowerCase();
-  if (isAmazonHost(host)) return "amazon";
-  if (isEbayHost(host)) return "ebay";
-  for (const [store, domain] of MERCHANT_HOSTS) {
-    if (onDomain(host, domain)) return store;
+
+  // Unwrap a single level of network (AvantLink/CJ/Impact) link so the
+  // destination merchant is labelled instead of "other". Unwrap once only.
+  const kind = networkKind(host);
+  if (kind) {
+    const param = kind === "impact" ? "u" : "url";
+    const dest = parsed.searchParams.get(param);
+    if (!dest) return "other";
+    let destParsed: URL;
+    try {
+      destParsed = new URL(dest);
+    } catch {
+      return "other";
+    }
+    if (destParsed.protocol !== "https:" && destParsed.protocol !== "http:") return "other";
+    return classifyHost(destParsed.hostname);
   }
-  return "other";
+  return classifyHost(host);
 }
 
 export const BUY_LABEL: Record<Store, string> = {
