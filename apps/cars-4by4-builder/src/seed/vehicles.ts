@@ -5,4 +5,5 @@ export const seedVehicles = [
   { id: "f150", name: "Ford F-150", yearRange: "2021–2026", sortOrder: 4 },
   { id: "silverado-1500", name: "Chevrolet Silverado 1500", yearRange: "2019–2026", sortOrder: 5 },
   { id: "sierra-1500", name: "GMC Sierra 1500", yearRange: "2019–2026", sortOrder: 6 },
+  { id: "tacoma-3g", name: "Toyota Tacoma", yearRange: "2016–2023", sortOrder: 7 },
 ];

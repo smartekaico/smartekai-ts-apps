@@ -3,7 +3,7 @@
 // URL. Fitment is SUV by default; parts that also fit a full-size pickup carry
 // BOTH, and the truck-only parts carry TRUCKS.
 const SUVS = ["lc300", "patrol-y62", "wrangler-jl"];
-const TRUCKS = ["f150", "silverado-1500", "sierra-1500"];
+const TRUCKS = ["f150", "silverado-1500", "sierra-1500", "tacoma-3g"];
 const BOTH = [...SUVS, ...TRUCKS];
 
 type SeedPart = {

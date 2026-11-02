@@ -16,7 +16,7 @@ const TRUCK_PRESET_PARTS: Record<PresetKey, string[]> = {
 
 const PRESET_NAMES: Record<PresetKey, string> = { overlander: "Overlander", dune: "Desert / Dune", trail: "Trail" };
 
-const TRUCKS = ["f150", "silverado-1500", "sierra-1500"];
+const TRUCKS = ["f150", "silverado-1500", "sierra-1500", "tacoma-3g"];
 
 // Preset ids and slugs keep the `${vehicleId}-${key}` / `${vehicleSlug}-${key}`
 // pattern so a preset URL stays stable per vehicle.
@@ -27,6 +27,7 @@ const VEHICLE_SLUGS: Record<string, string> = {
   f150: "f-150",
   "silverado-1500": "silverado",
   "sierra-1500": "sierra",
+  "tacoma-3g": "tacoma",
 };
 
 const FITMENT = new Map(seedParts.map((part) => [part.id, part.vehicleIds] as const));
