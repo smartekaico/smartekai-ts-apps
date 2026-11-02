@@ -6,12 +6,15 @@ export const RENDER_COST = 10;
 // Paid in USDT (TRC20) via NOWPayments. The provider puts a floor under a usdttrc20 deposit
 // (~$11.35 fiat at the time of writing, and it moves), so `startCheckout` re-checks it per
 // checkout and refuses a pack it has outgrown rather than sending the buyer to a payment page
-// that cannot be paid. Both packs sit comfortably above it. Beware the pair you ask about:
+// that cannot be paid. The one pack sits comfortably above it. Beware the pair you ask about:
 // `/min-amount?currency_from=usd&currency_to=usdttrc20` answers a different question (a
 // USD→USDT conversion) and reports ~60% more than the deposit floor — use currency_from=usdttrc20.
+//
+// One pack only, and it is offered only when the account can't afford another render
+// (see `canBuyCredits`). Past purchases keep working: `credit_purchases` snapshots the pack
+// id, credits and price, and the return page falls back to the stored id.
 export const CREDIT_PACKS = [
   { id: "starter", name: "Starter", credits: 100, priceUsd: "14.00" }, // ≈ 10 renders
-  { id: "pro", name: "Pro", credits: 300, priceUsd: "30.00" }, // ≈ 30 renders
 ] as const;
 
 export type CreditPack = (typeof CREDIT_PACKS)[number];
@@ -21,7 +24,7 @@ export function findPack(id: string): CreditPack | undefined {
   return CREDIT_PACKS.find((p) => p.id === id);
 }
 
-/** "300 credits ≈ 30 renders". */
+/** "100 credits ≈ 10 renders". */
 export function rendersFor(credits: number): number {
   return Math.floor(credits / RENDER_COST);
 }
@@ -34,3 +37,12 @@ export type CreditBlock = "sign-in" | "buy-credits" | "confirm-credits";
 
 /** `account` = a real account (guests never hold credits). */
 export type CreditState = { account: boolean; balance: number; freeRenderUsed: boolean };
+
+/**
+ * A pack is offered only when an account can't afford one more render. A guest can't
+ * buy at all, and an account with credits for even one render is turned away — server
+ * and page share this one rule.
+ */
+export function canBuyCredits(state: CreditState): boolean {
+  return state.account && state.balance < RENDER_COST;
+}
