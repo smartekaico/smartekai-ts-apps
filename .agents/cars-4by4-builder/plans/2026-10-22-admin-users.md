@@ -190,14 +190,34 @@ same `.validator()` style as `src/lib/credits.ts`.
 
 ### 7. Production (ask first, one step at a time)
 
-- [ ] Production DDL with `psql -1` over the production direct URL; `\d` to confirm.
+- [x] Production DDL with `psql -1` over the production direct URL; `\d` to confirm.
   This must happen **before** the deploy, or Better Auth fails on the missing
   columns for every session.
+  — **Done 2026-11-02**: both `ALTER TABLE`s applied over
+  `ep-winter-frost-b1drw3en` (direct), columns confirmed, the 3 existing guests
+  took the defaults.
 - [ ] Set the admin role for the user's own account (ask which email).
-- [ ] `npm run deploy -w cars-4by4-builder`, then check `/admin` on
+  — **Blocked**: production has no real accounts at all (3 anonymous guests,
+  no `smartekaico@gmail.com`). Waiting for the owner to sign in once; then
+  `update cars_user set role = 'admin' where email = 'smartekaico@gmail.com';`
+  (role changes are only visible after a fresh session — `cookieCache` is 5 min).
+- [x] `npm run deploy -w cars-4by4-builder`, then check `/admin` on
   overlander.smartekai.com and run `wrangler tail` for one `/admin` load to confirm the
   CPU time stays under the Free limit.
-- [ ] Add a current-work line to `.agents/cars-4by4-builder/plans/active.md`.
+  — **Done 2026-11-02**: version `9be406b0-39dd-46e4-9cf9-2af0c8f2571d`.
+  Live `/admin` 404 signed out, `/` and `/build` 200, `/credits` and
+  `/projects` 307, sitemap/robots 200. `wrangler tail`: `/admin` (signed out)
+  **4 ms**, `/` **11 ms**. The authenticated `/admin` load still has to be
+  measured once the admin role exists.
+- [x] Add a current-work line to `.agents/cars-4by4-builder/plans/active.md`.
+
+## Result (2026-11-02)
+
+Tasks 1–6 and the production DDL + deploy are done; the branch is merged into
+`main` (`cc50b2e`). Only the admin **role** is outstanding, because production
+holds no real accounts yet. Evidence, findings (the 5-minute cookie cache, the
+numeric `?guests=1` parse bug) and the exact live checks:
+`.agents/logs/2026-11-02-cars-admin-users.md`.
 
 ## Done when
 
