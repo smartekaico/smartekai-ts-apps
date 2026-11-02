@@ -2,7 +2,7 @@
 
 > For agentic workers: use superpowers:executing-plans. Steps use `- [ ]`.
 > Spec: `.agents/cars-4by4-builder/specs/2026-11-02-interactive-builder-design.md` §2.
-> Do this after the Tacoma plan (so the rules cover 7 vehicles).
+> Do this after the Tacoma and part-images plans (so the rules cover 7 vehicles).
 
 **Goal:** an optional question step that pre-ticks fitting parts and explains
 why, with no AI, no server code and no database change.

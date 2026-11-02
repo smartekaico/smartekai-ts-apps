@@ -24,8 +24,11 @@ Build order — three independent sub-projects, each with its own plan and
 usable on its own:
 
 1. Tacoma → `plans/2026-11-02-tacoma.md`
-2. Help me choose → `plans/2026-11-02-help-me-choose.md`
-3. Live 3D preview → `plans/2026-11-02-3d-preview.md`
+2. Part images (added 2026-11-02, not part of this spec's design: AI
+   illustrations + category icons, and `db:seed` stops wiping images/links)
+   → `plans/2026-11-02-part-images.md`
+3. Help me choose → `plans/2026-11-02-help-me-choose.md`
+4. Live 3D preview → `plans/2026-11-02-3d-preview.md`
 
 ## 1. Toyota Tacoma (3rd gen)
 
