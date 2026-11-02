@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img" aria-label="Wheels and tires">
+  <rect width="320" height="180" fill="#f1f5f9"/>
+  <g transform="translate(160 78)" fill="none" stroke="#94a3b8" stroke-width="3">
+    <circle cx="0" cy="0" r="34"/>
+    <circle cx="0" cy="0" r="14"/>
+    <circle cx="0" cy="0" r="4" fill="#94a3b8"/>
+    <line x1="0" y1="-34" x2="0" y2="-14"/>
+    <line x1="0" y1="14" x2="0" y2="34"/>
+    <line x1="-34" y1="0" x2="-14" y2="0"/>
+    <line x1="14" y1="0" x2="34" y2="0"/>
+  </g>
+  <text x="160" y="148" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" font-weight="600" letter-spacing="2" fill="#64748b">WHEELS &amp; TIRES</text>
+</svg>

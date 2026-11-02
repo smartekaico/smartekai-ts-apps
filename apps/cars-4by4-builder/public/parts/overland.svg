@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img" aria-label="Overland">
+  <rect width="320" height="180" fill="#f1f5f9"/>
+  <g transform="translate(160 78)" fill="none" stroke="#94a3b8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M-36 24 L0 -28 L36 24 Z"/>
+    <line x1="-12" y1="24" x2="12" y2="24"/>
+    <rect x="-10" y="-4" width="20" height="12" rx="2"/>
+  </g>
+  <text x="160" y="148" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" font-weight="600" letter-spacing="2" fill="#64748b">OVERLAND</text>
+</svg>
