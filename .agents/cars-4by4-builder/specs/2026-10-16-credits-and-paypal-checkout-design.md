@@ -163,6 +163,20 @@ price). If it isn't, Starter cannot be paid and the packs must change
 > `startCheckout` (spec §5) re-reads it per checkout and refuses a pack below it, before
 > creating a purchase row.
 
+> **2026-11-02 — the pack line-up changed.** Ask-first decision (2026-10-26): sell **one**
+> pack, the smallest, and only when the user is out. `CREDIT_PACKS` is now just
+> `{ id: "starter", name: "Starter", credits: 100, priceUsd: "14.00" }`; **Pro
+> (300 / $30) is withdrawn**. Eligibility is one shared helper,
+> `canBuyCredits(state) = state.account && state.balance < RENDER_COST`, used by
+> `getCreditsPage` (the `/credits` card) *and* `createInvoice` (the server refuses with
+> "You still have credits — buy more when you run out.", before the checkout rate limit is
+> consumed). `/credits` with an ineligible account shows the balance, "You can buy more
+> credits when you run out." and a link back to `next`. Past purchases are unaffected:
+> `credit_purchases` snapshots pack id, credits and price, and the return page falls back to
+> the stored id when `findPack` no longer knows it (an old `pro` row still reads
+> "✓ 300 credits added"). No schema change. Plan:
+> `plans/2026-10-26-single-credit-pack.md`.
+
 ## 3. Render gating — `startBuild` (built)
 
 After the existing validation, IP rate limit and daily cap, before the build

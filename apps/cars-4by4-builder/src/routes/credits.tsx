@@ -23,7 +23,7 @@ export const Route = createFileRoute("/credits")({
 });
 
 function CreditsPage() {
-  const { balance, next } = Route.useLoaderData();
+  const { balance, canBuy, next } = Route.useLoaderData();
   const { purchase } = Route.useSearch();
   const [pendingPack, setPendingPack] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -51,23 +51,36 @@ function CreditsPage() {
         You have <span className="font-bold text-foreground">{balance} credits</span> (≈ {rendersFor(balance)}{" "}
         renders). Each render uses {RENDER_COST} credits. Credits never expire, and a failed render gives them back.
       </p>
-      {next && !purchase && (
+      {canBuy && next && !purchase && (
         <p className="mt-1 text-sm text-muted-foreground">After you buy, we'll take you back to your build.</p>
       )}
 
-      {purchase && <PurchaseStatusPanel key={purchase} id={purchase} next={next} />}
+      {purchase && <PurchaseStatusPanel key={purchase} id={purchase} next={next} canBuy={canBuy} />}
 
-      <ul className="mt-8 grid gap-4 md:grid-cols-2">
-        {CREDIT_PACKS.map((pack) => (
-          <PackCard
-            key={pack.id}
-            pack={pack}
-            pending={pendingPack === pack.id}
-            disabled={pendingPack !== null}
-            onBuy={() => void buy(pack)}
-          />
-        ))}
-      </ul>
+      {canBuy ? (
+        <ul className="mt-8 max-w-sm">
+          {CREDIT_PACKS.map((pack) => (
+            <PackCard
+              key={pack.id}
+              pack={pack}
+              pending={pendingPack === pack.id}
+              disabled={pendingPack !== null}
+              onBuy={() => void buy(pack)}
+            />
+          ))}
+        </ul>
+      ) : (
+        <section className="mt-8 max-w-md rounded-lg border border-border bg-card p-5">
+          <h2 className="text-lg font-semibold">You still have credits</h2>
+          <p className="mt-1 text-sm text-muted-foreground">You can buy more credits when you run out.</p>
+          <a
+            href={next ?? "/build"}
+            className="mt-3 inline-block text-sm font-semibold text-primary underline-offset-4 hover:underline"
+          >
+            {next ? "Back to your build" : "Start a build"}
+          </a>
+        </section>
+      )}
 
       <p className="mt-8 text-xs text-muted-foreground">
         Payments are processed by NOWPayments in USDT on the Tron network (TRC20). Prices in USD.
@@ -123,7 +136,7 @@ type PanelState =
   | { kind: "missing" }
   | { kind: "stale" }; // stopped polling while still in progress
 
-function PurchaseStatusPanel({ id, next }: { id: string; next?: string }) {
+function PurchaseStatusPanel({ id, next, canBuy }: { id: string; next?: string; canBuy: boolean }) {
   const router = useRouter();
   const [state, setState] = useState<PanelState>({ kind: "loading" });
 
@@ -170,7 +183,7 @@ function PurchaseStatusPanel({ id, next }: { id: string; next?: string }) {
 
   return (
     <section aria-live="polite" className="mt-6 rounded-lg border border-border bg-card p-5">
-      <PanelBody state={state} id={id} next={next} />
+      <PanelBody state={state} id={id} next={next} canBuy={canBuy} />
     </section>
   );
 }
@@ -183,7 +196,17 @@ function SupportNote({ id }: { id: string }) {
   );
 }
 
-function PanelBody({ state, id, next }: { state: PanelState; id: string; next?: string }) {
+function PanelBody({
+  state,
+  id,
+  next,
+  canBuy,
+}: {
+  state: PanelState;
+  id: string;
+  next?: string;
+  canBuy: boolean;
+}) {
   if (state.kind === "loading") return <p className="text-muted-foreground">Checking your payment…</p>;
   if (state.kind === "missing") return <p className="font-semibold">We couldn't find that purchase.</p>;
   if (state.kind === "stale") {
@@ -231,7 +254,11 @@ function PanelBody({ state, id, next }: { state: PanelState; id: string; next?: 
       return (
         <>
           <p className="font-semibold">Payment expired</p>
-          <p className="mt-1 text-sm text-muted-foreground">No charge was made. Pick a pack below to try again.</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {canBuy
+              ? "No charge was made. Pick a pack below to try again."
+              : "No charge was made. You can buy again when you run out of credits."}
+          </p>
         </>
       );
     case "partially_paid":

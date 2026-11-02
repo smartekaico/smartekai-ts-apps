@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { redirect } from "@tanstack/react-router";
 import type { CreditPurchaseStatus } from "@smartekai/db/cars";
-import { findPack } from "@/lib/credit-packs";
+import { canBuyCredits, findPack } from "@/lib/credit-packs";
 import type { CreditState } from "@/lib/credit-packs";
 import { safeNext } from "@/lib/next";
 import { startCheckout } from "@/server/checkout";
@@ -38,8 +38,8 @@ export const getCreditsPage = createServerFn({ method: "GET" })
       const back = qs.toString() ? `/credits?${qs.toString()}` : "/credits";
       throw redirect({ to: "/sign-in", search: { next: back } });
     }
-    const { balance } = await getCreditState(user);
-    return { balance, next: data.next };
+    const state = await getCreditState(user);
+    return { balance: state.balance, canBuy: canBuyCredits(state), next: data.next };
   });
 
 
@@ -54,6 +54,12 @@ export const createInvoice = createServerFn({ method: "POST" })
     if (!user) return { ok: false, error: "Sign in to buy credits." };
     const pack = findPack(data.packId);
     if (!pack) return { ok: false, error: "That pack doesn't exist." };
+    // One pack, sold only when the account can't afford another render. Checked before
+    // the rate limit so a refused request doesn't burn a checkout slot; the page hides
+    // the button, this is the enforcement.
+    if (!canBuyCredits(await getCreditState(user))) {
+      return { ok: false, error: "You still have credits — buy more when you run out." };
+    }
     if (!(await tryConsume(checkoutRules(user.id)))) return { ok: false, error: "Too many checkouts — try again in a bit." };
     return startCheckout(user.id, pack, data.next);
   });
