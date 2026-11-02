@@ -31,7 +31,20 @@ export type PartVisual =
   | { kind: "skid" }
   | { kind: "tonneau" };
 
-export type AccessoryKind = PartVisual["kind"] extends "lift" | "tyre" | "wheel" ? never : PartVisual["kind"];
+export type AccessoryKind =
+  | "lightbar"
+  | "pods"
+  | "roofRack"
+  | "bedRack"
+  | "tent"
+  | "awning"
+  | "bumper"
+  | "stealthbar"
+  | "winch"
+  | "snorkel"
+  | "sliders"
+  | "skid"
+  | "tonneau";
 
 export type SceneSpec = {
   shape: VehicleShape;
@@ -79,14 +92,14 @@ export const PART_VISUALS: Record<string, PartVisual> = {
 };
 
 export function sceneSpec(vehicleId: string, partIds: string[]): SceneSpec | null {
-  const shape = VEHICLE_SHAPES[vehicleId];
+  const shape = VEHICLE_SHAPES[vehicleId] as VehicleShape | undefined;
   if (!shape) return null;
   let liftInches = 0;
   let tyreInches: 31 | 33 | 35 = 31;
   let wheel: "stock" | "fuel" | "method" = "stock";
   const accessories = new Set<AccessoryKind>();
   for (const id of partIds) {
-    const v = PART_VISUALS[id];
+    const v = PART_VISUALS[id] as PartVisual | undefined;
     if (!v) continue;
     if (v.kind === "lift") liftInches = Math.max(liftInches, v.inches);
     else if (v.kind === "tyre") tyreInches = Math.max(tyreInches, v.inches) as 33 | 35;
