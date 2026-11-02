@@ -1,6 +1,6 @@
 import { createAuth, pbkdf2Password } from "@smartekai/auth/factory";
 import { eq } from "drizzle-orm";
-import { anonymous } from "better-auth/plugins";
+import { admin, anonymous } from "better-auth/plugins";
 import { builds, carsAccounts, carsSessions, carsUsers, carsVerifications, getDbCars } from "@smartekai/db/cars";
 import { googleProvider } from "@/server/social-auth";
 
@@ -52,5 +52,10 @@ export const auth = createAuth({
         }
       },
     }),
+    // Better Auth admin plugin: role "admin" (cars_user.role) unlocks /admin,
+    // bans block sign-in, and sessions can be revoked. Defaults are enough —
+    // adminRoles ["admin"], defaultRole "user". No adminUserIds list: the role
+    // column stays the single source of truth.
+    admin(),
   ],
 });

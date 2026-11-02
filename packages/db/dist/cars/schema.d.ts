@@ -119,6 +119,74 @@ export declare const carsUsers: import("drizzle-orm/pg-core").PgTableWithColumns
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        role: import("drizzle-orm/pg-core").PgColumn<{
+            name: "role";
+            tableName: "cars_user";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        banned: import("drizzle-orm/pg-core").PgColumn<{
+            name: "banned";
+            tableName: "cars_user";
+            dataType: "boolean";
+            columnType: "PgBoolean";
+            data: boolean;
+            driverParam: boolean;
+            notNull: false;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        banReason: import("drizzle-orm/pg-core").PgColumn<{
+            name: "ban_reason";
+            tableName: "cars_user";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        banExpires: import("drizzle-orm/pg-core").PgColumn<{
+            name: "ban_expires";
+            tableName: "cars_user";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
         creditBalance: import("drizzle-orm/pg-core").PgColumn<{
             name: "credit_balance";
             tableName: "cars_user";
@@ -281,6 +349,23 @@ export declare const carsSessions: import("drizzle-orm/pg-core").PgTableWithColu
         }, {}, {}>;
         userAgent: import("drizzle-orm/pg-core").PgColumn<{
             name: "user_agent";
+            tableName: "cars_session";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        impersonatedBy: import("drizzle-orm/pg-core").PgColumn<{
+            name: "impersonated_by";
             tableName: "cars_session";
             dataType: "string";
             columnType: "PgText";

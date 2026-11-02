@@ -54,7 +54,7 @@ ledger must stay consistent).
 
 ### 1. Schema + DDL
 
-- [ ] In `carsUsers` add (Better Auth admin plugin field names, snake_case
+- [x] In `carsUsers` add (Better Auth admin plugin field names, snake_case
   columns like the rest of the table):
 
 ```ts
@@ -65,10 +65,10 @@ ledger must stay consistent).
   banExpires: timestamp("ban_expires"),
 ```
 
-- [ ] In `carsSessions` add `impersonatedBy: text("impersonated_by"),`. The plugin
+- [x] In `carsSessions` add `impersonatedBy: text("impersonated_by"),`. The plugin
   writes this field, so the column must exist even though we don't build an
   impersonation UI.
-- [ ] The DDL (one transaction, idempotent). Earlier cars DDL wasn't committed as
+- [x] The DDL (one transaction, idempotent). Earlier cars DDL wasn't committed as
   files; this plan is the record. Save it to a scratch file to apply it:
 
 ```sql
@@ -81,19 +81,19 @@ alter table cars_session
   add column if not exists impersonated_by text;
 ```
 
-- [ ] Apply on `cars-credits`: `psql -1 "$BRANCH_DIRECT_URL" -f <scratch file>`, then
+- [x] Apply on `cars-credits`: `psql -1 "$BRANCH_DIRECT_URL" -f <scratch file>`, then
   `\d cars_user` and `\d cars_session` to confirm.
-- [ ] Commit `feat(cars): admin-plugin columns on cars_user and cars_session`.
+- [x] Commit `feat(cars): admin-plugin columns on cars_user and cars_session`.
 
 ### 2. Wire the plugin
 
-- [ ] `auth.ts`: `import { admin, anonymous } from "better-auth/plugins";` and add
+- [x] `auth.ts`: `import { admin, anonymous } from "better-auth/plugins";` and add
   `admin()` to `plugins` after `anonymous(...)`. Defaults are fine: `adminRoles:
   ["admin"]`, `defaultRole: "user"`. Don't set `adminUserIds` (the role column is
   the single source of truth).
-- [ ] `auth-client.ts`: `import { adminClient, anonymousClient } from "better-auth/client/plugins";`,
+- [x] `auth-client.ts`: `import { adminClient, anonymousClient } from "better-auth/client/plugins";`,
   `plugins: [anonymousClient(), adminClient()]`.
-- [ ] `session.ts`: extend `SessionUser` with `role?: string | null` and add
+- [x] `session.ts`: extend `SessionUser` with `role?: string | null` and add
 
 ```ts
 /** A real account whose cars_user.role is "admin" (Better Auth admin plugin). */
@@ -103,13 +103,13 @@ export async function adminUser(): Promise<SessionUser | null> {
 }
 ```
 
-- [ ] Check that a guest session and a normal sign-in still work (the plugin
+- [x] Check that a guest session and a normal sign-in still work (the plugin
   adds a ban check at session creation; the anonymous plugin must be unaffected).
-- [ ] Commit `feat(cars): enable the Better Auth admin plugin`.
+- [x] Commit `feat(cars): enable the Better Auth admin plugin`.
 
 ### 3. Credit grants
 
-- [ ] In `server/credits.ts` add `grantCredits(userId, delta)`, modelled on
+- [x] In `server/credits.ts` add `grantCredits(userId, delta)`, modelled on
   `refundRender`: one `db.batch` that updates `cars_user.credit_balance` by
   `delta` and inserts a `credit_ledger` row with `reason: "grant"` (the
   `CreditReason` type already has it). Allow negative `delta` for corrections but
@@ -117,7 +117,7 @@ export async function adminUser(): Promise<SessionUser | null> {
   `where credit_balance + delta >= 0` and insert the ledger row only if the update
   matched (use a single data-modifying CTE like `refundFailedBuild` so the two
   can't diverge). Return `{ ok: boolean; balance: number }`.
-- [ ] Commit `feat(cars): admin credit grants through the ledger`.
+- [x] Commit `feat(cars): admin credit grants through the ledger`.
 
 ### 4. Server functions (`src/lib/admin.ts`)
 
@@ -125,7 +125,7 @@ Every function starts with `const admin = await adminUser(); if (!admin) throw n
 (404, not 403, so the page doesn't advertise itself). Validate inputs with the
 same `.validator()` style as `src/lib/credits.ts`.
 
-- [ ] `getAdminUsers({ q?, page?, includeGuests? })` — Drizzle query, parameterized:
+- [x] `getAdminUsers({ q?, page?, includeGuests? })` — Drizzle query, parameterized:
   - columns: id, email, name, created_at, role, banned, ban_reason,
     credit_balance, free_render_used, `string_agg(cars_account.provider_id)` as
     sign-in methods, count of `builds`, sum of `credit_purchases.amount_usd`
@@ -134,59 +134,59 @@ same `.validator()` style as `src/lib/credits.ts`.
   - `q` matches email or name with `ilike` (escape `%`/`_`);
   - order by `created_at desc`, 50 per page; also return the total count and the
     guest count.
-- [ ] `getAdminUser({ id })` — the same row plus the last 20 `credit_ledger` rows
+- [x] `getAdminUser({ id })` — the same row plus the last 20 `credit_ledger` rows
   and the last 10 `credit_purchases`.
-- [ ] `adminGrantCredits({ userId, delta })` — `delta` an integer, non-zero,
+- [x] `adminGrantCredits({ userId, delta })` — `delta` an integer, non-zero,
   |delta| ≤ 10 000; calls `grantCredits`.
-- [ ] Ban, unban, revoke sessions and delete go through the plugin's endpoints,
+- [x] Ban, unban, revoke sessions and delete go through the plugin's endpoints,
   called server-side with the admin's request headers so the plugin's own role
   check also applies:
   `auth.api.banUser({ body: { userId, banReason, banExpiresIn? }, headers })`,
   `auth.api.unbanUser`, `auth.api.revokeUserSessions`, `auth.api.removeUser`.
   Check the exact names and bodies against the installed version's types before
   using them. Refuse to ban or delete yourself.
-- [ ] Deleting a user: sessions and accounts cascade; `builds`, `credit_ledger`
+- [x] Deleting a user: sessions and accounts cascade; `builds`, `credit_ledger`
   and `credit_purchases` keep their rows with `user_id` set null (audit trail).
   The confirm text on the page says so.
-- [ ] Commit `feat(cars): admin server functions`.
+- [x] Commit `feat(cars): admin server functions`.
 
 ### 5. `/admin` page (`src/routes/admin.tsx`)
 
-- [ ] `head`: title "Admin | 4x4 Builder", `robots: noindex`. Not linked from
+- [x] `head`: title "Admin | 4x4 Builder", `robots: noindex`. Not linked from
   `SiteHeader` or the sitemap.
-- [ ] Loader calls `getAdminUsers` with search params `q`, `page`, `guests`.
+- [x] Loader calls `getAdminUsers` with search params `q`, `page`, `guests`.
   Non-admins get the app's normal 404.
-- [ ] Top line: total accounts, guests, total credited USD.
-- [ ] Search box (submits as `?q=`), "include guests" toggle, pager.
-- [ ] Table: email, name, sign-in methods, joined (fixed `en-US`/UTC formatter
+- [x] Top line: total accounts, guests, total credited USD.
+- [x] Search box (submits as `?q=`), "include guests" toggle, pager.
+- [x] Table: email, name, sign-in methods, joined (fixed `en-US`/UTC formatter
   like `projects.tsx`, to avoid hydration mismatch), credits, builds, paid USD,
   status (Active / Banned).
-- [ ] Row expands (or links to `/admin?user=<id>`) to the detail: ledger and
+- [x] Row expands (or links to `/admin?user=<id>`) to the detail: ledger and
   purchases, plus actions:
   - Grant credits (number input, +/−) → shows the new balance;
   - Ban (reason required, optional days) / Unban;
   - Sign out everywhere (revoke sessions);
   - Delete user (typed-email confirm; no `window.confirm`).
-- [ ] After an action, invalidate the router so the table refreshes.
-- [ ] Commit `feat(cars): /admin users page`.
+- [x] After an action, invalidate the router so the table refreshes.
+- [x] Commit `feat(cars): /admin users page`.
 
 ### 6. Verify on `cars-credits`
 
-- [ ] Make yourself admin on the branch:
+- [x] Make yourself admin on the branch:
   `update cars_user set role = 'admin' where email = '<test account>';`
-- [ ] Signed out and as a normal account, `/admin` is a 404, and calling the
+- [x] Signed out and as a normal account, `/admin` is a 404, and calling the
   server functions directly (copy the fetch from devtools) is refused.
-- [ ] As admin: the list shows accounts only; the guest toggle adds guests;
+- [x] As admin: the list shows accounts only; the guest toggle adds guests;
   search by part of an email works; paging works.
-- [ ] Grant +100 → balance and a `grant` ledger row; −1000 on a 100 balance is
+- [x] Grant +100 → balance and a `grant` ledger row; −1000 on a 100 balance is
   refused and writes nothing.
-- [ ] Ban a second test account → its open session is signed out and it can't
+- [x] Ban a second test account → its open session is signed out and it can't
   sign in (check the message); Unban → it can again.
-- [ ] Revoke sessions → that account is signed out on its next request.
-- [ ] Delete a throwaway account → gone from the list; its builds and ledger
+- [x] Revoke sessions → that account is signed out on its next request.
+- [x] Delete a throwaway account → gone from the list; its builds and ledger
   rows remain with `user_id` null.
-- [ ] Guest flow still works: guest render, then sign-up moves the builds.
-- [ ] Gate passes; `npx wrangler deploy --dry-run --outdir /tmp/cars-dry` succeeds.
+- [x] Guest flow still works: guest render, then sign-up moves the builds.
+- [x] Gate passes; `npx wrangler deploy --dry-run --outdir /tmp/cars-dry` succeeds.
 
 ### 7. Production (ask first, one step at a time)
 
