@@ -18,7 +18,8 @@
     "gallery:render": "tsx --env-file=../../.env.local scripts/render-gallery.ts",
     "parts:links": "tsx --env-file=../../.env.local scripts/parts-links.ts",
     "links:check": "tsx --env-file=../../.env.local scripts/parts-links.ts --check",
-    "cleanup": "tsx --env-file=../../.env.local scripts/cleanup.ts"
+    "cleanup": "tsx --env-file=../../.env.local scripts/cleanup.ts",
+    "parts:images": "tsx --env-file=../../.env.local scripts/generate-part-images.ts"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",

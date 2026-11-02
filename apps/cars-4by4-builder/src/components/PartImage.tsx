@@ -1,22 +1,32 @@
 import { cn } from "@/lib/utils";
 
-/** Parts have no licensed photo yet, so a neutral "photo coming soon" placeholder is shown. */
+const KNOWN_CATEGORIES = new Set(["armor", "wheels_tires", "overland", "suspension", "lighting"]);
+
 export function PartImage({
   src,
   alt,
+  category,
+  kind,
   className,
 }: {
   src: string;
   alt: string;
+  category?: string;
+  kind?: "illustration" | "photo" | null;
   className?: string;
 }) {
-  if (src) return <img src={src} alt={alt} loading="lazy" className={cn("aspect-video w-full object-cover", className)} />;
-  return (
-    <img
-      src="/part-placeholder.svg"
-      alt={alt}
-      loading="lazy"
-      className={cn("aspect-video w-full object-cover", className)}
-    />
-  );
+  if (src) {
+    return (
+      <div className={cn("relative aspect-video w-full overflow-hidden", className)}>
+        <img src={src} alt={alt} loading="lazy" className="h-full w-full object-cover" />
+        {kind === "illustration" ? (
+          <span className="absolute bottom-1 right-1 rounded bg-black/50 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white">
+            Illustration
+          </span>
+        ) : null}
+      </div>
+    );
+  }
+  const icon = category && KNOWN_CATEGORIES.has(category) ? `/parts/${category}.svg` : "/part-placeholder.svg";
+  return <img src={icon} alt={alt} loading="lazy" className={cn("aspect-video w-full object-cover", className)} />;
 }

@@ -17,7 +17,13 @@ async function main() {
 
   console.log(`Seeding ${seedParts.length} parts...`);
   for (const p of seedParts) {
-    await db.insert(parts).values(p).onConflictDoUpdate({ target: parts.id, set: p });
+    // imageUrl is owned by scripts/generate-part-images.ts and affiliateUrl
+    // (affiliate_url) by scripts/parts-links.ts — never overwrite them here.
+    const { imageUrl, affiliateUrl, ...rest } = p;
+    await db.insert(parts).values(p).onConflictDoUpdate({
+      target: parts.id,
+      set: { ...rest },
+    });
   }
 
   console.log(`Seeding ${seedPresets.length} presets...`);

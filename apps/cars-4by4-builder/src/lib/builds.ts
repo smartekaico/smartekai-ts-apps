@@ -34,13 +34,17 @@ export type PublicPart = {
   laborHoursEst: string;
   fitmentDifficulty: string;
   imageUrl: string;
+  imageKind: "illustration" | "photo" | null;
   store: Store | null; // null = no partner link yet (Buy stays hidden)
 };
 
 /** What a guest sees on the public build page — no per-part price, labor or fitment. */
-export type TeaserPart = Pick<PublicPart, "id" | "name" | "brand" | "category" | "imageUrl" | "store">;
+export type TeaserPart = Pick<PublicPart, "id" | "name" | "brand" | "category" | "imageUrl" | "imageKind" | "store">;
 
 function toPublicPart(p: Part, vehicleUrl?: string): PublicPart {
+  const raw = p.imageUrl;
+  const isIllustration = raw.startsWith("parts/");
+  const resolved = isIllustration ? publicImageUrl(raw) : raw;
   return {
     id: p.id,
     name: p.name,
@@ -49,7 +53,8 @@ function toPublicPart(p: Part, vehicleUrl?: string): PublicPart {
     priceUsd: p.priceUsd,
     laborHoursEst: p.laborHoursEst,
     fitmentDifficulty: p.fitmentDifficulty,
-    imageUrl: p.imageUrl,
+    imageUrl: resolved,
+    imageKind: raw === "" ? null : isIllustration ? "illustration" : "photo",
     // The store is read off the link /go will actually use: a vehicle-specific
     // link (shocks, lift kits, wheels, tonneau covers) beats the default one.
     store: storeOf(vehicleUrl ?? p.affiliateUrl),
@@ -57,12 +62,16 @@ function toPublicPart(p: Part, vehicleUrl?: string): PublicPart {
 }
 
 function toTeaserPart(p: Part, vehicleUrl?: string): TeaserPart {
+  const raw = p.imageUrl;
+  const isIllustration = raw.startsWith("parts/");
+  const resolved = isIllustration ? publicImageUrl(raw) : raw;
   return {
     id: p.id,
     name: p.name,
     brand: p.brand,
     category: p.category,
-    imageUrl: p.imageUrl,
+    imageUrl: resolved,
+    imageKind: raw === "" ? null : isIllustration ? "illustration" : "photo",
     store: storeOf(vehicleUrl ?? p.affiliateUrl),
   };
 }
