@@ -131,6 +131,7 @@ exports.builds = (0, pg_core_1.pgTable)("builds", {
     charge: (0, pg_core_1.text)("charge").$type(),
     selectedPartIds: (0, pg_core_1.text)("selected_part_ids").array().notNull(),
     detectedVehicle: (0, pg_core_1.jsonb)("detected_vehicle").$type(),
+    rateLimitRefs: (0, pg_core_1.jsonb)("rate_limit_refs").$type(),
     createdAt: (0, pg_core_1.timestamp)("created_at").defaultNow().notNull(),
     updatedAt: (0, pg_core_1.timestamp)("updated_at").defaultNow().notNull(),
 }, (table) => ({

@@ -1,5 +1,6 @@
 import { and, eq, sql } from "drizzle-orm";
 import { getDbCars, rateLimits } from "@smartekai/db/cars";
+import type { RateLimitRef } from "@smartekai/db/cars";
 
 type Rule = { key: string; limit: number; windowMs: number };
 
@@ -10,11 +11,13 @@ const HOUR = 3_600_000;
  * Fixed windows in Postgres (Workers isolates share no memory). A refused rule
  * gives back the units already taken (best-effort: a lost give-back only
  * over-counts, the safe side).
+ *
+ * Returns the refs taken on success (one per rule), `null` when refused.
  */
-export async function tryConsume(rules: Rule[]): Promise<boolean> {
+export async function tryConsume(rules: Rule[]): Promise<RateLimitRef[] | null> {
   const db = getDbCars();
   const now = Date.now();
-  const taken: { key: string; windowStart: Date }[] = [];
+  const taken: RateLimitRef[] = [];
   for (const r of rules) {
     const windowStart = new Date(Math.floor(now / r.windowMs) * r.windowMs);
     const rows = await db
@@ -31,14 +34,30 @@ export async function tryConsume(rules: Rule[]): Promise<boolean> {
         await db
           .update(rateLimits)
           .set({ count: sql`${rateLimits.count} - 1` })
-          .where(and(eq(rateLimits.key, t.key), eq(rateLimits.windowStart, t.windowStart)))
+          .where(and(eq(rateLimits.key, t.key), eq(rateLimits.windowStart, new Date(t.windowStart))))
           .catch((err: unknown) => console.warn("[rate-limit] give-back failed", err));
       }
-      return false;
+      return null;
     }
-    taken.push({ key: r.key, windowStart });
+    taken.push({ key: r.key, windowStart: windowStart.toISOString() });
   }
-  return true;
+  return taken;
+}
+
+/** Hands back units previously taken by tryConsume. Best-effort, never throws. */
+export async function giveBack(refs: RateLimitRef[] | null | undefined): Promise<void> {
+  if (!refs || refs.length === 0) return;
+  const db = getDbCars();
+  for (const ref of refs) {
+    try {
+      await db
+        .update(rateLimits)
+        .set({ count: sql`${rateLimits.count} - 1` })
+        .where(and(eq(rateLimits.key, ref.key), eq(rateLimits.windowStart, new Date(ref.windowStart)), sql`${rateLimits.count} > 0`));
+    } catch (err) {
+      console.warn("[rate-limit] give-back failed", err);
+    }
+  }
 }
 
 /** Cron (Spec 4 §4): drop counters whose window has ended. */

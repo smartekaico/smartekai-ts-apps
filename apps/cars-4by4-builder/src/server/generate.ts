@@ -2,6 +2,7 @@ import { and, eq, inArray, lt } from "drizzle-orm";
 import { builds, getDbCars, parts, vehicles } from "@smartekai/db/cars";
 import { describeVehicle } from "@/lib/prompt";
 import { refundFailedBuild } from "@/server/credits";
+import { giveBack } from "@/server/rate-limit";
 import { renderUpgrade } from "@/server/render-core";
 
 /** A `processing` build older than this is treated as failed (server restarted mid-render). */
@@ -25,9 +26,10 @@ export async function failProcessingBuild(buildId: string, errorMessage: string,
         olderThan ? lt(builds.updatedAt, olderThan) : undefined,
       ),
     )
-    .returning({ id: builds.id });
+    .returning({ id: builds.id, rateLimitRefs: builds.rateLimitRefs });
   if (rows.length === 0) return false;
   await refundFailedBuild(buildId); // Spec 3 §3: a failed render gives back what it used (once)
+  await giveBack(rows[0].rateLimitRefs);
   return true;
 }
 

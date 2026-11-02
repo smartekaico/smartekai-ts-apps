@@ -19,6 +19,7 @@ export type DetectedVehicle = {
   color: string | null;
 };
 export type BuildStatus = "draft" | "processing" | "completed" | "failed";
+export type RateLimitRef = { key: string; windowStart: string };
 /** What a render used, so a failure can give back the right thing. null = curated, pre-credits, or already refunded. */
 export type BuildCharge = "free" | "credit";
 export type CreditReason = "purchase" | "render" | "refund" | "grant";
@@ -190,6 +191,7 @@ export const builds = pgTable(
     charge: text("charge").$type<BuildCharge>(),
     selectedPartIds: text("selected_part_ids").array().notNull(),
     detectedVehicle: jsonb("detected_vehicle").$type<DetectedVehicle>(),
+    rateLimitRefs: jsonb("rate_limit_refs").$type<RateLimitRef[]>(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
