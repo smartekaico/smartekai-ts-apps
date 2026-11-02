@@ -142,7 +142,7 @@ function Configurator() {
                 <PresetPills
                   presets={data.presets.filter((p) => p.vehicleId === vehicle.id)}
                   activeSlug={search.preset}
-                  onPick={(p) => update({ preset: p.slug, parts: p.partIds }, true)}
+                  onPick={(p) => update({ preset: p.slug, parts: p.partIds, use: undefined, budget: undefined, lift: undefined, install: undefined }, true)}
                 />
                 <CategoryTabs active={category} onChange={setCategory} />
                 <div className="mt-3">
