@@ -69,7 +69,7 @@ function BuildPage() {
         <p className="text-muted-foreground">{build.errorMessage ?? "Generation failed — try again."}</p>
         <Link
           to="/build"
-          search={{ vehicle: build.vehicle.id, parts: build.selectedPartIds, step: "photo" }}
+          search={{ vehicle: build.vehicle.id, parts: build.selectedPartIds, step: "vehicle" }}
           className="rounded-md bg-primary px-5 py-2.5 font-bold text-primary-foreground"
         >
           Try again
@@ -93,7 +93,7 @@ function BuildPage() {
       {build.isCurated && (
         <Link
           to="/build"
-          search={{ vehicle: build.vehicle.id, preset: build.presetSlug ?? undefined, parts: build.selectedPartIds, step: "photo" }}
+          search={{ vehicle: build.vehicle.id, preset: build.presetSlug ?? undefined, parts: build.selectedPartIds, step: "vehicle" }}
           className="mt-6 inline-flex rounded-md bg-primary px-5 py-3 font-bold text-primary-foreground"
         >
           Make it yours — try it on your truck

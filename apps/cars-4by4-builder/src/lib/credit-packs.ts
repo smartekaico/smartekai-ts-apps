@@ -2,6 +2,7 @@
 // be priced later without repricing packs. Client-safe: no server imports.
 
 export const RENDER_COST = 10;
+export const WELCOME_CREDITS = 20;
 
 // Paid in USDT (TRC20) via NOWPayments. The provider puts a floor under a usdttrc20 deposit
 // (~$11.35 fiat at the time of writing, and it moves), so `startCheckout` re-checks it per

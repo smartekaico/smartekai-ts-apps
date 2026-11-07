@@ -7,6 +7,7 @@ import { detectVehicle } from "@smartekai/ai";
 import { BUCKETS, deleteObject, getPresignedReadUrl, uploadObject } from "@smartekai/storage";
 import { MAX_PARTS } from "@/lib/catalog";
 import { summarize } from "@/lib/pricing";
+import { matchVehicle } from "@/lib/match-vehicle";
 import { storeOf } from "@/lib/store";
 import type { Store } from "@/lib/store";
 import type { CreditBlock } from "@/lib/credit-packs";
@@ -111,23 +112,22 @@ export const getConfigurator = createServerFn({ method: "GET" })
 
 export type ConfiguratorData = Awaited<ReturnType<typeof getConfigurator>>;
 
+
 export const checkPhoto = createServerFn({ method: "POST" })
   .validator((formData: FormData) => {
     const photo = formData.get("photo");
     const vehicleId = formData.get("vehicleId");
     if (!(photo instanceof File)) throw new Error("photo is required");
-    if (typeof vehicleId !== "string" || vehicleId === "") throw new Error("vehicleId is required");
-    return { photo, vehicleId };
+    if (vehicleId !== null && typeof vehicleId !== "string") throw new Error("invalid vehicleId");
+    return { photo, vehicleId: typeof vehicleId === "string" ? vehicleId : null };
   })
-  .handler(async ({ data }): Promise<{ ok: true; buildId: string; detected: DetectedVehicle } | Fail> => {
+  .handler(async ({ data }): Promise<{ ok: true; buildId: string; detected: DetectedVehicle; vehicleId: string | null } | Fail> => {
     const extension = ACCEPTED_TYPES[data.photo.type] as string | undefined;
     if (!extension) return fail("Please upload a JPG, PNG or WebP photo.");
     if (data.photo.size > MAX_PHOTO_BYTES) return fail("That photo is over 10 MB — try a smaller one.");
     if (!(await tryConsume(photoRules(requestIp())))) return fail("Too many uploads — try again in a bit.");
 
     const db = getDbCars();
-    const vehicle = (await db.select({ id: vehicles.id }).from(vehicles).where(eq(vehicles.id, data.vehicleId))).at(0);
-    if (!vehicle) return fail("Pick a vehicle first.");
     const user = await currentUser(); // before the upload: ownership is optional and must not waste it
 
     const id = crypto.randomUUID();
@@ -151,16 +151,30 @@ export const checkPhoto = createServerFn({ method: "POST" })
       model: detection.detectedModel,
       color: detection.detectedColor,
     };
+
+    // Match the detected vehicle to a supported one. No match → null (UI offers
+    // "pick closest match"). builds.vehicle_id is NOT NULL, so a draft with no
+    // match stores the first vehicle as a placeholder; startBuild overwrites it
+    // from the user's choice on the flip, and drafts never render without
+    // passing through startBuild.
+    const matched = matchVehicle(detection.detectedMake, detection.detectedModel);
+    const placeholderVehicleId = (await db.select({ id: vehicles.id }).from(vehicles).orderBy(asc(vehicles.sortOrder)))[0]?.id;
+    const storeVehicleId = matched ?? data.vehicleId ?? placeholderVehicleId;
+    if (!storeVehicleId) {
+      await deleteObject(BUCKETS.uploads, key);
+      return fail("No vehicles available.");
+    }
+
     await db.insert(builds).values({
       id,
       userId: user?.id ?? null,
-      vehicleId: vehicle.id,
+      vehicleId: storeVehicleId,
       originalImageKey: key,
       status: "draft",
       selectedPartIds: [],
       detectedVehicle: detected,
     });
-    return { ok: true, buildId: id, detected };
+    return { ok: true, buildId: id, detected, vehicleId: matched };
   });
 
 export const startBuild = createServerFn({ method: "POST" })

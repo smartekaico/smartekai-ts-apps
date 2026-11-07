@@ -81,3 +81,6 @@ export const freeRenderRules = (ip: string): Rule[] => [{ key: `free:d:${ip}`, l
 
 /** Spec 3 §5 flow 2: at most 10 checkouts (invoices) per account per hour. */
 export const checkoutRules = (userId: string): Rule[] => [{ key: `checkout:h:${userId}`, limit: 10, windowMs: HOUR }];
+
+/** Welcome credits: at most 2 grants per network per day. */
+export const welcomeRules = (ip: string): Rule[] => [{ key: `welcome:d:${ip}`, limit: 2, windowMs: 24 * HOUR }];

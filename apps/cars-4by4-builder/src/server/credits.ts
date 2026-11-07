@@ -1,7 +1,7 @@
 import { and, eq, gte, ne, sql } from "drizzle-orm";
 import { carsUsers, creditLedger, creditPurchases, getDbCars } from "@smartekai/db/cars";
 import type { BuildCharge, CreditPurchase, CreditPurchaseStatus, RateLimitRef } from "@smartekai/db/cars";
-import { RENDER_COST } from "@/lib/credit-packs";
+import { RENDER_COST, WELCOME_CREDITS } from "@/lib/credit-packs";
 import type { CreditBlock, CreditPack, CreditState } from "@/lib/credit-packs";
 import { freeRenderRules, tryConsume } from "@/server/rate-limit";
 import type { SessionUser } from "@/server/session";
@@ -182,6 +182,27 @@ export async function refundFailedBuild(buildId: string): Promise<void> {
  * and the ledger row is inserted only for the row that matched. A refused
  * correction or unknown user writes nothing and returns the current balance.
  */
+export async function grantWelcomeCredits(userId: string, googleAccountId: string): Promise<void> {
+  const db = getDbCars();
+  try {
+    await db.execute(sql`
+      WITH l AS (
+        INSERT INTO credit_ledger (id, user_id, delta, reason, payment_ref)
+        VALUES (${crypto.randomUUID()}::text, ${userId}::text, ${WELCOME_CREDITS}::integer, 'grant', ${"welcome:google:" + googleAccountId}::text)
+        ON CONFLICT (payment_ref) DO NOTHING
+        RETURNING id
+      ), u AS (
+        UPDATE cars_user SET credit_balance = credit_balance + ${WELCOME_CREDITS}::integer
+        WHERE id = ${userId}::text AND EXISTS (SELECT 1 FROM l)
+        RETURNING id
+      )
+      SELECT (SELECT count(*) FROM l) AS granted
+    `);
+  } catch (err) {
+    console.error(`[credits] MANUAL REVIEW: welcome grant for user ${userId} (google ${googleAccountId}) failed`, err);
+  }
+}
+
 export async function grantCredits(userId: string, delta: number): Promise<{ ok: boolean; balance: number }> {
   const db = getDbCars();
   const { rows } = await db.execute(sql`
