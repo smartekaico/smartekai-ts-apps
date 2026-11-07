@@ -174,27 +174,6 @@ function Configurator() {
                 <BuildPreview3D vehicleId={vehicle.id} partIds={selected} className="h-[260px] w-full rounded-lg lg:h-[400px]" />
               </div>
             </div>
-                />
-                <CategoryTabs active={category} onChange={setCategory} />
-                {selected.length >= MAX_PARTS && (
-                  <p className="text-sm text-muted-foreground">That's the max of {MAX_PARTS} upgrades per build.</p>
-                )}
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-                  {visible.map((part) => (
-                    <PartCard
-                      key={part.id}
-                      part={part}
-                      selected={selected.includes(part.id)}
-                      disabled={selected.length >= MAX_PARTS}
-                      onToggle={() => toggle(part.id)}
-                    />
-                  ))}
-                </div>
-              </div>
-              <div className="order-1 lg:order-2 lg:w-1/3 lg:sticky lg:top-4 lg:self-start">
-                <BuildPreview3D vehicleId={vehicle.id} partIds={selected} className="h-[260px] w-full rounded-lg lg:h-[400px]" />
-              </div>
-            </div>
           </>
         )}
 
