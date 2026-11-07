@@ -74,7 +74,7 @@ function SignInPage() {
             disabled={pending}
             className="rounded-md border border-border px-4 py-2.5 font-semibold hover:border-primary disabled:opacity-50"
           >
-            Continue with Google
+            Sign in with Google and get 20 free credits
           </button>
 
           <div className="flex items-center gap-3 text-xs text-muted-foreground">

@@ -1,8 +1,11 @@
 import { createAuth, pbkdf2Password } from "@smartekai/auth/factory";
 import { eq } from "drizzle-orm";
 import { admin, anonymous } from "better-auth/plugins";
-import { builds, carsAccounts, carsSessions, carsUsers, carsVerifications, getDbCars } from "@smartekai/db/cars";
+import { builds, carsAccounts, carsSessions, carsUsers, carsVerifications, creditLedger, getDbCars } from "@smartekai/db/cars";
 import { googleProvider } from "@/server/social-auth";
+import { grantWelcomeCredits } from "@/server/credits";
+import { requestIp } from "@/server/request";
+import { tryConsume, welcomeRules } from "@/server/rate-limit";
 
 const google = googleProvider();
 
@@ -82,6 +85,32 @@ export const auth = createAuth({
           ).at(0);
           if (existingAdmin) return;
           return { data: { ...user, role: "admin" } };
+        },
+      },
+    },
+    account: {
+      create: {
+        after: async (account) => {
+          try {
+            if (account.providerId !== "google") return;
+            const db = getDbCars();
+            const googleAccountId = account.accountId;
+            // Check if this Google id already has a welcome grant (survives user deletion).
+            const existing = (
+              await db
+                .select({ id: creditLedger.id })
+                .from(creditLedger)
+                .where(eq(creditLedger.paymentRef, `welcome:google:${googleAccountId}`))
+                .limit(1)
+            ).at(0);
+            if (existing) return;
+            // Consume rate limit after the check so repeat sign-ins use no quota.
+            const ip = requestIp();
+            if (!(await tryConsume(welcomeRules(ip)))) return;
+            await grantWelcomeCredits(account.userId, googleAccountId);
+          } catch (err) {
+            console.error("account.create.after: welcome credits failed", err);
+          }
         },
       },
     },

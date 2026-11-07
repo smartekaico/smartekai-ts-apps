@@ -7,6 +7,7 @@ import { detectVehicle } from "@smartekai/ai";
 import { BUCKETS, deleteObject, getPresignedReadUrl, uploadObject } from "@smartekai/storage";
 import { MAX_PARTS } from "@/lib/catalog";
 import { summarize } from "@/lib/pricing";
+import { matchVehicle } from "@/lib/match-vehicle";
 import { storeOf } from "@/lib/store";
 import type { Store } from "@/lib/store";
 import type { CreditBlock } from "@/lib/credit-packs";
@@ -111,7 +112,6 @@ export const getConfigurator = createServerFn({ method: "GET" })
 
 export type ConfiguratorData = Awaited<ReturnType<typeof getConfigurator>>;
 
-import { matchVehicle } from "@/lib/match-vehicle";
 
 export const checkPhoto = createServerFn({ method: "POST" })
   .validator((formData: FormData) => {
@@ -119,7 +119,7 @@ export const checkPhoto = createServerFn({ method: "POST" })
     const vehicleId = formData.get("vehicleId");
     if (!(photo instanceof File)) throw new Error("photo is required");
     if (vehicleId !== null && typeof vehicleId !== "string") throw new Error("invalid vehicleId");
-    return { photo, vehicleId: (vehicleId as string | null) ?? null };
+    return { photo, vehicleId: typeof vehicleId === "string" ? vehicleId : null };
   })
   .handler(async ({ data }): Promise<{ ok: true; buildId: string; detected: DetectedVehicle; vehicleId: string | null } | Fail> => {
     const extension = ACCEPTED_TYPES[data.photo.type] as string | undefined;

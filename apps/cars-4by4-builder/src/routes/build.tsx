@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { getConfigurator } from "@/lib/builds";
 import { pageMeta } from "@/lib/seo";
@@ -11,42 +11,56 @@ import { BuildFooter } from "@/components/BuildFooter";
 import { BuildPreview3D } from "@/components/BuildPreview3D";
 import { CategoryTabs } from "@/components/CategoryTabs";
 import { HelpMeChoose } from "@/components/HelpMeChoose";
+import { Panel } from "@/components/Panel";
 import { PartCard } from "@/components/PartCard";
-import { PhotoStep } from "@/components/PhotoStep";
 import { PresetPills } from "@/components/PresetPills";
+import { ReviewStep } from "@/components/ReviewStep";
+import { StepIndicator } from "@/components/StepIndicator";
+import { TruckStep } from "@/components/TruckStep";
 import { VehiclePicker } from "@/components/VehiclePicker";
 
-type Step = "vehicle" | "questions" | "parts" | "photo";
+type Step = "vehicle" | "parts" | "review";
 type BuildSearch = {
   vehicle?: string;
   preset?: string;
   parts?: string[];
   step?: Step;
+  photoId?: string;
+  help?: boolean;
   use?: Use;
   budget?: Budget;
   lift?: Lift;
   install?: Install;
 };
-const STEPS: Step[] = ["vehicle", "questions", "parts", "photo"];
+const STEPS: Step[] = ["vehicle", "parts", "review"];
 const USES: Use[] = ["overland", "trail", "desert", "daily"];
 const BUDGETS: Budget[] = ["2k", "5k", "10k", "any"];
 const LIFTS: Lift[] = ["stock", "mild", "big"];
 const INSTALLS: Install[] = ["diy", "shop"];
-const STEP_NUMS = ["vehicle", "parts", "photo"];
 
 export const Route = createFileRoute("/build")({
-  validateSearch: (search: Record<string, unknown>): BuildSearch => ({
-    vehicle: typeof search.vehicle === "string" ? search.vehicle : undefined,
-    preset: typeof search.preset === "string" ? search.preset : undefined,
-    parts: Array.isArray(search.parts)
-      ? search.parts.filter((p): p is string => typeof p === "string").slice(0, MAX_PARTS)
-      : undefined,
-    step: STEPS.find((s) => s === search.step),
-    use: USES.find((v) => v === search.use),
-    budget: BUDGETS.find((v) => v === search.budget),
-    lift: LIFTS.find((v) => v === search.lift),
-    install: INSTALLS.find((v) => v === search.install),
-  }),
+  validateSearch: (search: Record<string, unknown>): BuildSearch => {
+    // old link mapping
+    let step = STEPS.find((s) => s === search.step);
+    const hasPhoto = typeof search.photoId === "string";
+    const hasParts = Array.isArray(search.parts) && (search.parts as unknown[]).length > 0;
+    if (search.step === "photo") step = hasParts && !hasPhoto ? "vehicle" : hasPhoto ? "review" : "vehicle";
+    if (search.step === "questions") step = "parts";
+    return {
+      vehicle: typeof search.vehicle === "string" ? search.vehicle : undefined,
+      preset: typeof search.preset === "string" ? search.preset : undefined,
+      parts: Array.isArray(search.parts)
+        ? (search.parts as unknown[]).filter((p): p is string => typeof p === "string").slice(0, MAX_PARTS)
+        : undefined,
+      step,
+      photoId: typeof search.photoId === "string" ? search.photoId : undefined,
+      help: search.help === true || search.help === "1" || search.help === "true" ? true : undefined,
+      use: USES.find((v) => v === search.use),
+      budget: BUDGETS.find((v) => v === search.budget),
+      lift: LIFTS.find((v) => v === search.lift),
+      install: INSTALLS.find((v) => v === search.install),
+    };
+  },
   loaderDeps: ({ search }) => ({ vehicle: search.vehicle }),
   loader: ({ deps }) => getConfigurator({ data: deps.vehicle }),
   head: () => {
@@ -66,6 +80,11 @@ function Configurator() {
   const search = Route.useSearch();
   const navigate = useNavigate({ from: "/build" });
   const [category, setCategory] = useState<Category | "all">("all");
+  const [panelOpen, setPanelOpen] = useState(search.help === true);
+  const [showPreview, setShowPreview] = useState(false);
+  useEffect(() => {
+    if (window.matchMedia("(min-width: 1024px)").matches) setShowPreview(true);
+  }, []);
 
   const vehicle = data.vehicles.find((v) => v.id === search.vehicle);
   const step: Step = !vehicle || search.step === "vehicle" ? "vehicle" : (search.step ?? "parts");
@@ -95,73 +114,45 @@ function Configurator() {
     update({ parts: next, preset: undefined }, true);
   }
 
+  // keep fitting parts when truck changes: compare selected with fitting
   return (
     <>
       <main className="mx-auto max-w-6xl px-4 py-8">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          {step === "questions"
-            ? "Optional"
-            : `Step ${STEP_NUMS.indexOf(step) + 1} of 3${vehicle ? ` · ${vehicle.name}` : ""}`}
-        </p>
+        <StepIndicator current={step} onGo={(s) => update({ step: s as Step })} />
 
         {step === "vehicle" && (
-          <>
-            <h1 className="mt-1 text-3xl">Pick your truck</h1>
-            <div className="mt-6">
-              <VehiclePicker
-                vehicles={data.vehicles}
-                onPick={(id) => update({ vehicle: id, parts: [], preset: undefined, step: "questions" })}
-              />
-            </div>
-          </>
-        )}
-
-        {step === "questions" && vehicle && (
-          <HelpMeChoose
-            vehicleId={vehicle.id}
-            parts={fitting}
-            answers={answers}
-            onShowBuild={(a, partIds) =>
-              update(
-                {
-                  use: a.use,
-                  budget: a.budget,
-                  lift: a.lift,
-                  install: a.install,
-                  parts: partIds,
-                  preset: undefined,
-                  step: "parts",
-                },
-                true,
-              )
-            }
-            onSkip={() => update({ step: "parts" })}
-          />
+          <div className="mt-6">
+            <TruckStep
+              vehicles={data.vehicles}
+              selectedVehicleId={search.vehicle}
+              onPickVehicle={(id) => {
+                const nextFitting = new Set(data.parts.filter((p) => p.vehicleIds.includes(id)).map((p) => p.id));
+                const kept = selected.filter((x) => nextFitting.has(x));
+                update({ vehicle: id, parts: kept, preset: undefined, step: "parts" }, true);
+              }}
+            />
+          </div>
         )}
 
         {step === "parts" && vehicle && (
           <>
-            <div className="mt-1 flex flex-wrap items-end justify-between gap-2">
-              <h1 className="text-3xl">Choose your upgrades</h1>
+            <div className="mt-4 flex flex-wrap items-end justify-between gap-2">
+              <h1 className="text-3xl">Your build</h1>
               <button type="button" onClick={() => update({ step: "vehicle" })} className="text-sm text-primary">
                 Change truck
               </button>
             </div>
             <div className="mt-4 flex flex-col gap-4 lg:flex-row">
-              <div className="order-2 flex flex-col gap-4 lg:order-1 lg:w-2/3">
+              <div className="flex flex-col gap-4 lg:w-2/3">
                 <PresetPills
                   presets={data.presets.filter((p) => p.vehicleId === vehicle.id)}
                   activeSlug={search.preset}
                   onPick={(p) => update({ preset: p.slug, parts: p.partIds, use: undefined, budget: undefined, lift: undefined, install: undefined }, true)}
                 />
-                <CategoryTabs active={category} onChange={setCategory} />
-                <div className="mt-3">
-                  <button
-                    type="button"
-                    onClick={() => update({ step: "questions" })}
-                    className="text-sm text-primary"
-                  >
-                    Help me choose
+                <div className="flex items-center justify-between">
+                  <CategoryTabs active={category} onChange={setCategory} />
+                  <button type="button" className="text-sm text-primary" onClick={() => setPanelOpen(true)}>
+                    Not sure? 4 quick questions
                   </button>
                 </div>
                 {selected.length >= MAX_PARTS && (
@@ -180,39 +171,76 @@ function Configurator() {
                   ))}
                 </div>
               </div>
-              <div className="order-1 lg:order-2 lg:w-1/3 lg:sticky lg:top-4 lg:self-start">
-                <BuildPreview3D vehicleId={vehicle.id} partIds={selected} className="h-[200px] w-full overflow-hidden rounded-lg lg:h-[300px]" />
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Quick shape preview. Add your photo next to see the realistic version.
-                </p>
+              <div className="hidden lg:block lg:w-1/3 lg:sticky lg:top-4 lg:self-start">
+                <BuildPreview3D vehicleId={vehicle.id} partIds={selected} className="h-[400px] w-full rounded-lg" />
               </div>
             </div>
+            {showPreview && (
+              <div className="mt-4 lg:hidden">
+                <BuildPreview3D vehicleId={vehicle.id} partIds={selected} className="h-[260px] w-full rounded-lg" />
+              </div>
+            )}
+            {!showPreview && (
+              <button
+                type="button"
+                className="mt-4 text-sm text-primary lg:hidden"
+                onClick={() => setShowPreview(true)}
+              >
+                Show 3D preview
+              </button>
+            )}
           </>
         )}
 
-        {step === "photo" && vehicle && (
-          <>
-            <div className="mt-1 flex flex-wrap items-end justify-between gap-2">
-              <h1 className="text-3xl">Add your truck</h1>
-              <button type="button" onClick={() => update({ step: "parts" })} className="text-sm text-primary">
-                Back to upgrades
-              </button>
-            </div>
-            <div className="mt-6 max-w-2xl">
-              <PhotoStep vehicle={vehicle} partIds={selectedParts.map((p) => p.id)} />
-            </div>
-          </>
+        {step === "review" && vehicle && (
+          <ReviewStep
+            vehicle={vehicle}
+            photoId={search.photoId}
+            partIds={selected}
+            parts={fitting}
+            totalUsd={totalUsd}
+            onEdit={() => update({ step: "parts" })}
+            onPickVehicle={() => update({ step: "vehicle" })}
+          />
         )}
       </main>
 
-      {step !== "vehicle" && step !== "questions" && (
+      {step === "parts" && (
         <BuildFooter
           count={selectedParts.length}
           totalUsd={totalUsd}
-          nextLabel={step === "parts" ? "Next: add your truck" : undefined}
-          onNext={step === "parts" ? () => update({ step: "photo" }) : undefined}
+          nextLabel="Next: see it"
+          onNext={() => update({ step: "review" })}
         />
       )}
+
+      <Panel open={panelOpen} onClose={() => { setPanelOpen(false); update({ help: undefined }, true); }}>
+        <HelpMeChoose
+          vehicleId={vehicle?.id ?? ""}
+          parts={fitting}
+          answers={answers}
+          onShowBuild={(a, partIds) => {
+            update(
+              {
+                use: a.use,
+                budget: a.budget,
+                lift: a.lift,
+                install: a.install,
+                parts: partIds,
+                preset: undefined,
+                step: "parts",
+                help: undefined,
+              },
+              true,
+            );
+            setPanelOpen(false);
+          }}
+          onSkip={() => {
+            update({ step: "parts", help: undefined }, true);
+            setPanelOpen(false);
+          }}
+        />
+      </Panel>
     </>
   );
 }
