@@ -105,16 +105,41 @@ to **step 2**, so the user sees what fit (§3).
 - `describeVehicle` already prefers `detectedVehicle`, so a closest-match build still
   describes the real truck in the render prompt.
 
+## 6a. Welcome credits (decided 2026-11-07)
+
+A new account gets nothing extra today, so a guest who used the free render meets a
+sign-in wall and then a payment wall. **Google sign-ups get 20 credits (2 renders).**
+
+- **Google only.** Email sign-up has no verification, so throwaway accounts could farm
+  Gemini spend. Email accounts get it once verification exists (not in this work).
+- **Once per Google account, ever.** The ledger row uses
+  `payment_ref = welcome:google:<Google account id>`, which is unique and survives user
+  deletion (`user_id` is set null), so deleting and re-joining doesn't pay twice.
+- **At most 2 grants per network per day:** `welcomeRules(ip)`. Over the limit, the
+  account is created normally with no grant, and nothing is shown as an error.
+- **Trigger:** Better Auth `databaseHooks.account.create.after`, only when
+  `providerId === "google"`. Runs alongside the existing `databaseHooks` in
+  `src/lib/auth.ts`. A failed grant must never fail the sign-in (log it, like
+  `onLinkAccount`).
+- **One statement:** a CTE inserts the ledger row (`reason: "grant"`, `ON CONFLICT DO
+  NOTHING`) and adds to the balance only if that row was inserted, so the two can't
+  diverge.
+- `WELCOME_CREDITS = 20` in `credit-packs.ts`. The free render is unchanged.
+- **Promise it only where true:** "Sign in with Google and get 20 free credits" on the
+  sign-in page and on the step 3 sign-in button, only when Google sign-in is enabled.
+  Don't promise it to someone who already has an account.
+
 ## 7. Done when
 
 - A Silverado photo can't produce a Tacoma build unless the user explicitly chooses that.
 - Three visible steps; no question screen in the path.
 - Changing truck keeps fitting parts and says what was removed.
 - Cost is visible on the final button for each user state.
+- A new Google account gets 20 credits once; email accounts and repeat sign-ups don't.
 - Phone users don't download the 3D code unless they open it.
 - Old links keep working. Gate passes; click-through at 375 px and desktop.
 
 ## Out of scope
 
-Saving answers, new vehicles, generation or year detection, accounts changes, visual
+Email verification, saving answers, new vehicles, generation or year detection, accounts changes, visual
 restyle beyond these screens, a new thumbnail endpoint.

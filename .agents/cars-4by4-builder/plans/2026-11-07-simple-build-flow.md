@@ -79,6 +79,25 @@ See it**, with the photo choosing the truck.
 - [ ] Delete `PhotoStep.tsx`.
 - [ ] Commit `feat(cars): review step with the cost on the button`.
 
+### 4a. Welcome credits (spec §6a)
+
+- [ ] `WELCOME_CREDITS = 20` in `src/lib/credit-packs.ts`; `welcomeRules(ip)` (2 per 24 h)
+  in `src/server/rate-limit.ts`.
+- [ ] `grantWelcomeCredits(userId, googleAccountId)` in `src/server/credits.ts`: one
+  CTE that inserts the `credit_ledger` row (`reason: 'grant'`,
+  `payment_ref = 'welcome:google:' || id`, `ON CONFLICT (payment_ref) DO NOTHING`
+  `RETURNING`) and updates `credit_balance` only from that insert. Parameterized. Never throws.
+- [ ] `src/lib/auth.ts`: add `account.create.after` to the existing `databaseHooks`.
+  Only `providerId === "google"`. Consume `welcomeRules(requestIp())` **after** checking
+  that this Google id has no ledger row yet, so a repeat sign-in uses no quota. Wrap all of it
+  in try/catch. Confirm the hook runs in a request context where `requestIp()` works;
+  if not, pass the IP another way and note it.
+- [ ] Confirm a guest moving to Google gets the grant on the **new** user (the anonymous
+  plugin deletes the guest afterwards).
+- [ ] Sign-in page and step 3 sign-in button: "Sign in with Google and get 20 free
+  credits", shown only when Google is enabled and the visitor is a guest.
+- [ ] Commit `feat(cars): 20 welcome credits for Google sign-ups`.
+
 ### 5. Verify (`cars-credits`, 375 px and desktop)
 
 Gemini budget: **up to 5 uploads and 2 renders**. Say so before starting.
@@ -92,6 +111,11 @@ Gemini budget: **up to 5 uploads and 2 renders**. Say so before starting.
 - [ ] Questions panel: opens, pre-ticks, closes; Esc and backdrop close; "Why" lines show.
 - [ ] Change truck: fitting parts stay, notice shows.
 - [ ] Button states: free, credits, guest with free render used, out of credits.
+- [ ] Welcome credits, on `cars-credits` (call `grantWelcomeCredits` directly if Google
+  sign-in can't reach local dev; then do one real Google sign-up after deploy):
+  first grant → balance 20 and one `grant` ledger row; same Google id again → no change;
+  third grant from one IP in a day → none; email sign-up → none; delete the user and
+  re-join with the same Google id → none.
 - [ ] Old links: `?step=photo`, `?step=questions`, "Make it yours".
 - [ ] Refresh on each step; back button; share a step 2 URL in a private window.
 - [ ] Phone width: the network tab shows no 3D chunk until "Show 3D preview" is tapped.
@@ -99,7 +123,8 @@ Gemini budget: **up to 5 uploads and 2 renders**. Say so before starting.
 
 ### 6. Ship (ask first)
 
-- [ ] Ask to merge and deploy. After deploy: walk the flow on overlander.smartekai.com
+- [ ] Ask to merge and deploy. After deploy: one real Google sign-up gets 20 credits
+  (check `/admin`), then walk the flow on overlander.smartekai.com
   with a studio photo, and record `/build` CPU from `wrangler tail`.
 - [ ] Log in `.agents/logs/`, current-work line in `plans/active.md`.
 
