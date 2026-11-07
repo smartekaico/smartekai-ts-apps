@@ -76,24 +76,38 @@ function toTeaserPart(p: Part, vehicleUrl?: string): TeaserPart {
   };
 }
 
-export const getConfigurator = createServerFn({ method: "GET" }).handler(async () => {
-  const db = getDbCars();
-  const [allVehicles, allParts, allPresets] = await Promise.all([
-    db.select().from(vehicles).orderBy(asc(vehicles.sortOrder)),
-    db.select().from(parts).orderBy(asc(parts.category), asc(parts.name)),
-    db.select().from(presets).orderBy(asc(presets.sortOrder)),
-  ]);
-  return {
-    vehicles: allVehicles.map((v) => ({
-      id: v.id,
-      name: v.name,
-      yearRange: v.yearRange,
-      stockImageUrl: v.stockImageKey ? publicImageUrl(v.stockImageKey) : null,
-    })),
-    parts: allParts.map((p) => ({ ...toPublicPart(p), vehicleIds: p.vehicleIds })),
-    presets: allPresets.map((p) => ({ id: p.id, slug: p.slug, vehicleId: p.vehicleId, name: p.name, partIds: p.partIds })),
-  };
-});
+const validateConfiguratorVehicle = (input: unknown): string | undefined => {
+  if (input === undefined || input === null || input === "") return undefined;
+  if (typeof input !== "string") throw new Error("invalid vehicle");
+  return input;
+};
+
+export const getConfigurator = createServerFn({ method: "GET" })
+  .validator(validateConfiguratorVehicle)
+  .handler(async ({ data: vehicleId }) => {
+    const db = getDbCars();
+    const [allVehicles, allParts, allPresets] = await Promise.all([
+      db.select().from(vehicles).orderBy(asc(vehicles.sortOrder)),
+      db.select().from(parts).orderBy(asc(parts.category), asc(parts.name)),
+      db.select().from(presets).orderBy(asc(presets.sortOrder)),
+    ]);
+    const filteredParts = vehicleId
+      ? allParts.filter((p) => p.vehicleIds.includes(vehicleId))
+      : allParts;
+    const filteredPresets = vehicleId
+      ? allPresets.filter((p) => p.vehicleId === vehicleId)
+      : allPresets;
+    return {
+      vehicles: allVehicles.map((v) => ({
+        id: v.id,
+        name: v.name,
+        yearRange: v.yearRange,
+        stockImageUrl: v.stockImageKey ? publicImageUrl(v.stockImageKey) : null,
+      })),
+      parts: filteredParts.map((p) => ({ ...toPublicPart(p), vehicleIds: p.vehicleIds })),
+      presets: filteredPresets.map((p) => ({ id: p.id, slug: p.slug, vehicleId: p.vehicleId, name: p.name, partIds: p.partIds })),
+    };
+  });
 
 export type ConfiguratorData = Awaited<ReturnType<typeof getConfigurator>>;
 

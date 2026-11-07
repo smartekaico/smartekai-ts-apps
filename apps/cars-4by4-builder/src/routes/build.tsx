@@ -46,7 +46,8 @@ export const Route = createFileRoute("/build")({
     lift: LIFTS.find((v) => v === search.lift),
     install: INSTALLS.find((v) => v === search.install),
   }),
-  loader: () => getConfigurator(),
+  loaderDeps: ({ search }) => ({ vehicle: search.vehicle }),
+  loader: ({ deps }) => getConfigurator({ data: deps.vehicle }),
   head: () => ({ meta: [{ title: "Build your 4x4 | 4x4 Builder" }] }),
   component: Configurator,
 });
