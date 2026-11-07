@@ -34,3 +34,7 @@ page at render time. Both are larger changes.
 
 ## Status
 Investigated and proposed only. No code changed.
+## Result (implemented)
+- Deployed version `850bb4de-e407-4b24-b340-76fd94fd4be3` (parallelized loadBuild).
+- CPU after fix: `/builds/f-150-overlander` p50 6.0 ms, p95 9 ms (run 2; run 1 was 9.0/14 — isolate variance).
+  Consistently under 10 ms. No further action.
