@@ -1,8 +1,8 @@
 # Realistic 3D: one-vehicle pilot (Tacoma) — Plan
 
 > For agentic workers: use superpowers:executing-plans. Steps use `- [ ]`.
-> Status: **waiting for the user to approve buying a model.** Don't start step 2
-> until the user has bought one.
+> Status: **free-first (decided 2026-11-07).** Start with step 1a. Don't start step 2
+> until the user has picked a model; never buy one without their OK.
 
 **Why:** the code-built model reached its limit: it can't look like the AI photo
 next to it. Realism needs an artist-made model with real textures. Before spending
@@ -11,9 +11,10 @@ on 7 vehicles, prove it with one: the Tacoma, whose aftermarket earns the most.
 **Decision this pilot answers:** does a licensed model look good enough, and load
 fast enough on a phone, to replace the stylized one? If not, keep the stylized
 preview on the parts step (as shipped 2026-11-07) and stop. Nothing is lost but
-the cost of one model.
+at most the cost of one model.
 
-**Budget:** one model, about $25–100, paid by the user. No other spend.
+**Budget:** $0 first. Only if no free model passes: one model, about $25–100, paid by
+the user. No other spend.
 
 ## Ground rules
 
@@ -28,7 +29,27 @@ the cost of one model.
 
 ## Steps
 
-### 1. Shortlist (agent) and buy (user)
+### 1a. Free search first (agent)
+
+- [ ] Search Sketchfab directly (not a general web search) for a 3rd-gen Tacoma with
+  the Downloadable filter, licences **CC BY** or **CC0** only.
+- [ ] Reject anything marked NonCommercial or NoDerivatives (we must convert and edit
+  it), anything without separate wheels, and anything that looks copied from a video
+  game (game-style naming, game credits in the description, or a suspiciously
+  detailed model with no real author). When unsure, reject.
+- [ ] Remeshy and Free3D only if the model page states a licence that clearly allows
+  commercial use. No stated licence means rejected.
+- [ ] Show the user the best 2–3: link, licence text, author, triangle count, a
+  screenshot, and why each passed. The same quality criteria as step 1 apply.
+- [ ] **The user picks one, or says none are good enough.** If none pass, go to step 1.
+- [ ] CC BY needs credit: add a line to the footer or an attributions page (model
+  name, author, link, licence) when the model ships. Save a copy of the model page
+  and licence with the source file, outside git, as proof of what it said on that date.
+
+### 1. Paid fallback: shortlist (agent) and buy (user)
+
+Only if step 1a found nothing good enough.
+
 
 - [ ] Find 3 candidates (CGTrader, Sketchfab, TurboSquid, RenderHub) and give the
   user a table: link, price, licence, formats, poly count, whether wheels are
