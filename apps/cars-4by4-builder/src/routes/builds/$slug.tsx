@@ -4,7 +4,6 @@ import { getBuild } from "@/lib/builds";
 import { notifyCreditsChanged } from "@/lib/use-credits";
 import { formatPrice } from "@/lib/pricing";
 import { BeforeAfterSlider } from "@/components/BeforeAfterSlider";
-import { BuildPreview3D } from "@/components/BuildPreview3D";
 import { BuildProgress } from "@/components/BuildProgress";
 import { ShareButton } from "@/components/ShareButton";
 import { ShopList } from "@/components/ShopList";
@@ -78,10 +77,6 @@ function BuildPage() {
       <div className="mt-6">
         <BeforeAfterSlider beforeUrl={build.beforeUrl} afterUrl={build.afterUrl} />
         <p className="mt-2 text-xs text-muted-foreground">AI visualization — actual appearance may vary.</p>
-      </div>
-
-      <div className="mt-6">
-        <BuildPreview3D vehicleId={build.vehicle.id} partIds={build.selectedPartIds} className="h-[320px] w-full rounded-lg" />
       </div>
 
       {build.isCurated && (

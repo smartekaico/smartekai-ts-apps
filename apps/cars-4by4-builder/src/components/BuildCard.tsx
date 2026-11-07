@@ -1,5 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { formatPrice } from "@/lib/pricing";
+import { STUDIO_CROP } from "@/components/studio-photo";
+import { cn } from "@/lib/utils";
 
 export function BuildCard({
   slug,
@@ -20,7 +22,10 @@ export function BuildCard({
       params={{ slug }}
       className="group overflow-hidden rounded-lg border border-border bg-card transition hover:-translate-y-0.5 hover:border-primary"
     >
-      <img src={afterUrl} alt={`${vehicleName} ${presetName} build`} loading="lazy" className="aspect-video w-full object-cover" />
+      {/* Gallery builds are all curated, so always studio photos. */}
+      <div className="aspect-video overflow-hidden">
+        <img src={afterUrl} alt={`${vehicleName} ${presetName} build`} loading="lazy" className={cn("h-full w-full object-cover", STUDIO_CROP)} />
+      </div>
       <div className="flex items-center justify-between gap-2 p-4">
         <div>
           <p className="font-extrabold tracking-tight">{presetName}</p>
