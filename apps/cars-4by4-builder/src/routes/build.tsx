@@ -172,7 +172,10 @@ function Configurator() {
                 </div>
               </div>
               <div className="order-1 lg:order-2 lg:w-1/3 lg:sticky lg:top-4 lg:self-start">
-                <BuildPreview3D vehicleId={vehicle.id} partIds={selected} className="h-[260px] w-full rounded-lg lg:h-[400px]" />
+                <BuildPreview3D vehicleId={vehicle.id} partIds={selected} className="h-[200px] w-full overflow-hidden rounded-lg lg:h-[300px]" />
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Quick shape preview. Add your photo next to see the realistic version.
+                </p>
               </div>
             </div>
           </>

@@ -4,7 +4,8 @@ import { getReport } from "@/lib/builds";
 import { getAdvisories } from "@/lib/advisories";
 import { formatPrice, summarize } from "@/lib/pricing";
 import { ShopList } from "@/components/ShopList";
-import { BuildPreview3D } from "@/components/BuildPreview3D";
+import { STUDIO_CROP, isStudioPhoto } from "@/components/studio-photo";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/builds/$slug_/report")({
   loader: ({ params }) => getReport({ data: params.slug }),
@@ -34,12 +35,10 @@ function ReportPage() {
         </button>
       </div>
 
-      <img src={report.afterUrl} alt={title} className="mt-6 w-full rounded-lg" />
-      <p className="mt-2 text-xs text-muted-foreground">AI visualization — actual appearance may vary.</p>
-
-      <div className="mt-6">
-        <BuildPreview3D vehicleId={report.vehicle.id} partIds={report.selectedPartIds} className="h-[320px] w-full rounded-lg" />
+      <div className="mt-6 overflow-hidden rounded-lg">
+        <img src={report.afterUrl} alt={title} className={cn("w-full", isStudioPhoto(report.beforeUrl) && STUDIO_CROP)} />
       </div>
+      <p className="mt-2 text-xs text-muted-foreground">AI visualization — actual appearance may vary.</p>
 
       <section className="mt-10">
         <h2 className="text-2xl">Parts</h2>
