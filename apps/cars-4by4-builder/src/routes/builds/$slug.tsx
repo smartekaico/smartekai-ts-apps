@@ -3,6 +3,7 @@ import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import { getBuild } from "@/lib/builds";
 import { notifyCreditsChanged } from "@/lib/use-credits";
 import { formatPrice } from "@/lib/pricing";
+import { pageMeta, partSummary } from "@/lib/seo";
 import { BeforeAfterSlider } from "@/components/BeforeAfterSlider";
 import { BuildProgress } from "@/components/BuildProgress";
 import { ShareButton } from "@/components/ShareButton";
@@ -10,19 +11,29 @@ import { ShopList } from "@/components/ShopList";
 
 export const Route = createFileRoute("/builds/$slug")({
   loader: ({ params }) => getBuild({ data: params.slug }),
-  head: ({ loaderData }) => {
+  head: ({ loaderData, params }) => {
     if (!loaderData) return {};
     const title = loaderData.presetName
       ? `${loaderData.vehicle.name} ${loaderData.presetName} build`
       : `${loaderData.vehicle.name} build`;
+    const names = loaderData.parts.map((p) => p.name);
+    const description = names.length
+      ? `${title} with ${partSummary(names)}. See the before and after, estimated prices and where to buy.`
+      : `${title}. See the before and after, estimated prices and where to buy.`;
+    const { meta, links } = pageMeta({
+      title,
+      description,
+      path: `/builds/${params.slug}`,
+      image: loaderData.afterUrl,
+      imageAlt: title,
+    });
     return {
       meta: [
         { title: `${title} | Overlander Builder` },
-        { name: "description", content: `${loaderData.parts.length} upgrades with estimated prices and install time.` },
-        { property: "og:title", content: title },
-        ...(loaderData.afterUrl ? [{ property: "og:image", content: loaderData.afterUrl }] : []),
+        ...meta,
         ...(loaderData.isCurated ? [] : [{ name: "robots", content: "noindex" }]),
       ],
+      links: loaderData.isCurated ? links : [],
     };
   },
   component: BuildPage,

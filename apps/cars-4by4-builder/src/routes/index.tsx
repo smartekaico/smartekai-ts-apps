@@ -1,18 +1,25 @@
 import { useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { getGallery } from "@/lib/builds";
+import { pageMeta } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 import { BeforeAfterSlider } from "@/components/BeforeAfterSlider";
 import { BuildCard } from "@/components/BuildCard";
 
 export const Route = createFileRoute("/")({
   loader: () => getGallery(),
-  head: () => ({
-    meta: [
-      { title: "Overlander Builder — see upgrades on your truck before you buy" },
-      { name: "description", content: "Pick real off-road upgrades, see them on your own truck, and get an itemized parts list with estimated prices." },
-    ],
-  }),
+  head: ({ loaderData }) => {
+    const title = "Overlander Builder — see upgrades on your truck before you buy";
+    const featured = loaderData?.builds.at(0);
+    const { meta, links } = pageMeta({
+      title,
+      description: "Pick real off-road upgrades, see them on your own truck, and get an itemized parts list with estimated prices.",
+      path: "/",
+      image: featured?.afterUrl,
+      imageAlt: featured ? `${featured.vehicleName} ${featured.presetName} build` : undefined,
+    });
+    return { meta: [{ title }, ...meta], links };
+  },
   component: Home,
 });
 

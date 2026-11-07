@@ -11,7 +11,7 @@ export const Route = createFileRoute("/sitemap.xml")({
           .select({ slug: builds.slug })
           .from(builds)
           .where(and(eq(builds.isCurated, true), eq(builds.status, "completed")));
-        const urls = [`${origin}/`, ...curated.flatMap((b) => (b.slug ? [`${origin}/builds/${b.slug}`] : []))];
+        const urls = [`${origin}/`, `${origin}/build`, ...curated.flatMap((b) => (b.slug ? [`${origin}/builds/${b.slug}`] : []))];
         const xml = [
           '<?xml version="1.0" encoding="UTF-8"?>',
           '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
