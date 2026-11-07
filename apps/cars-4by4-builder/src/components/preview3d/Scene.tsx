@@ -61,6 +61,7 @@ function Model({ spec, vehicleId }: { spec: SceneSpec; vehicleId: string }) {
     return (
       <group>
         <RealVehicle spec={spec} />
+        <Accessories spec={spec} l={l} />
       </group>
     );
   }
