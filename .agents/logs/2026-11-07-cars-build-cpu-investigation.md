@@ -37,3 +37,7 @@ still fetches all 24 rows. The server-side filter is the real win.
 
 ## Status
 Proposed only. No code changed.
+## Result (implemented)
+- Deployed version `1ca845c8-af39-4c8c-bf5b-d8da40a740db`.
+- CPU after fix: `/build?vehicle=f150&step=parts` p50 9.5 ms, p95 11 ms (was 13 / 19).
+  Back under the 10 ms threshold. No further action.
