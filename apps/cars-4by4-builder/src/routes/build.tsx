@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { getConfigurator } from "@/lib/builds";
+import { pageMeta } from "@/lib/seo";
 import { MAX_PARTS } from "@/lib/catalog";
 import type { Category } from "@/lib/catalog";
 import { recommend } from "@/lib/recommend";
@@ -48,7 +49,15 @@ export const Route = createFileRoute("/build")({
   }),
   loaderDeps: ({ search }) => ({ vehicle: search.vehicle }),
   loader: ({ deps }) => getConfigurator({ data: deps.vehicle }),
-  head: () => ({ meta: [{ title: "Build your 4x4 | Overlander Builder" }] }),
+  head: () => {
+    const title = "Build your 4x4 | Overlander Builder";
+    const { meta, links } = pageMeta({
+      title,
+      description: "Choose your truck, pick lift kits, tires, racks and lights, and see the estimated cost before you buy.",
+      path: "/build",
+    });
+    return { meta: [{ title }, ...meta], links };
+  },
   component: Configurator,
 });
 
