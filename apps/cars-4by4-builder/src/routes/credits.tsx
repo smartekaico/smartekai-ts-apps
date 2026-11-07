@@ -18,7 +18,7 @@ export const Route = createFileRoute("/credits")({
   }),
   loaderDeps: ({ search }) => ({ next: search.next, purchase: search.purchase }),
   loader: ({ deps }) => getCreditsPage({ data: { next: deps.next, purchase: deps.purchase } }),
-  head: () => ({ meta: [{ title: "Buy credits | 4x4 Builder" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "Buy credits | Overlander Builder" }, { name: "robots", content: "noindex" }] }),
   component: CreditsPage,
 });
 

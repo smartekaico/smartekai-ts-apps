@@ -86,7 +86,7 @@ export async function startCheckout(userId: string, pack: CreditPack, next?: str
       payCurrency: NOWPAYMENTS_PAY_CURRENCY,
       orderId: purchaseId,
       // ASCII only (IPN signature: PHP vs JS unicode escaping, spec §5 (a)).
-      orderDescription: `4x4 Builder ${pack.name} pack - ${pack.credits} credits`,
+      orderDescription: `Overlander Builder ${pack.name} pack - ${pack.credits} credits`,
       ipnCallbackUrl: `${site}/api/nowpayments/ipn`,
       successUrl: `${site}/credits?purchase=${purchaseId}${nextQs ? `&${nextQs}` : ""}`,
       cancelUrl: `${site}/credits${nextQs ? `?${nextQs}` : ""}`,

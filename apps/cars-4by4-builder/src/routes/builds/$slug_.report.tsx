@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/builds/$slug_/report")({
   loader: ({ params }) => getReport({ data: params.slug }),
-  head: () => ({ meta: [{ title: "Build report | 4x4 Builder" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "Build report | Overlander Builder" }, { name: "robots", content: "noindex" }] }),
   component: ReportPage,
 });
 

@@ -48,7 +48,7 @@ export const Route = createFileRoute("/build")({
   }),
   loaderDeps: ({ search }) => ({ vehicle: search.vehicle }),
   loader: ({ deps }) => getConfigurator({ data: deps.vehicle }),
-  head: () => ({ meta: [{ title: "Build your 4x4 | 4x4 Builder" }] }),
+  head: () => ({ meta: [{ title: "Build your 4x4 | Overlander Builder" }] }),
   component: Configurator,
 });
 
