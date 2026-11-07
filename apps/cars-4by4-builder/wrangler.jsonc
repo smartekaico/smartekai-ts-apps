@@ -33,7 +33,7 @@
     "BETTER_AUTH_URL": "https://overlander.smartekai.com",
     "PUBLIC_SITE_URL": "https://overlander.smartekai.com",
     "NOWPAYMENTS_ENV": "live",
-    "CARS_DAILY_RENDER_CAP": "200",
+    "CARS_DAILY_RENDER_CAP": "40",
     // Google is registered by Better Auth and shown on /sign-in only while this
     // is "true" AND the secrets exist. The OAuth client must also have
     // https://overlander.smartekai.com/api/auth/callback/google registered,
