@@ -17,7 +17,7 @@ export const Route = createFileRoute("/builds/$slug")({
       : `${loaderData.vehicle.name} build`;
     return {
       meta: [
-        { title: `${title} | 4x4 Builder` },
+        { title: `${title} | Overlander Builder` },
         { name: "description", content: `${loaderData.parts.length} upgrades with estimated prices and install time.` },
         { property: "og:title", content: title },
         ...(loaderData.afterUrl ? [{ property: "og:image", content: loaderData.afterUrl }] : []),

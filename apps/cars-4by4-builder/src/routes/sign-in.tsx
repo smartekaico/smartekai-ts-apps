@@ -8,7 +8,7 @@ import { safeNext } from "@/lib/next";
 export const Route = createFileRoute("/sign-in")({
   validateSearch: (search: Record<string, unknown>) => ({ next: safeNext(search.next) }),
   loader: () => getAuthOptions(),
-  head: () => ({ meta: [{ title: "Sign in | 4x4 Builder" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "Sign in | Overlander Builder" }, { name: "robots", content: "noindex" }] }),
   component: SignInPage,
 });
 

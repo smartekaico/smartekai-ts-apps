@@ -9,7 +9,7 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "4x4 Builder" },
+      { title: "Overlander Builder" },
       { name: "description", content: "See real off-road upgrades on your own truck before you buy." },
     ],
     links: [{ rel: "stylesheet", href: appCss }],

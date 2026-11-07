@@ -35,7 +35,7 @@ export const Route = createFileRoute("/admin")({
     ]);
     return { list, detail };
   },
-  head: () => ({ meta: [{ title: "Admin | 4x4 Builder" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "Admin | Overlander Builder" }, { name: "robots", content: "noindex" }] }),
   component: AdminPage,
 });
 

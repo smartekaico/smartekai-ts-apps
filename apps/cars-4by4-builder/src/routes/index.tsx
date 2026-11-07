@@ -9,7 +9,7 @@ export const Route = createFileRoute("/")({
   loader: () => getGallery(),
   head: () => ({
     meta: [
-      { title: "4x4 Builder — see upgrades on your truck before you buy" },
+      { title: "Overlander Builder — see upgrades on your truck before you buy" },
       { name: "description", content: "Pick real off-road upgrades, see them on your own truck, and get an itemized parts list with estimated prices." },
     ],
   }),

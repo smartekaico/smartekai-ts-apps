@@ -3,7 +3,7 @@ import { getProjects } from "@/lib/builds";
 
 export const Route = createFileRoute("/projects")({
   loader: () => getProjects(),
-  head: () => ({ meta: [{ title: "My projects | 4x4 Builder" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "My projects | Overlander Builder" }, { name: "robots", content: "noindex" }] }),
   component: ProjectsPage,
 });
 

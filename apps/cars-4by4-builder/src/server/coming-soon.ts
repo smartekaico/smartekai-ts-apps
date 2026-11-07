@@ -177,7 +177,7 @@ function page(notice: Notice): string {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>Coming soon | 4x4 Builder</title>
+<title>Coming soon | Overlander Builder</title>
 <style>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
@@ -217,7 +217,7 @@ function page(notice: Notice): string {
 </head>
 <body>
 <main>
-  <div class="brand">4x4 Builder</div>
+  <div class="brand">Overlander Builder</div>
   <h1>Coming soon</h1>
   <p>We're putting the finishing touches on the configurator, the AI renders and the parts shop.</p>
   <div class="rule"></div>
