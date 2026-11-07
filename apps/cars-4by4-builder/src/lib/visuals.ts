@@ -55,6 +55,12 @@ export type SceneSpec = {
   rackFor: "roof" | "bed" | null;
 };
 
+// Real (artist-made) models. Only vehicles listed here use the real model;
+// others keep the stylized code-built preview. URLs point at public storage.
+export const VEHICLE_MODELS: Record<string, string> = {
+  "tacoma-3g": "https://br-frosty-band-b195s0t1.storage.c-5.eu-central-1.aws.neon.tech/cars-renders/models/tacoma-3g.glb",
+};
+
 export const VEHICLE_SHAPES: Record<string, VehicleShape> = {
   lc300: { body: "suv", length: 5.0, wheelbase: 2.85, width: 1.98, height: 1.95, colour: "#e6e6e2" },
   "patrol-y62": { body: "suv", length: 5.2, wheelbase: 3.08, width: 1.99, height: 1.94, colour: "#a9aeb4" },
@@ -168,4 +174,8 @@ export function sceneSpec(vehicleId: string, partIds: string[]): SceneSpec | nul
   // bedRack ignored on SUVs
   if (shape.body === "suv") accessories.delete("bedRack");
   return { shape, liftInches, tyreInches, wheel, accessories, rackFor };
+}
+
+export function hasRealModel(vehicleId: string): boolean {
+  return vehicleId in VEHICLE_MODELS;
 }
