@@ -16,13 +16,6 @@ export const Route = createFileRoute("/")({
   component: Home,
 });
 
-// TEMPORARY: AvantLink's application check looks for this exact tag in the
-// homepage source. Delete it (and the div in Home) once the application is
-// confirmed. Raw HTML so the `&` isn't escaped; it never executes: innerHTML
-// scripts don't run, and http on an https page would be blocked anyway.
-const AVANTLINK_VERIFY =
-  '<script type="text/javascript" src="http://classic.avantlink.com/affiliate_app_confirm.php?mode=js&authResponse=532757e36b248e10b32b4b11fe0b992999294ea8"></script>';
-
 function Home() {
   const { builds, vehicles } = Route.useLoaderData();
   const [filter, setFilter] = useState("all");
@@ -31,7 +24,6 @@ function Home() {
 
   return (
     <main>
-      <div hidden dangerouslySetInnerHTML={{ __html: AVANTLINK_VERIFY }} />
       <section className="border-b border-border bg-texture">
         <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 md:grid-cols-2 md:items-center md:py-16">
           <div>
