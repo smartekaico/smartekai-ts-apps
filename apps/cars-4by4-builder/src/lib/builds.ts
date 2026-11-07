@@ -336,27 +336,28 @@ async function loadBuild(slugOrId: string) {
   }
   const { status, errorMessage } = build;
 
-  const vehicle = (await db.select().from(vehicles).where(eq(vehicles.id, build.vehicleId))).at(0);
+  // Independent reads: run them in parallel (was sequential). Cheapest CPU/wall win.
+  const [vehicle, preset, buildParts, vehicleLinks] = await Promise.all([
+    db.select().from(vehicles).where(eq(vehicles.id, build.vehicleId)).then((r) => r.at(0)),
+    build.presetId
+      ? db.select().from(presets).where(eq(presets.id, build.presetId)).then((r) => r.at(0))
+      : Promise.resolve(undefined),
+    build.selectedPartIds.length
+      ? db.select().from(parts).where(inArray(parts.id, build.selectedPartIds))
+      : Promise.resolve([]),
+    build.selectedPartIds.length
+      ? db
+          .select({ partId: partVehicleLinks.partId, url: partVehicleLinks.url })
+          .from(partVehicleLinks)
+          .where(
+            and(
+              eq(partVehicleLinks.vehicleId, build.vehicleId),
+              inArray(partVehicleLinks.partId, build.selectedPartIds),
+            ),
+          )
+      : Promise.resolve([]),
+  ]);
   if (!vehicle) throw notFound();
-  const preset = build.presetId
-    ? (await db.select().from(presets).where(eq(presets.id, build.presetId))).at(0)
-    : undefined;
-  const buildParts = build.selectedPartIds.length
-    ? await db.select().from(parts).where(inArray(parts.id, build.selectedPartIds))
-    : [];
-  // Vehicle-specific affiliate links (Task H2): a part that is sold as a
-  // different listing per truck family has its own link for this vehicle.
-  const vehicleLinks = build.selectedPartIds.length
-    ? await db
-        .select({ partId: partVehicleLinks.partId, url: partVehicleLinks.url })
-        .from(partVehicleLinks)
-        .where(
-          and(
-            eq(partVehicleLinks.vehicleId, build.vehicleId),
-            inArray(partVehicleLinks.partId, build.selectedPartIds),
-          ),
-        )
-    : [];
   const linkByPart = new Map(vehicleLinks.map((link) => [link.partId, link.url] as const));
 
   return {
