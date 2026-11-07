@@ -7,12 +7,15 @@ export function PartImage({
   alt,
   category,
   kind,
+  compact = false,
   className,
 }: {
   src: string;
   alt: string;
   category?: string;
   kind?: "illustration" | "photo" | null;
+  /** Small thumbnails: a short label, so it doesn't cover the picture. */
+  compact?: boolean;
   className?: string;
 }) {
   if (src) {
@@ -20,8 +23,16 @@ export function PartImage({
       <div className={cn("relative aspect-video w-full overflow-hidden", className)}>
         <img src={src} alt={alt} loading="lazy" className="h-full w-full object-cover" />
         {kind === "illustration" ? (
-          <span className="absolute bottom-1 right-1 rounded bg-black/50 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white">
-            Illustration
+          <span
+            title="Illustration"
+            className={cn(
+              "absolute rounded bg-black/50 font-medium text-white",
+              compact
+                ? "bottom-0.5 right-0.5 px-1 text-[8px] leading-3"
+                : "bottom-1 right-1 px-1.5 py-0.5 text-[10px] uppercase tracking-wide",
+            )}
+          >
+            {compact ? "Illus." : "Illustration"}
           </span>
         ) : null}
       </div>
