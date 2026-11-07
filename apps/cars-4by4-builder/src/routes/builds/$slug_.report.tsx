@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { AlertTriangle, Info } from "lucide-react";
 import { getReport } from "@/lib/builds";
 import { getAdvisories } from "@/lib/advisories";
@@ -6,9 +6,15 @@ import { formatPrice, summarize } from "@/lib/pricing";
 import { ShopList } from "@/components/ShopList";
 import { STUDIO_CROP, isStudioPhoto } from "@/components/studio-photo";
 import { cn } from "@/lib/utils";
+import { AI_RENDERS_ENABLED } from "@/lib/features";
 
 export const Route = createFileRoute("/builds/$slug_/report")({
-  loader: ({ params }) => getReport({ data: params.slug }),
+  loader: ({ params }) => {
+    // Spec 7: the report needs a sign-in and a saved build; the build page now
+    // shows prices and fitment to everyone, so send visitors there.
+    if (!AI_RENDERS_ENABLED) throw redirect({ to: "/builds/$slug", params: { slug: params.slug } });
+    return getReport({ data: params.slug });
+  },
   head: () => ({ meta: [{ title: "Build report | Overlander Builder" }, { name: "robots", content: "noindex" }] }),
   component: ReportPage,
 });

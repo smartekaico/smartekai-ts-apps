@@ -7,6 +7,7 @@ import { notifyCreditsChanged } from "@/lib/use-credits";
 import { PhotoDropzone } from "@/components/PhotoDropzone";
 import { VehiclePicker } from "@/components/VehiclePicker";
 import type { ConfiguratorData } from "@/lib/builds";
+import { AI_RENDERS_ENABLED } from "@/lib/features";
 
 type Vehicle = ConfiguratorData["vehicles"][number];
 
@@ -72,9 +73,10 @@ export function TruckStep({
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-3xl">Your truck</h1>
+      <h1 className="text-3xl">{AI_RENDERS_ENABLED ? "Your truck" : "Pick your truck"}</h1>
 
-      {/* Choice A: upload photo */}
+      {/* Choice A: upload photo (MVP: hidden - no photo upload) */}
+      {AI_RENDERS_ENABLED && (
       <div className="rounded-lg border border-border bg-card p-4">
         <p className="mb-3 font-semibold">Upload a photo of your truck</p>
         <PhotoDropzone onFileSelected={handleFile} disabled={check.state === "checking"} />
@@ -110,12 +112,17 @@ export function TruckStep({
           </div>
         )}
       </div>
+      )}
 
-      {/* Tiles (model pick) — shown when showTiles or no photo */}
-      {(showTiles || check.state === "idle") && (
+      {/* Tiles (model pick) */}
+      {(AI_RENDERS_ENABLED ? showTiles || check.state === "idle" : true) && (
         <div className="rounded-lg border border-border bg-card p-4">
-          <p className="mb-3 font-semibold">Pick a model</p>
-          <p className="mb-3 text-xs text-muted-foreground">No photo? No problem — we'll use a studio photo.</p>
+          {AI_RENDERS_ENABLED ? (
+            <>
+              <p className="mb-3 font-semibold">Pick a model</p>
+              <p className="mb-3 text-xs text-muted-foreground">No photo? No problem — we'll use a studio photo.</p>
+            </>
+          ) : null}
           <VehiclePicker vehicles={vehicles} onPick={pickModel} />
         </div>
       )}

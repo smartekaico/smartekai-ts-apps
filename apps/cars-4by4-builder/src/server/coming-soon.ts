@@ -221,7 +221,7 @@ function page(notice: Notice): string {
   <h1>Coming soon</h1>
   <p>We're putting the finishing touches on the configurator, the AI renders and the parts shop.</p>
   <div class="rule"></div>
-  <p class="hook">See a real off-road build on your own truck before you buy.</p>
+  <p class="hook">Plan your 4x4 build from real popular builds, real parts and real prices.</p>
   ${message}
   ${form}
   <small>overlander.smartekai.com</small>

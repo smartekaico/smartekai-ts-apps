@@ -7,19 +7,22 @@ import type { Category } from "@/lib/catalog";
 import { recommend } from "@/lib/recommend";
 import type { Answers, Budget, Install, Lift, Use } from "@/lib/recommend";
 import { summarize } from "@/lib/pricing";
+import { AI_RENDERS_ENABLED } from "@/lib/features";
 import { BuildFooter } from "@/components/BuildFooter";
 import { BuildPreview3D } from "@/components/BuildPreview3D";
 import { CategoryTabs } from "@/components/CategoryTabs";
 import { HelpMeChoose } from "@/components/HelpMeChoose";
 import { Panel } from "@/components/Panel";
 import { PartCard } from "@/components/PartCard";
+import { PopularBuilds } from "@/components/PopularBuilds";
 import { PresetPills } from "@/components/PresetPills";
+import { PartsListStep } from "@/components/PartsListStep";
 import { ReviewStep } from "@/components/ReviewStep";
 import { StepIndicator } from "@/components/StepIndicator";
 import { TruckStep } from "@/components/TruckStep";
 import { VehiclePicker } from "@/components/VehiclePicker";
 
-type Step = "vehicle" | "parts" | "review";
+type Step = "vehicle" | "parts" | "review" | "list";
 type BuildSearch = {
   vehicle?: string;
   preset?: string;
@@ -32,7 +35,7 @@ type BuildSearch = {
   lift?: Lift;
   install?: Install;
 };
-const STEPS: Step[] = ["vehicle", "parts", "review"];
+const STEPS: Step[] = ["vehicle", "parts", "review", "list"];
 const USES: Use[] = ["overland", "trail", "desert", "daily"];
 const BUDGETS: Budget[] = ["2k", "5k", "10k", "any"];
 const LIFTS: Lift[] = ["stock", "mild", "big"];
@@ -46,6 +49,8 @@ export const Route = createFileRoute("/build")({
     const hasParts = Array.isArray(search.parts) && (search.parts as unknown[]).length > 0;
     if (search.step === "photo") step = hasParts && !hasPhoto ? "vehicle" : hasPhoto ? "review" : "vehicle";
     if (search.step === "questions") step = "parts";
+    // MVP: the review step (a render) is replaced by the parts list.
+    if (!AI_RENDERS_ENABLED && step === "review") step = "list";
     return {
       vehicle: typeof search.vehicle === "string" ? search.vehicle : undefined,
       preset: typeof search.preset === "string" ? search.preset : undefined,
@@ -67,7 +72,9 @@ export const Route = createFileRoute("/build")({
     const title = "Build your 4x4 | Overlander Builder";
     const { meta, links } = pageMeta({
       title,
-      description: "Choose your truck, pick lift kits, tires, racks and lights, and see the estimated cost before you buy.",
+      description: AI_RENDERS_ENABLED
+        ? "Choose your truck, pick lift kits, tires, racks and lights, and see the estimated cost before you buy."
+        : "Start from a popular build, swap lift kits, tires, racks and lights, and see the estimated cost and where to buy.",
       path: "/build",
     });
     return { meta: [{ title }, ...meta], links };
@@ -85,6 +92,7 @@ function Configurator() {
   useEffect(() => {
     if (window.matchMedia("(min-width: 1024px)").matches) setShowPreview(true);
   }, []);
+
 
   const vehicle = data.vehicles.find((v) => v.id === search.vehicle);
   const step: Step = !vehicle || search.step === "vehicle" ? "vehicle" : (search.step ?? "parts");
@@ -108,6 +116,12 @@ function Configurator() {
   function update(next: BuildSearch, replace = false) {
     void navigate({ search: (prev) => ({ ...prev, ...next }), replace });
   }
+
+  // The parts list needs parts: an empty list goes back to step 2.
+  const listIsEmpty = step === "list" && selectedParts.length === 0;
+  useEffect(() => {
+    if (listIsEmpty) update({ step: "parts" }, true);
+  }, [listIsEmpty]);
 
   function toggle(id: string) {
     const next = selected.includes(id) ? selected.filter((s) => s !== id) : [...selected, id];
@@ -144,16 +158,40 @@ function Configurator() {
             </div>
             <div className="mt-4 flex flex-col gap-4 lg:flex-row">
               <div className="flex flex-col gap-4 lg:w-2/3">
-                <PresetPills
-                  presets={data.presets.filter((p) => p.vehicleId === vehicle.id)}
-                  activeSlug={search.preset}
-                  onPick={(p) => update({ preset: p.slug, parts: p.partIds, use: undefined, budget: undefined, lift: undefined, install: undefined }, true)}
-                />
+                {AI_RENDERS_ENABLED ? (
+                  <PresetPills
+                    presets={data.presets.filter((p) => p.vehicleId === vehicle.id)}
+                    activeSlug={search.preset}
+                    onPick={(p) => update({ preset: p.slug, parts: p.partIds, use: undefined, budget: undefined, lift: undefined, install: undefined }, true)}
+                  />
+                ) : (
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                    <div className="flex-1">
+                      <PopularBuilds
+                        presets={data.presets.filter((p) => p.vehicleId === vehicle.id)}
+                        activeSlug={search.preset}
+                        onPick={(p) => update({ preset: p.slug, parts: p.partIds, use: undefined, budget: undefined, lift: undefined, install: undefined }, true)}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setPanelOpen(true)}
+                      className="shrink-0 rounded-lg border border-border bg-card p-3 text-left text-sm font-semibold hover:border-primary"
+                    >
+                      Help me choose
+                      <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
+                        Answer 4 quick questions
+                      </span>
+                    </button>
+                  </div>
+                )}
                 <div className="flex items-center justify-between">
                   <CategoryTabs active={category} onChange={setCategory} />
-                  <button type="button" className="text-sm text-primary" onClick={() => setPanelOpen(true)}>
-                    Not sure? 4 quick questions
-                  </button>
+                  {AI_RENDERS_ENABLED && (
+                    <button type="button" className="text-sm text-primary" onClick={() => setPanelOpen(true)}>
+                      Not sure? 4 quick questions
+                    </button>
+                  )}
                 </div>
                 {selected.length >= MAX_PARTS && (
                   <p className="text-sm text-muted-foreground">That's the max of {MAX_PARTS} upgrades per build.</p>
@@ -192,6 +230,22 @@ function Configurator() {
           </>
         )}
 
+        {step === "list" && vehicle && selectedParts.length > 0 && (
+          <div className="mt-4">
+            <PartsListStep
+              vehicle={vehicle}
+              partIds={selected}
+              parts={fitting}
+              presets={data.presets.filter((p) => p.vehicleId === vehicle.id)}
+              onEdit={() => update({ step: "parts" })}
+            />
+          </div>
+        )}
+
+        {step === "list" && vehicle && selectedParts.length === 0 && (
+          <p className="mt-6 text-sm text-muted-foreground">No upgrades selected yet — taking you back to the parts.</p>
+        )}
+
         {step === "review" && vehicle && (
           <ReviewStep
             vehicle={vehicle}
@@ -209,8 +263,9 @@ function Configurator() {
         <BuildFooter
           count={selectedParts.length}
           totalUsd={totalUsd}
-          nextLabel="Next: see it"
-          onNext={() => update({ step: "review" })}
+          nextLabel={AI_RENDERS_ENABLED ? "Next: see it" : "See my parts list"}
+          onNext={() => update({ step: AI_RENDERS_ENABLED ? "review" : "list" })}
+          showRenderCost={AI_RENDERS_ENABLED}
         />
       )}
 

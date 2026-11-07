@@ -1,10 +1,17 @@
 import { cn } from "@/lib/utils";
+import { AI_RENDERS_ENABLED } from "@/lib/features";
 
-const STEPS = [
-  { id: "vehicle", label: "Your truck" },
-  { id: "parts", label: "Your build" },
-  { id: "review", label: "See it" },
-] as const;
+const STEPS = AI_RENDERS_ENABLED
+  ? ([
+      { id: "vehicle", label: "Your truck" },
+      { id: "parts", label: "Your build" },
+      { id: "review", label: "See it" },
+    ] as const)
+  : ([
+      { id: "vehicle", label: "Your truck" },
+      { id: "parts", label: "Your build" },
+      { id: "list", label: "Your parts list" },
+    ] as const);
 
 export function StepIndicator({
   current,

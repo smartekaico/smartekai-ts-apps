@@ -7,7 +7,18 @@ import { PartImage } from "@/components/PartImage";
 // Guests get TeaserPart; the signed-in report passes full PublicPart.
 type ShopPart = TeaserPart & Partial<Pick<PublicPart, "priceUsd" | "laborHoursEst" | "fitmentDifficulty">>;
 
-export function ShopList({ parts, buildId }: { parts: ShopPart[]; buildId: string }) {
+export function ShopList({
+  parts,
+  buildId,
+  vehicleId,
+}: {
+  parts: ShopPart[];
+  /** A saved build: /go attributes the click to it. */
+  buildId?: string;
+  /** No saved build (MVP parts list): /go uses the truck's own link. */
+  vehicleId?: string;
+}) {
+  const query = buildId ? `build=${buildId}` : vehicleId ? `vehicle=${vehicleId}` : "";
   return (
     <div>
       {parts.some((p) => p.store) && (
@@ -40,7 +51,7 @@ export function ShopList({ parts, buildId }: { parts: ShopPart[]; buildId: strin
               )}
               {p.store && (
                 <a
-                  href={`/go/${p.id}?build=${buildId}`}
+                  href={`/go/${p.id}?${query}`}
                   target="_blank"
                   rel="sponsored nofollow noopener noreferrer"
                   className="mt-1 inline-block rounded-md bg-primary px-3 py-1.5 text-sm font-bold text-primary-foreground hover:opacity-90 print:hidden"

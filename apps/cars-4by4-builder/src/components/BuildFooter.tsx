@@ -10,13 +10,16 @@ export function BuildFooter({
   totalUsd,
   nextLabel,
   onNext,
+  showRenderCost = true,
 }: {
   count: number;
   totalUsd: number;
   nextLabel?: string;
   onNext?: () => void;
+  /** MVP (Spec 7): no render, so no cost line. */
+  showRenderCost?: boolean;
 }) {
-  const credits = useCredits(true);
+  const credits = useCredits(showRenderCost);
 
   return (
     <div className="sticky bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur">
@@ -29,7 +32,7 @@ export function BuildFooter({
             <span className="text-muted-foreground"> · est. </span>
             <span className="font-semibold">{formatPrice(totalUsd)}</span>
           </p>
-          <RenderCost credits={credits} />
+          {showRenderCost ? <RenderCost credits={credits} /> : null}
         </div>
         {onNext && nextLabel ? (
           <Button disabled={count === 0} onClick={onNext}>

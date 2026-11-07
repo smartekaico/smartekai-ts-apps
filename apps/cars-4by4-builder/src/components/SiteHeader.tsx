@@ -1,11 +1,12 @@
 import { Link } from "@tanstack/react-router";
 import { authClient } from "@/lib/auth-client";
 import { useCredits } from "@/lib/use-credits";
+import { AI_RENDERS_ENABLED } from "@/lib/features";
 
 export function SiteHeader() {
   const { data, isPending } = authClient.useSession();
   const account = data && !data.user.isAnonymous ? data.user : null; // guests render as signed out
-  const credits = useCredits(account !== null, account?.id);
+  const credits = useCredits(AI_RENDERS_ENABLED && account !== null, account?.id);
 
   async function signOut() {
     try {
@@ -28,7 +29,7 @@ export function SiteHeader() {
           </Link>
           {isPending ? null : account ? (
             <>
-              {credits && (
+              {AI_RENDERS_ENABLED && credits && (
                 <Link
                   to="/credits"
                   className="rounded-full border border-border px-2.5 py-0.5 text-xs hover:border-primary"
@@ -36,18 +37,25 @@ export function SiteHeader() {
                   {credits.balance} credits
                 </Link>
               )}
-              <Link to="/projects" className="hover:text-primary">
-                My projects
-              </Link>
+              {AI_RENDERS_ENABLED && (
+                <Link to="/projects" className="hover:text-primary">
+                  My projects
+                </Link>
+              )}
               <button type="button" onClick={signOut} className="text-muted-foreground hover:text-primary">
                 Sign out
               </button>
+              {!AI_RENDERS_ENABLED && account.role === "admin" && (
+                <Link to="/admin" className="hover:text-primary">
+                  Admin
+                </Link>
+              )}
             </>
-          ) : (
+          ) : AI_RENDERS_ENABLED ? (
             <Link to="/sign-in" search={{ next: "/" }} className="hover:text-primary">
               Sign in
             </Link>
-          )}
+          ) : null}
         </nav>
       </div>
     </header>

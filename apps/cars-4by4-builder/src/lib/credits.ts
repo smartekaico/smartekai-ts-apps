@@ -4,6 +4,7 @@ import type { CreditPurchaseStatus } from "@smartekai/db/cars";
 import { canBuyCredits, findPack } from "@/lib/credit-packs";
 import type { CreditState } from "@/lib/credit-packs";
 import { safeNext } from "@/lib/next";
+import { AI_RENDERS_ENABLED, FEATURE_PAUSED_MESSAGE } from "@/lib/features";
 import { startCheckout } from "@/server/checkout";
 import type { StartCheckoutResult } from "@/server/checkout";
 import { getCreditState, getPurchaseForUser } from "@/server/credits";
@@ -50,6 +51,7 @@ export const createInvoice = createServerFn({ method: "POST" })
     return { packId: input.packId, next: typeof input.next === "string" ? safeNext(input.next) : undefined };
   })
   .handler(async ({ data }): Promise<StartCheckoutResult> => {
+    if (!AI_RENDERS_ENABLED) return { ok: false, error: FEATURE_PAUSED_MESSAGE };
     const user = await accountUser();
     if (!user) return { ok: false, error: "Sign in to buy credits." };
     const pack = findPack(data.packId);
