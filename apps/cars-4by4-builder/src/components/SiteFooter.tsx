@@ -5,6 +5,7 @@ export function SiteFooter() {
         <p>We may earn a commission when you buy through links on this site.</p>
         <p>As an Amazon Associate I earn from qualifying purchases.</p>
         <p>Renders are AI visualizations — actual appearance may vary. Prices and install times are estimates.</p>
+        <p>3D model: Toyota Tacoma by LagzDesign, CC BY 4.0 (https://sketchfab.com/3d-models/toyota-tacoma-trd-f13b2c73a13147a69a6d2a83f72b2505).</p>
       </div>
     </footer>
   );

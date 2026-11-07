@@ -3,11 +3,12 @@ import { Environment, Lightformer, OrbitControls } from "@react-three/drei";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CanvasTexture } from "three";
 import type { PerspectiveCamera } from "three";
-import { STOCK_TYRE_RADIUS, sceneSpec, vehicleLayout } from "@/lib/visuals";
+import { STOCK_TYRE_RADIUS, sceneSpec, vehicleLayout, hasRealModel } from "@/lib/visuals";
 import type { SceneSpec } from "@/lib/visuals";
 import { VehicleBody } from "./Vehicle";
 import { Accessories } from "./Accessories";
 import { Wheel } from "./Wheel";
+import { RealVehicle } from "./RealVehicle";
 
 const INCH = 0.0254;
 // Lifts are shown a little taller than life so a 2" kit is still visible.
@@ -50,12 +51,19 @@ function GroundShadow({ length, width }: { length: number; width: number }) {
   );
 }
 
-function Model({ spec }: { spec: SceneSpec }) {
+function Model({ spec, vehicleId }: { spec: SceneSpec; vehicleId: string }) {
   const { shape, liftInches, tyreInches, wheel } = spec;
   const l = useMemo(() => vehicleLayout(shape), [shape]);
   const radius = (tyreInches / 2) * INCH;
   const bodyY = radius + liftInches * INCH * LIFT_SCALE;
   const track = shape.width / 2 - 0.13;
+  if (hasRealModel(vehicleId)) {
+    return (
+      <group>
+        <RealVehicle spec={spec} />
+      </group>
+    );
+  }
   return (
     <group>
       <group position={[0, bodyY, 0]}>
@@ -67,7 +75,6 @@ function Model({ spec }: { spec: SceneSpec }) {
           <Wheel key={`${x}${side}`} x={x} z={side * track} side={side} radius={radius} style={wheel} aggressive={tyreInches > 31} />
         )),
       )}
-      {/* axles tie the wheels to the lifted body */}
       {[l.frontAxle, l.rearAxle].map((x) => (
         <mesh key={x} position={[x, radius, 0]} rotation={[Math.PI / 2, 0, 0]}>
           <cylinderGeometry args={[0.05, 0.05, shape.width - 0.3, 10]} />
@@ -109,7 +116,7 @@ export default function Scene({ vehicleId, partIds }: { vehicleId: string; partI
         <Lightformer form="rect" intensity={1.1} position={[7, 2, -2]} rotation={[0, -Math.PI / 2, 0]} scale={[12, 3, 1]} />
         <Lightformer form="rect" intensity={0.5} color="#9fb4c8" position={[0, 1, 8]} scale={[14, 2, 1]} />
       </Environment>
-      <Model spec={spec} />
+      <Model spec={spec} vehicleId={vehicleId} />
       <GroundShadow length={spec.shape.length} width={spec.shape.width} />
       <OrbitControls
         ref={controls as never}
