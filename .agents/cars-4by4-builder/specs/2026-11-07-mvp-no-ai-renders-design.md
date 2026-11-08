@@ -56,7 +56,9 @@ Below: category tabs and part cards, with the running total in the footer. 3D as
 - Image: if the parts exactly match a preset, its photo. Otherwise the **closest** preset
   photo, labelled **"Closest look. Your parts are listed below."** If nothing overlaps, the
   studio photo, labelled the same way. Never imply it shows the exact build.
-- `ShopList` with per-part estimated price, install hours and fitment, then the estimated total.
+- `ShopList` with per-part estimated price, install hours and fitment.
+- **The full build report, free and with no sign-in** (§4a): parts total, estimated labour
+  hours and cost, estimated total, and the advisory notes.
 - Buy buttons, the commission disclosure, **Edit parts**, and **Copy link**.
 
 `closestPreset(presets, partIds)`: pure; highest shared ÷ union; ties to the first preset.
@@ -80,7 +82,23 @@ wheels, tonneau) would show no button or 404.
 - `getBuild` returns full part data when the switch is off, so prices, install hours and
   fitment show on the public page. No sign-in needed. Remove the "Full build report" upsell.
 - The slider stays, with its existing "AI visualization" note: those are real, saved images.
+- The build page shows the same full report as step 3 (§4a).
 - `/builds/<slug>/report` redirects to the build page when off. Its auth gate stays for later.
+
+## 4a. The build report goes free
+
+The report has no AI: catalogue prices and install hours, totals from `summarize()`, and
+fixed-rule advisories from `getAdvisories()` in `src/lib/advisories.ts`. The MVP gives it
+to everyone instead of dropping it with the report page.
+
+- Extract `BuildReport` (`src/components/`) from `routes/builds/$slug_.report.tsx`: the
+  Parts / Est. labour (hrs) / Estimated total breakdown, then the advisory list, with the
+  same icons and wording.
+- Use it on step 3, on the build page, and on the report page (for when the switch is back
+  on), so there's one copy of the logic.
+- Step 3 and the build page get a **Print** button (`window.print()`, hidden in print).
+  Check the print layout: no header, footer or 3D, and readable black text.
+- Advisories are guidance, not guarantees. Keep the existing wording.
 
 ## 5. Copy
 
@@ -94,6 +112,7 @@ wheels, tonneau) would show no button or 404.
 - No visitor path can reach Gemini, a credit charge or a checkout, including by calling
   the server functions directly.
 - A custom build shows correct Buy buttons for per-vehicle parts on all 7 vehicles.
+- Step 3 and every build page show the labour estimate and advisories, with no sign-in.
 - Parts-list URLs work when shared to a private window.
 - Existing build links, `?step=review`, `?step=vehicle` with parts, and `/admin` still work.
 - Tested in a real browser at 375 px and desktop, with results logged.

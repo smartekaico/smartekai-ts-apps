@@ -56,10 +56,14 @@ buttons. No upload, no Gemini, no sign-in, no credits. Hide the AI code; don't d
 
 ### 4. Step 3: parts list
 
+- [ ] First, extract `BuildReport` (spec §4a) from `routes/builds/$slug_.report.tsx`, and
+  make the report page use it. Check the report page looks unchanged before moving on.
+
 - [ ] `closestPreset(presets, partIds)` in `src/lib/recommend.ts` (pure). Spot-check with
   `npx tsx -e`: exact match, partial match, no overlap, tie.
 - [ ] `step` gains `list`; `review` maps to `list` when off. `StepIndicator`: "3 Your parts list".
-- [ ] `PartsListStep`: spec §2. Full `ShopList` with `vehicleId`, the total, Edit parts,
+- [ ] `PartsListStep`: spec §2. Full `ShopList` with `vehicleId`, then `BuildReport`
+  (labour and advisories), Print, Edit parts,
   Copy link (`navigator.clipboard`, with a visible "Copied"). 3D as on step 2.
 - [ ] With no valid parts in the URL, send the user to step 2.
 - [ ] Commit `feat(cars): parts list step`.
@@ -67,7 +71,7 @@ buttons. No upload, no Gemini, no sign-in, no credits. Hide the AI code; don't d
 ### 5. Build pages, header, copy
 
 - [ ] Build page: **Customize this build** → `step=parts`. `getBuild` returns
-  `toPublicPart` when off. Remove the report upsell.
+  `toPublicPart` when off. Replace the report upsell with `BuildReport` and a Print button.
 - [ ] `SiteHeader`: hide Sign in, credits and My projects for visitors when off. A
   signed-in admin keeps a Sign out, and a link to `/admin`.
 - [ ] Home hero, meta descriptions, `/build` description and `pageMeta` copy per spec §5.
@@ -85,6 +89,10 @@ Local dev needs affiliate links on the branch, which has none: load them with
 - [ ] Per-vehicle link: F-150 and Silverado list → Bilstein goes to different ASINs, with the tag.
 - [ ] Tacoma with BAKFlip → the Tacoma ASIN. Part with no link → no button.
 - [ ] Bad `?vehicle=` on `/go` → default link or 404, no 500.
+- [ ] Report content: a build with suspension, lighting and a Custom Fabrication part shows
+  the labour line and the matching advisories, on step 3 and on the build page, signed out.
+- [ ] Print preview of step 3 (headless Chrome `--print-to-pdf=out.pdf`): parts, totals and
+  advisories readable; no header, footer or 3D.
 - [ ] Shared `step=list` URL in a private window matches.
 - [ ] Direct POSTs to `checkPhoto`, `startBuild`, `createInvoice` → refused. Check no Gemini
   calls in logs across the whole run.
