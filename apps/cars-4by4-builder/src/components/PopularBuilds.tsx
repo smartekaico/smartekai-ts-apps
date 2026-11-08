@@ -22,7 +22,8 @@ export function PopularBuilds({
   return (
     <div>
       <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Popular builds</p>
-      <div className="grid gap-3 sm:grid-cols-3">
+      {/* Phones: a swipeable row of smaller cards, so the parts aren't pushed two screens down. */}
+      <div className="-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0 sm:pb-0">
         {presets.map((p) => (
           <button
             key={p.id}
@@ -30,7 +31,7 @@ export function PopularBuilds({
             aria-pressed={activeSlug === p.slug}
             onClick={() => onPick(p)}
             className={cn(
-              "overflow-hidden rounded-lg border bg-card text-left transition hover:-translate-y-0.5",
+              "w-[68%] shrink-0 snap-start overflow-hidden rounded-lg border bg-card text-left transition hover:-translate-y-0.5 sm:w-auto",
               activeSlug === p.slug ? "border-primary ring-2 ring-primary" : "border-border hover:border-primary/60",
             )}
           >
