@@ -3,6 +3,7 @@ import "@fontsource-variable/inter";
 import appCss from "../styles.css?url";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
+import { AI_RENDERS_ENABLED } from "@/lib/features";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -10,7 +11,12 @@ export const Route = createRootRoute({
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Overlander Builder" },
-      { name: "description", content: "See real off-road upgrades on your own truck before you buy." },
+      {
+        name: "description",
+        content: AI_RENDERS_ENABLED
+          ? "See real off-road upgrades on your own truck before you buy."
+          : "Plan your 4x4 build from real popular builds, real parts and real prices.",
+      },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
   }),

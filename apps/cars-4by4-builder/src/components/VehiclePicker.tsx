@@ -1,4 +1,5 @@
 import type { ConfiguratorData } from "@/lib/builds";
+import { STUDIO_CROP } from "@/components/studio-photo";
 
 type Vehicle = ConfiguratorData["vehicles"][number];
 
@@ -13,7 +14,7 @@ export function VehiclePicker({ vehicles, onPick }: { vehicles: Vehicle[]; onPic
           className="overflow-hidden rounded-lg border border-border bg-card text-left transition hover:-translate-y-0.5 hover:border-primary"
         >
           {v.stockImageUrl ? (
-            <img src={v.stockImageUrl} alt={v.name} className="aspect-video w-full object-cover" />
+            <img src={v.stockImageUrl} alt={v.name} className={`aspect-video w-full object-cover ${STUDIO_CROP}`} />
           ) : (
             <div aria-hidden className="aspect-video w-full bg-muted bg-texture" />
           )}

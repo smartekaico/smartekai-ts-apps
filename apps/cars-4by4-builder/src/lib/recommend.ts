@@ -189,3 +189,29 @@ export function recommend(
 
   return { partIds: final.map((f) => f.part.id), reasons };
 }
+
+/**
+ * The preset whose parts overlap most with the given parts (Spec 7 §2).
+ * Score = shared parts / union of parts; ties go to the first preset. Pure.
+ */
+export function closestPreset<T extends { partIds: string[] }>(
+  presets: T[],
+  partIds: string[],
+): T | null {
+  if (presets.length === 0 || partIds.length === 0) return null;
+  const chosen = new Set(partIds);
+  let best: T | null = null;
+  let bestScore = 0;
+  for (const preset of presets) {
+    const presetParts = new Set(preset.partIds);
+    let shared = 0;
+    for (const id of chosen) if (presetParts.has(id)) shared++;
+    const union = new Set([...chosen, ...presetParts]).size;
+    const score = union === 0 ? 0 : shared / union;
+    if (score > bestScore) {
+      bestScore = score;
+      best = preset;
+    }
+  }
+  return best;
+}

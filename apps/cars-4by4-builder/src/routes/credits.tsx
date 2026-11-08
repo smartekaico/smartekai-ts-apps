@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import type { CreditPurchaseStatus } from "@smartekai/db/cars";
 import { CREDIT_PACKS, RENDER_COST, rendersFor } from "@/lib/credit-packs";
 import type { CreditPack } from "@/lib/credit-packs";
 import { createInvoice, getCreditsPage, getPurchaseStatus, isPurchaseId } from "@/lib/credits";
 import type { PurchaseView } from "@/lib/credits";
 import { safeNext } from "@/lib/next";
+import { AI_RENDERS_ENABLED } from "@/lib/features";
 import { notifyCreditsChanged } from "@/lib/use-credits";
 import { Toast } from "@/components/Toast";
 
@@ -17,7 +18,11 @@ export const Route = createFileRoute("/credits")({
     purchase: isPurchaseId(search.purchase) ? search.purchase : undefined,
   }),
   loaderDeps: ({ search }) => ({ next: search.next, purchase: search.purchase }),
-  loader: ({ deps }) => getCreditsPage({ data: { next: deps.next, purchase: deps.purchase } }),
+  loader: ({ deps }) => {
+    // Spec 7: credits are paused for the MVP — send visitors back to the builder.
+    if (!AI_RENDERS_ENABLED) throw redirect({ to: "/build" });
+    return getCreditsPage({ data: { next: deps.next, purchase: deps.purchase } });
+  },
   head: () => ({ meta: [{ title: "Buy credits | Overlander Builder" }, { name: "robots", content: "noindex" }] }),
   component: CreditsPage,
 });

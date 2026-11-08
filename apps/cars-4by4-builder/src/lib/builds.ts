@@ -8,6 +8,7 @@ import { BUCKETS, deleteObject, getPresignedReadUrl, uploadObject } from "@smart
 import { MAX_PARTS } from "@/lib/catalog";
 import { summarize } from "@/lib/pricing";
 import { matchVehicle } from "@/lib/match-vehicle";
+import { AI_RENDERS_ENABLED, FEATURE_PAUSED_MESSAGE } from "@/lib/features";
 import { storeOf } from "@/lib/store";
 import type { Store } from "@/lib/store";
 import type { CreditBlock } from "@/lib/credit-packs";
@@ -98,6 +99,38 @@ export const getConfigurator = createServerFn({ method: "GET" })
     const filteredPresets = vehicleId
       ? allPresets.filter((p) => p.vehicleId === vehicleId)
       : allPresets;
+
+    // Per-vehicle affiliate links: the store label must match the link /go will
+    // use for this truck (shocks, lift kits, wheels, tonneau covers differ).
+    // Popular builds show a photo: the curated build for that preset.
+    // Both run in parallel with the other reads: /build is near the CPU limit.
+    const presetIds = filteredPresets.map((p) => p.id);
+    const [vehicleLinks, curated] = await Promise.all([
+      vehicleId
+        ? db
+            .select({ partId: partVehicleLinks.partId, url: partVehicleLinks.url })
+            .from(partVehicleLinks)
+            .where(eq(partVehicleLinks.vehicleId, vehicleId))
+        : Promise.resolve([]),
+      presetIds.length
+        ? db
+            .select({ presetId: builds.presetId, renderKey: builds.renderKey })
+            .from(builds)
+            .where(
+              and(
+                inArray(builds.presetId, presetIds),
+                eq(builds.isCurated, true),
+                eq(builds.status, "completed"),
+              ),
+            )
+        : Promise.resolve([]),
+    ]);
+    const linkByPart = new Map(vehicleLinks.map((l) => [l.partId, l.url] as const));
+    const afterUrlByPreset = new Map(
+      curated.flatMap((c) => (c.presetId && c.renderKey ? [[c.presetId, publicImageUrl(c.renderKey)] as const] : [])),
+    );
+    const priceById = new Map(allParts.map((p) => [p.id, Number(p.priceUsd)] as const));
+
     return {
       vehicles: allVehicles.map((v) => ({
         id: v.id,
@@ -105,8 +138,16 @@ export const getConfigurator = createServerFn({ method: "GET" })
         yearRange: v.yearRange,
         stockImageUrl: v.stockImageKey ? publicImageUrl(v.stockImageKey) : null,
       })),
-      parts: filteredParts.map((p) => ({ ...toPublicPart(p), vehicleIds: p.vehicleIds })),
-      presets: filteredPresets.map((p) => ({ id: p.id, slug: p.slug, vehicleId: p.vehicleId, name: p.name, partIds: p.partIds })),
+      parts: filteredParts.map((p) => ({ ...toPublicPart(p, linkByPart.get(p.id)), vehicleIds: p.vehicleIds })),
+      presets: filteredPresets.map((p) => ({
+        id: p.id,
+        slug: p.slug,
+        vehicleId: p.vehicleId,
+        name: p.name,
+        partIds: p.partIds,
+        afterUrl: afterUrlByPreset.get(p.id) ?? null,
+        totalUsd: p.partIds.reduce((sum, id) => sum + (priceById.get(id) ?? 0), 0),
+      })),
     };
   });
 
@@ -122,6 +163,7 @@ export const checkPhoto = createServerFn({ method: "POST" })
     return { photo, vehicleId: typeof vehicleId === "string" ? vehicleId : null };
   })
   .handler(async ({ data }): Promise<{ ok: true; buildId: string; detected: DetectedVehicle; vehicleId: string | null } | Fail> => {
+    if (!AI_RENDERS_ENABLED) return fail(FEATURE_PAUSED_MESSAGE);
     const extension = ACCEPTED_TYPES[data.photo.type] as string | undefined;
     if (!extension) return fail("Please upload a JPG, PNG or WebP photo.");
     if (data.photo.size > MAX_PHOTO_BYTES) return fail("That photo is over 10 MB — try a smaller one.");
@@ -192,6 +234,7 @@ export const startBuild = createServerFn({ method: "POST" })
     };
   })
   .handler(async ({ data }): Promise<{ ok: true; id: string } | Fail> => {
+    if (!AI_RENDERS_ENABLED) return fail(FEATURE_PAUSED_MESSAGE);
     if (data.partIds.length === 0 || data.partIds.length > MAX_PARTS) {
       return fail(`Pick between 1 and ${MAX_PARTS} upgrades.`);
     }
@@ -394,14 +437,20 @@ async function loadBuild(slugOrId: string) {
   };
 }
 
-/** Public build page: gated fields (per-part price, labor, fitment) are never sent. */
+/**
+ * Public build page. While AI renders are paused (Spec 7) the full part data
+ * (price, install hours, fitment) is sent to everyone — there is no report to
+ * unlock, so nothing is gated. With AI on, the fields stay behind sign-in.
+ */
 export const getBuild = createServerFn({ method: "GET" })
   .validator(validateSlugOrId)
   .handler(async ({ data: slugOrId }) => {
     const { view, parts: buildParts, linkByPart } = await loadBuild(slugOrId);
     return {
       ...view,
-      parts: buildParts.map((p) => toTeaserPart(p, linkByPart.get(p.id))),
+      parts: buildParts.map((p) =>
+        AI_RENDERS_ENABLED ? toTeaserPart(p, linkByPart.get(p.id)) : toPublicPart(p, linkByPart.get(p.id)),
+      ),
       estimatedTotalUsd: summarize(buildParts).totalUsd,
     };
   });
