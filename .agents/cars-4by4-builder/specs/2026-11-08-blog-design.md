@@ -1,6 +1,6 @@
 # Spec 8 — Blog: buying guides that lead to builds and Buy buttons
 
-**Date:** 2026-11-08 · **Status:** draft for the user's review · **App:** `apps/cars-4by4-builder`
+**Date:** 2026-11-08 · **Status:** approved 2026-11-09 · **App:** `apps/cars-4by4-builder`
 (overlander.smartekai.com)
 
 ## 0. Why now
@@ -10,7 +10,7 @@ qualifying sales by about late April 2027**. People searching "best lift kit for
 Tacoma" are close to buying; the app can't rank for that on its own. Each article answers
 one such search, then sends the reader to a matching build, Help me choose, or a Buy button.
 
-## 1. Decisions (proposed — confirm or change)
+## 1. Decisions (approved 2026-11-09)
 
 | Question | Proposal |
 |---|---|
