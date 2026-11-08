@@ -8,6 +8,7 @@ import { BeforeAfterSlider } from "@/components/BeforeAfterSlider";
 import { BuildProgress } from "@/components/BuildProgress";
 import { ShareButton } from "@/components/ShareButton";
 import { ShopList } from "@/components/ShopList";
+import { BuildReport } from "@/components/BuildReport";
 import { AI_RENDERS_ENABLED } from "@/lib/features";
 
 export const Route = createFileRoute("/builds/$slug")({
@@ -117,22 +118,19 @@ function BuildPage() {
         </div>
       </section>
 
-      {AI_RENDERS_ENABLED && (
-        <section className="mt-10 rounded-lg border border-primary/40 bg-card p-5">
-          <h2 className="text-xl">Full build report</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Per-part prices, install hours, the parts-and-labor breakdown and fitment notes — printable. Free with an
-            account.
-          </p>
-          <Link
-            to="/builds/$slug/report"
-            params={{ slug }}
-            className="mt-4 inline-flex rounded-md bg-primary px-5 py-2.5 font-bold text-primary-foreground"
+      <section className="mt-10">
+        <h2 className="text-xl">Build report</h2>
+        <BuildReport parts={build.parts} />
+        <div className="mt-4 print:hidden">
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="rounded-md border border-border px-4 py-2 text-sm font-semibold hover:border-primary"
           >
-            Unlock full report
-          </Link>
-        </section>
-      )}
+            Print
+          </button>
+        </div>
+      </section>
 
       <div className="mt-10 flex flex-wrap gap-3">
         <ShareButton />

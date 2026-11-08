@@ -3,6 +3,7 @@ import type { ConfiguratorData } from "@/lib/builds";
 import { closestPreset } from "@/lib/recommend";
 import { formatPrice, summarize } from "@/lib/pricing";
 import { BuildPreview3D } from "@/components/BuildPreview3D";
+import { BuildReport } from "@/components/BuildReport";
 import { ShopList } from "@/components/ShopList";
 import { STUDIO_CROP } from "@/components/studio-photo";
 
@@ -68,13 +69,20 @@ export function PartsListStep({
             <ShopList parts={selectedParts} vehicleId={vehicle.id} />
           </div>
 
-          <div className="ml-auto mt-4 flex max-w-xs justify-between border-t border-border pt-1 text-base font-bold">
-            <span>Estimated total</span>
-            <span>{formatPrice(totalUsd)}</span>
+          <BuildReport parts={selectedParts} />
+
+          <div className="mt-4 print:hidden">
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="rounded-md border border-border px-4 py-2 text-sm font-semibold hover:border-primary"
+            >
+              Print
+            </button>
           </div>
         </div>
 
-        <div className="lg:w-1/3 lg:sticky lg:top-4 lg:self-start">
+        <div className="lg:w-1/3 lg:sticky lg:top-4 lg:self-start print:hidden">
           <BuildPreview3D vehicleId={vehicle.id} partIds={partIds} className="h-[300px] w-full rounded-lg" />
           <button type="button" onClick={() => void copyLink()} className="mt-3 text-sm text-primary">
             {copied ? "Copied" : "Copy link"}

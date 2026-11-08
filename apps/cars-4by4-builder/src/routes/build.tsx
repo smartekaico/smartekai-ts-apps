@@ -209,12 +209,12 @@ function Configurator() {
                   ))}
                 </div>
               </div>
-              <div className="hidden lg:block lg:w-1/3 lg:sticky lg:top-4 lg:self-start">
+              <div className="hidden lg:block lg:w-1/3 lg:sticky lg:top-4 lg:self-start print:hidden">
                 <BuildPreview3D vehicleId={vehicle.id} partIds={selected} className="h-[400px] w-full rounded-lg" />
               </div>
             </div>
             {showPreview && (
-              <div className="mt-4 lg:hidden">
+              <div className="mt-4 lg:hidden print:hidden">
                 <BuildPreview3D vehicleId={vehicle.id} partIds={selected} className="h-[260px] w-full rounded-lg" />
               </div>
             )}
