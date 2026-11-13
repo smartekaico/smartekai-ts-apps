@@ -19,23 +19,22 @@ April 2027**.
 So a visitor building an SUV sees mostly parts with no Buy button. And the home page's
 featured build is the Land Cruiser.
 
-**Goal:** every part in a popular build has an Amazon Buy button for its vehicle, and the
-catalogue leans to vehicles Amazon.com actually sells parts for.
+**Goal:** every part in a popular build has an Amazon Buy button for its vehicle: amazon.com
+for US vehicles, amazon.ae for the Land Cruiser and Patrol.
 
-## Decision for the user (blocks step 3)
+## Decision (user, 2026-11-13): B with Amazon.ae
 
-The Land Cruiser 300 and Patrol Y62 aren't sold in the US, and Amazon.com has few parts for
-them. Where are your visitors?
+Keep the Land Cruiser 300 and Patrol Y62 for Gulf visitors, earning from them through a
+**separate Amazon.ae Associates account**. US trucks and the Wrangler stay on Amazon.com.
+No 4Runner or Bronco for now.
 
-- **A. US / amazon.com (recommended):** replace the Patrol with the **Toyota 4Runner (5th
-  gen, 2014–2024)** and the Land Cruiser with the **Ford Bronco (6th gen, 2021+)**. Both have
-  a very large Amazon aftermarket. About 8 Gemini calls (2 stock photos, 6 preset renders),
-  roughly $0.55.
-- **B. Keep them** for Gulf visitors. They'd stay mostly without Buy buttons on amazon.com.
-  Earning from them would need a separate Amazon.ae or Amazon.sa Associates account
-  (separate approval, separate tag), which this plan doesn't cover.
-- **C. Keep them and hide them** from the home page and Popular builds, so traffic goes to
-  vehicles that earn.
+- **Links go by vehicle, not by the visitor's location.** `lc300` and `patrol-y62` get
+  per-vehicle rows pointing to amazon.ae, for every part they show, universal ones included
+  (tyres, lights, winch, tent). Every other vehicle keeps its amazon.com links.
+- No geo-detection, no new tables: `part_vehicle_links` already overrides the default link per
+  vehicle.
+- Amazon.ae is a separate approval with its own tag (usually ending `-21`), and likely its own
+  early-sales requirement. Check its terms when joining.
 
 ## Ground rules
 
@@ -90,14 +89,29 @@ same type and position:
   of presets and hidden from the parts step (add `retired: true` to seed data and filter it;
   no schema change if it lives in seed only, otherwise ask before DDL).
 
-### 3. Vehicles (after the user's decision above)
+### 3. Amazon.ae for the Land Cruiser and Patrol (starts when the user is approved)
 
-- **A:** add `4runner-5g` and `bronco-6g` as in the Tacoma plan: vehicle, fitment, presets,
-  stock photos, renders, links, `VEHICLE_SHAPES`, `matchVehicle` aliases. Retire `patrol-y62`
-  and `lc300` from new builds; keep their existing gallery builds reachable, out of the home
-  page and Popular builds.
-- **B:** no change here.
-- **C:** hide them from the home page and Popular builds; keep `/build` access.
+User first: apply at Amazon.ae Associates (`affiliate-program.amazon.ae`, or "Become an
+Affiliate" at the foot of amazon.ae), listing `overlander.smartekai.com`. Share the tag when
+approved.
+
+- [ ] **Label by marketplace.** `storeOf()` already returns `amazon` for amazon.ae. Make the
+  button say **Buy on Amazon.ae** for amazon.ae links (and plain "Buy on Amazon" for .com), so
+  shoppers expect dirham prices. Keep `rel` and the disclosure. Spot-check with `npx tsx -e`.
+- [ ] Research amazon.ae listings for every part `lc300` and `patrol-y62` show, per vehicle:
+  universal parts first (tyres in the LC300/Patrol sizes, light bar, pods, winch, tent), then
+  vehicle-specific ones. Same standards: sold by the brand or Amazon, the listing names the
+  vehicle and years, a fit note per row. **Expect armour gaps** (no ARB bull bars found in a
+  first search); leave blank rather than link a wrong part.
+- [ ] Show the user the list. On approval: rows ending `,lc300` / `,patrol-y62` with the .ae
+  tag, `links:check` on the branch, then production `parts:links`.
+- [ ] Where a Land Cruiser or Patrol preset part has no amazon.ae listing, propose a swap
+  (as in step 2) to something amazon.ae sells for that vehicle, and re-render only the
+  changed presets (Gemini: ask first, give the count).
+- [ ] Footer and blog disclosure: "As an Amazon Associate I earn from qualifying purchases"
+  already covers both stores; check the Amazon.ae terms for any required wording.
+- [ ] Verify: a Land Cruiser parts list shows "Buy on Amazon.ae" going to amazon.ae with the
+  .ae tag; an F-150 list still goes to amazon.com with `smartekaiover-20`.
 
 ### 4. Lead with what earns
 
@@ -110,7 +124,8 @@ same type and position:
 ### 5. Content
 
 - [ ] The blog plan's launch set is already truck- and Amazon-focused; keep it. Add, after it,
-  one Wrangler JL guide (once step 1 has links), and with decision A, one 4Runner guide.
+  one Wrangler JL guide (once step 1 has links), and once Amazon.ae links exist, one Land
+  Cruiser 300 guide for Gulf readers.
 - [ ] Articles only feature parts with working Amazon links for that vehicle (already a
   blog-plan rule).
 
@@ -118,12 +133,13 @@ same type and position:
 
 - Check that `overlander.smartekai.com` is the site listed in Associates Central (the old
   `cars.` address redirects; list the new one).
+- Apply to Amazon.ae Associates (step 3), and check its deadline and payout terms.
 - Watch Associates **Reports** weekly; the deadline is about late April 2027.
 - Later, with sales: Amazon's Product Advertising API can supply real product photos in place
   of illustrations. Access depends on recent sales, so don't plan on it yet.
 
 ## Done when
 
-Every popular build's parts have Amazon Buy buttons for its vehicle (or are listed as "no
-link yet" on purpose), the home page leads with a fully linked build, the vehicle decision is
-recorded and applied, and every ASIN list, seed, Gemini run, merge and deploy had the user's OK.
+Every popular build's parts have Amazon Buy buttons for its vehicle, on amazon.com or, for the
+Land Cruiser and Patrol, amazon.ae (or are listed as "no link yet" on purpose), the home page
+leads with a fully linked build, and every ASIN list, seed, Gemini run, merge and deploy had the user's OK.
