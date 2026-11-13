@@ -1,9 +1,8 @@
 # AvantLink links for the SUV parts — Task
 
-> **REMINDER: Part B starts when AvantLink approves application 1676225.**
-> Status 2026-11-07: website verified, waiting for staff review (a few days;
-> approval comes by email). Part A is done and live. Part B also needs the
-> user's merchant approvals (ARB USA, 4 Wheel Parts, Baja Designs).
+> **CANCELLED 2026-11-13: AvantLink rejected application 1676225.** Affiliate income is
+> Amazon only; see `plans/2026-11-13-amazon-only.md`. Part A (labelling network links by
+> their destination merchant) is live and harmless, so it stays. Part B will not happen.
 
 **Why:** 12 of 24 parts have no Buy button, almost all of them SUV parts — and
 the home page's featured build is the Land Cruiser. They aren't on Amazon.com
